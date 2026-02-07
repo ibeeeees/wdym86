@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, RefreshCw, TrendingUp, TrendingDown, Package, AlertTriangle, Wifi, WifiOff, Sparkles, ChevronDown, ChevronUp, Calendar, Download, ShoppingCart, Zap, X, Brain, BarChart3, Truck as TruckIcon, LayoutDashboard, Clock, CheckCircle } from 'lucide-react'
+import { ArrowRight, RefreshCw, TrendingUp, TrendingDown, Package, AlertTriangle, Wifi, WifiOff, Sparkles, ChevronDown, ChevronUp, Calendar, Download, ShoppingCart, Zap, X, Brain, BarChart3, Truck as TruckIcon, LayoutDashboard, Clock, CheckCircle, Crown, Flame } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts'
 import { getIngredients, runAgentPipeline, checkApiHealth, getDailySummary, getActiveEvents } from '../services/api'
 
@@ -73,6 +73,15 @@ const heatmapData = [
   { category: 'Produce', Mon: 0.58, Tue: 0.68, Wed: 0.75, Thu: 0.82, Fri: 0.92, Sat: 0.98, Sun: 0.62 },
   { category: 'Dairy', Mon: 0.55, Tue: 0.60, Wed: 0.68, Thu: 0.75, Fri: 0.85, Sat: 0.90, Sun: 0.58 },
   { category: 'Dry Goods', Mon: 0.45, Tue: 0.50, Wed: 0.55, Thu: 0.62, Fri: 0.70, Sat: 0.75, Sun: 0.42 },
+]
+
+// Top dishes data for dashboard widget
+const topDishesToday = [
+  { name: 'Lamb Souvlaki', orders: 32, trend: 11.4 },
+  { name: 'Greek Salad', orders: 28, trend: 6.8 },
+  { name: 'Baklava', orders: 25, trend: 9.1 },
+  { name: 'Classic Hummus', orders: 22, trend: 5.2 },
+  { name: 'Grilled Branzino', orders: 20, trend: -5.2 },
 ]
 
 // Get heatmap cell color based on intensity (0-1)
@@ -204,12 +213,17 @@ export default function Dashboard() {
 - **Olive Oil (Extra Virgin)** is running low - essential for tonight's service. Contact Aegean Imports.
 - **Lamb Chops** and **Halloumi Cheese** show URGENT risk. Weekend dinner reservations are 40% above average.
 
+**Menu Insights:**
+- **Lamb Souvlaki** is your #1 seller (195 orders/wk, +11.4%) — driving high Lamb Chops demand (243.8 lbs/wk projected).
+- **Shrimp Saganaki** is trending up fast (+12.3%) — consider promoting as a special.
+- **Chicken Souvlaki** is declining (-7.8%) and **Grilled Branzino** is down (-5.2%). Consider refreshing plating or running a lunch special to boost orders.
+
 **Today's Outlook:**
 - 4 items need immediate attention
 - Friday evening: Expecting 180+ covers (Grilled Branzino, Lamb Souvlaki popular)
 - Mezze platters trending up 25% this week
 
-**Recommendation:** Place urgent orders before 2 PM for same-day delivery. Consider featuring Shrimp Saganaki and Moussaka to reduce lamb dependency tonight.`)
+**Recommendation:** Place urgent orders before 2 PM for same-day delivery. Feature Shrimp Saganaki and Moussaka to reduce lamb dependency tonight.`)
       }
     }
     checkConnection()
@@ -493,7 +507,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Demand Forecast */}
         <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-4">
@@ -570,6 +584,45 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
         </div>
+
+        {/* Top Dishes Today */}
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-black dark:text-white flex items-center space-x-2">
+              <Flame className="w-4 h-4 text-orange-500" />
+              <span>Top Dishes Today</span>
+            </h3>
+            <Link to="/dishes" className="text-xs text-neutral-400 hover:text-black dark:hover:text-white flex items-center space-x-1">
+              <span>View All</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {topDishesToday.map((dish, i) => (
+              <div key={dish.name} className="flex items-center space-x-3">
+                <div className="w-6 flex-shrink-0 text-center">
+                  {i === 0 ? (
+                    <Crown className="w-4 h-4 text-yellow-500" />
+                  ) : (
+                    <span className="text-xs font-bold text-neutral-400">#{i + 1}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-black dark:text-white truncate">{dish.name}</span>
+                    <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
+                      <span className="text-xs font-mono text-neutral-500">{dish.orders}</span>
+                      <span className={`text-xs font-semibold flex items-center ${dish.trend > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        {dish.trend > 0 ? <TrendingUp className="w-3 h-3 mr-0.5" /> : <TrendingDown className="w-3 h-3 mr-0.5" />}
+                        {dish.trend > 0 ? '+' : ''}{dish.trend}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Smart Reorder Suggestions */}
@@ -636,15 +689,15 @@ export default function Dashboard() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { platform: 'DoorDash', icon: '🚗', status: 'Preparing', customer: 'Maria K.', total: 86.50, items: 'Lamb Souvlaki, Greek Salad', color: 'from-red-500 to-red-600' },
-            { platform: 'Uber Eats', icon: '🥡', status: 'Confirmed', customer: 'Nikos P.', total: 124.75, items: 'Mezze Platter, Grilled Branzino', color: 'from-green-500 to-emerald-600' },
-            { platform: 'Grubhub', icon: '🍔', status: 'Out for Delivery', customer: 'Elena S.', total: 78.90, items: 'Moussaka, Baklava x2', color: 'from-orange-500 to-red-500' },
-            { platform: 'DoorDash', icon: '🚗', status: 'Pending', customer: 'Dimitri T.', total: 145.25, items: 'Seafood Paella, Wine', color: 'from-red-500 to-red-600' },
+            { platform: 'DoorDash', label: 'DD', labelColor: 'bg-red-500 text-white', status: 'Preparing', customer: 'Maria K.', total: 86.50, items: 'Lamb Souvlaki, Greek Salad', color: 'from-red-500 to-red-600' },
+            { platform: 'Uber Eats', label: 'UE', labelColor: 'bg-green-500 text-white', status: 'Confirmed', customer: 'Nikos P.', total: 124.75, items: 'Mezze Platter, Grilled Branzino', color: 'from-green-500 to-emerald-600' },
+            { platform: 'Grubhub', label: 'GH', labelColor: 'bg-orange-500 text-white', status: 'Out for Delivery', customer: 'Elena S.', total: 78.90, items: 'Moussaka, Baklava x2', color: 'from-orange-500 to-red-500' },
+            { platform: 'DoorDash', label: 'DD', labelColor: 'bg-red-500 text-white', status: 'Pending', customer: 'Dimitri T.', total: 145.25, items: 'Seafood Paella, Wine', color: 'from-red-500 to-red-600' },
           ].map((order, i) => (
             <div key={i} className="bg-white dark:bg-neutral-800 rounded-xl p-4 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all hover:scale-[1.02]">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
-                  <span className="text-lg">{order.icon}</span>
+                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${order.labelColor}`}>{order.label}</span>
                   <span className="text-xs font-medium text-neutral-500">{order.platform}</span>
                 </div>
                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${
@@ -765,7 +818,7 @@ export default function Dashboard() {
                           item.category === 'dairy' ? 'bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30' :
                           'bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30'
                         }`}>
-                          {item.category === 'meat' ? '🥩' : item.category === 'produce' ? '🥬' : item.category === 'dairy' ? '🧀' : '🌾'}
+                          <span className="text-xs font-bold text-neutral-600 dark:text-neutral-300">{item.category === 'meat' ? 'MT' : item.category === 'produce' ? 'PR' : item.category === 'dairy' ? 'DY' : 'GR'}</span>
                         </div>
                         <div>
                           <p className="font-semibold text-black dark:text-white">{item.name}</p>

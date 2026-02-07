@@ -30,37 +30,41 @@ interface Platform {
   id: string
   name: string
   connected: boolean
-  icon: string
   color: string
   commission: string
 }
 
 // Platform styling configuration
-const platformConfig: Record<string, { gradient: string; bg: string; icon: string }> = {
+const platformConfig: Record<string, { gradient: string; bg: string; label: string; labelColor: string }> = {
   doordash: {
     gradient: 'from-red-500 to-red-600',
     bg: 'bg-red-50 dark:bg-red-900/20',
-    icon: '🚗'
+    label: 'DD',
+    labelColor: 'bg-red-500 text-white',
   },
   uber_eats: {
     gradient: 'from-green-500 to-emerald-600',
     bg: 'bg-green-50 dark:bg-green-900/20',
-    icon: '🥡'
+    label: 'UE',
+    labelColor: 'bg-green-500 text-white',
   },
   grubhub: {
     gradient: 'from-orange-500 to-red-500',
     bg: 'bg-orange-50 dark:bg-orange-900/20',
-    icon: '🍔'
+    label: 'GH',
+    labelColor: 'bg-orange-500 text-white',
   },
   postmates: {
     gradient: 'from-gray-700 to-black',
     bg: 'bg-gray-50 dark:bg-gray-900/20',
-    icon: '📦'
+    label: 'PM',
+    labelColor: 'bg-black text-white',
   },
   seamless: {
     gradient: 'from-blue-500 to-red-700',
     bg: 'bg-blue-50 dark:bg-blue-900/20',
-    icon: '🍽️'
+    label: 'SM',
+    labelColor: 'bg-blue-500 text-white',
   },
 }
 
@@ -199,11 +203,11 @@ const mockOrders: DeliveryOrder[] = [
 ]
 
 const mockPlatforms: Platform[] = [
-  { id: 'doordash', name: 'DoorDash', connected: true, icon: 'doordash', color: '#FF3008', commission: '15-30%' },
-  { id: 'uber_eats', name: 'Uber Eats', connected: true, icon: 'uber_eats', color: '#06C167', commission: '15-30%' },
-  { id: 'grubhub', name: 'Grubhub', connected: true, icon: 'grubhub', color: '#F63440', commission: '20-30%' },
-  { id: 'postmates', name: 'Postmates', connected: false, icon: 'postmates', color: '#000000', commission: '15-30%' },
-  { id: 'seamless', name: 'Seamless', connected: false, icon: 'seamless', color: '#F63440', commission: '20-30%' },
+  { id: 'doordash', name: 'DoorDash', connected: true, color: '#FF3008', commission: '15-30%' },
+  { id: 'uber_eats', name: 'Uber Eats', connected: true, color: '#06C167', commission: '15-30%' },
+  { id: 'grubhub', name: 'Grubhub', connected: true, color: '#F63440', commission: '20-30%' },
+  { id: 'postmates', name: 'Postmates', connected: false, color: '#000000', commission: '15-30%' },
+  { id: 'seamless', name: 'Seamless', connected: false, color: '#F63440', commission: '20-30%' },
 ]
 
 export default function Delivery() {
@@ -344,7 +348,7 @@ export default function Delivery() {
                     : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-400 dark:text-neutral-500'
                 }`}
               >
-                <span className="text-lg">{config?.icon}</span>
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${config?.labelColor}`}>{config?.label}</span>
                 <span>{platform.name}</span>
                 {platform.connected && (
                   <span className="w-2 h-2 bg-green-400 rounded-full" />
@@ -404,7 +408,7 @@ export default function Delivery() {
               {/* Header */}
               <div className={`px-5 py-3 bg-gradient-to-r ${platformCfg?.gradient} flex items-center justify-between`}>
                 <div className="flex items-center space-x-3">
-                  <span className="text-xl">{platformCfg?.icon}</span>
+                  <span className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center text-sm font-bold text-white">{platformCfg?.label}</span>
                   <div>
                     <p className="text-white font-semibold text-sm">{order.external_id}</p>
                     <p className="text-white/70 text-xs">{getTimeAgo(order.created_at)}</p>
@@ -541,7 +545,7 @@ export default function Delivery() {
             <div className={`px-6 py-4 bg-gradient-to-r ${platformConfig[selectedOrder.platform]?.gradient} sticky top-0`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{platformConfig[selectedOrder.platform]?.icon}</span>
+                  <span className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-sm font-bold text-white">{platformConfig[selectedOrder.platform]?.label}</span>
                   <div>
                     <p className="text-white font-bold">{selectedOrder.external_id}</p>
                     <p className="text-white/70 text-sm">{formatTime(selectedOrder.created_at)}</p>

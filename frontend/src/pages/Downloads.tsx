@@ -87,14 +87,14 @@ export default function Downloads() {
             <Download className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
           </div>
           <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse">
-            <span className="text-white text-[10px] sm:text-xs font-bold">M</span>
+            <span className="text-white text-[10px] sm:text-xs font-bold">W</span>
           </div>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-black dark:text-white mb-2 sm:mb-3">
-          Download Mykonos
+          Download wdym86
         </h1>
         <p className="text-neutral-500 dark:text-neutral-400 max-w-xl mx-auto text-sm sm:text-base px-4">
-          Get the full power of AI-driven inventory intelligence for your Mediterranean restaurant.
+          Get the full power of AI-driven inventory intelligence for your restaurant.
           Works offline with automatic cloud sync.
         </p>
       </div>
@@ -238,8 +238,8 @@ export default function Downloads() {
               {[
                 'Download the .dmg file',
                 'Open the downloaded file',
-                'Drag Mykonos to Applications folder',
-                'Open Mykonos from Applications',
+                'Drag wdym86 to Applications folder',
+                'Open wdym86 from Applications',
                 'Sign in with your account'
               ].map((step, i) => (
                 <li key={i} className="flex items-start space-x-3">
@@ -258,7 +258,7 @@ export default function Downloads() {
                 'Download the .exe installer',
                 'Run the installer as Administrator',
                 'Follow the installation wizard',
-                'Launch Mykonos from Start Menu',
+                'Launch wdym86 from Start Menu',
                 'Sign in with your account'
               ].map((step, i) => (
                 <li key={i} className="flex items-start space-x-3">

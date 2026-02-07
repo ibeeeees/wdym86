@@ -1,21 +1,22 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, ChevronDown, Wifi, WifiOff, UtensilsCrossed, DollarSign, ChefHat, Sparkles, Package } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, Wifi, WifiOff, UtensilsCrossed, DollarSign, ChefHat, Sparkles, Package, TrendingUp, TrendingDown, BarChart3, Flame, Crown, Award, Leaf, Fish, Beef, Cake, Coffee, Wine, Soup, Salad, Cherry } from 'lucide-react'
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 import { getDishes, getIngredients, checkApiHealth } from '../services/api'
 
-// Category emoji mapping - Mediterranean themed
-const categoryEmojis: Record<string, string> = {
-  'Appetizer': '🫒',
-  'Salad': '🥗',
-  'Soup': '🍲',
-  'Entree - Seafood': '🐟',
-  'Entree - Meat': '🥩',
-  'Entree - Vegetarian': '🥬',
-  'Main': '🍽️',
-  'Seafood': '🦐',
-  'Vegetarian': '🥙',
-  'Dessert': '🍯',
-  'Cocktail': '🍸',
-  'Beverage': '☕',
+// Category icon mapping - Mediterranean themed (Lucide icons)
+const categoryIcons: Record<string, typeof Leaf> = {
+  'Appetizer': Cherry,
+  'Salad': Salad,
+  'Soup': Soup,
+  'Entree - Seafood': Fish,
+  'Entree - Meat': Beef,
+  'Entree - Vegetarian': Leaf,
+  'Main': UtensilsCrossed,
+  'Seafood': Fish,
+  'Vegetarian': Leaf,
+  'Dessert': Cake,
+  'Cocktail': Wine,
+  'Beverage': Coffee,
 }
 
 // Category gradient mapping
@@ -49,6 +50,13 @@ interface Dish {
   price: number
   is_active: boolean
   recipe: RecipeIngredient[]
+  orders_today: number
+  orders_7d: number
+  orders_30d: number
+  trend: number
+  popularity_rank: number
+  daily_orders: number[]
+  revenue_7d: number
 }
 
 interface AvailableIngredient {
@@ -105,7 +113,14 @@ const demoDishes: Dish[] = [
       { id: '2', ingredient_id: '17', ingredient_name: 'Tahini', quantity: 0.25, unit: 'lbs' },
       { id: '3', ingredient_id: '28', ingredient_name: 'Garlic', quantity: 0.125, unit: 'lbs' },
       { id: '4', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.125, unit: 'liters' },
-    ]
+    ],
+    orders_today: 22,
+    orders_7d: 145,
+    orders_30d: 580,
+    trend: 5.2,
+    popularity_rank: 4,
+    daily_orders: [18, 20, 19, 22, 24, 26, 16],
+    revenue_7d: 1740,
   },
   {
     id: '2',
@@ -118,7 +133,14 @@ const demoDishes: Dish[] = [
       { id: '6', ingredient_id: '8', ingredient_name: 'Feta Cheese', quantity: 0.5, unit: 'lbs' },
       { id: '7', ingredient_id: '15', ingredient_name: 'Phyllo Dough', quantity: 0.75, unit: 'lbs' },
       { id: '8', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.2, unit: 'liters' },
-    ]
+    ],
+    orders_today: 15,
+    orders_7d: 98,
+    orders_30d: 400,
+    trend: -3.1,
+    popularity_rank: 8,
+    daily_orders: [15, 14, 13, 14, 15, 16, 11],
+    revenue_7d: 1372,
   },
   {
     id: '3',
@@ -129,7 +151,14 @@ const demoDishes: Dish[] = [
     recipe: [
       { id: '9', ingredient_id: '10', ingredient_name: 'Halloumi', quantity: 0.5, unit: 'lbs' },
       { id: '10', ingredient_id: '19', ingredient_name: 'Lemons', quantity: 2, unit: 'units' },
-    ]
+    ],
+    orders_today: 18,
+    orders_7d: 120,
+    orders_30d: 470,
+    trend: 8.5,
+    popularity_rank: 6,
+    daily_orders: [14, 16, 17, 18, 20, 22, 13],
+    revenue_7d: 1920,
   },
   {
     id: '4',
@@ -141,7 +170,14 @@ const demoDishes: Dish[] = [
       { id: '11', ingredient_id: '7', ingredient_name: 'Octopus', quantity: 0.75, unit: 'lbs' },
       { id: '12', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.1, unit: 'liters' },
       { id: '13', ingredient_id: '20', ingredient_name: 'Fresh Oregano', quantity: 0.05, unit: 'lbs' },
-    ]
+    ],
+    orders_today: 14,
+    orders_7d: 88,
+    orders_30d: 360,
+    trend: 2.0,
+    popularity_rank: 9,
+    daily_orders: [11, 12, 13, 14, 14, 15, 9],
+    revenue_7d: 1936,
   },
   // Salads
   {
@@ -156,7 +192,14 @@ const demoDishes: Dish[] = [
       { id: '16', ingredient_id: '27', ingredient_name: 'Red Onions', quantity: 0.15, unit: 'lbs' },
       { id: '17', ingredient_id: '8', ingredient_name: 'Feta Cheese', quantity: 0.25, unit: 'lbs' },
       { id: '18', ingredient_id: '29', ingredient_name: 'Kalamata Olives', quantity: 0.1, unit: 'lbs' },
-    ]
+    ],
+    orders_today: 28,
+    orders_7d: 175,
+    orders_30d: 720,
+    trend: 6.8,
+    popularity_rank: 2,
+    daily_orders: [22, 24, 25, 26, 28, 30, 20],
+    revenue_7d: 2450,
   },
   // Seafood Entrees
   {
@@ -171,7 +214,14 @@ const demoDishes: Dish[] = [
       { id: '21', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.1, unit: 'liters' },
       { id: '22', ingredient_id: '20', ingredient_name: 'Fresh Oregano', quantity: 0.05, unit: 'lbs' },
       { id: '23', ingredient_id: '21', ingredient_name: 'Fresh Dill', quantity: 0.05, unit: 'lbs' },
-    ]
+    ],
+    orders_today: 20,
+    orders_7d: 130,
+    orders_30d: 510,
+    trend: -5.2,
+    popularity_rank: 5,
+    daily_orders: [20, 19, 18, 20, 22, 21, 10],
+    revenue_7d: 4420,
   },
   {
     id: '7',
@@ -183,7 +233,14 @@ const demoDishes: Dish[] = [
       { id: '24', ingredient_id: '6', ingredient_name: 'Shrimp (Jumbo)', quantity: 0.5, unit: 'lbs' },
       { id: '25', ingredient_id: '11', ingredient_name: 'Tomatoes (Roma)', quantity: 0.3, unit: 'lbs' },
       { id: '26', ingredient_id: '8', ingredient_name: 'Feta Cheese', quantity: 0.2, unit: 'lbs' },
-    ]
+    ],
+    orders_today: 16,
+    orders_7d: 105,
+    orders_30d: 430,
+    trend: 12.3,
+    popularity_rank: 7,
+    daily_orders: [12, 14, 15, 16, 18, 19, 11],
+    revenue_7d: 3360,
   },
   // Meat Entrees
   {
@@ -197,7 +254,14 @@ const demoDishes: Dish[] = [
       { id: '28', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.15, unit: 'liters' },
       { id: '29', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.5, unit: 'lbs' },
       { id: '30', ingredient_id: '20', ingredient_name: 'Fresh Oregano', quantity: 0.05, unit: 'lbs' },
-    ]
+    ],
+    orders_today: 32,
+    orders_7d: 195,
+    orders_30d: 780,
+    trend: 11.4,
+    popularity_rank: 1,
+    daily_orders: [24, 26, 28, 30, 32, 35, 20],
+    revenue_7d: 5460,
   },
   {
     id: '9',
@@ -210,7 +274,14 @@ const demoDishes: Dish[] = [
       { id: '32', ingredient_id: '3', ingredient_name: 'Ground Lamb', quantity: 1.0, unit: 'lbs' },
       { id: '33', ingredient_id: '11', ingredient_name: 'Tomatoes (Roma)', quantity: 0.5, unit: 'lbs' },
       { id: '34', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.25, unit: 'lbs' },
-    ]
+    ],
+    orders_today: 19,
+    orders_7d: 135,
+    orders_30d: 550,
+    trend: -1.5,
+    popularity_rank: 3,
+    daily_orders: [18, 19, 20, 19, 22, 24, 13],
+    revenue_7d: 3510,
   },
   {
     id: '10',
@@ -222,7 +293,14 @@ const demoDishes: Dish[] = [
       { id: '35', ingredient_id: '4', ingredient_name: 'Chicken Thighs', quantity: 1.0, unit: 'lbs' },
       { id: '36', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.1, unit: 'liters' },
       { id: '37', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.3, unit: 'lbs' },
-    ]
+    ],
+    orders_today: 12,
+    orders_7d: 82,
+    orders_30d: 340,
+    trend: -7.8,
+    popularity_rank: 10,
+    daily_orders: [13, 12, 11, 12, 14, 13, 7],
+    revenue_7d: 1886,
   },
   // Desserts
   {
@@ -236,7 +314,14 @@ const demoDishes: Dish[] = [
       { id: '39', ingredient_id: '25', ingredient_name: 'Walnuts', quantity: 0.5, unit: 'lbs' },
       { id: '40', ingredient_id: '26', ingredient_name: 'Pistachios', quantity: 0.25, unit: 'lbs' },
       { id: '41', ingredient_id: '24', ingredient_name: 'Honey', quantity: 0.75, unit: 'lbs' },
-    ]
+    ],
+    orders_today: 25,
+    orders_7d: 160,
+    orders_30d: 640,
+    trend: 9.1,
+    popularity_rank: 11,
+    daily_orders: [20, 22, 23, 24, 26, 28, 17],
+    revenue_7d: 1600,
   },
   {
     id: '12',
@@ -248,11 +333,40 @@ const demoDishes: Dish[] = [
       { id: '42', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.5, unit: 'lbs' },
       { id: '43', ingredient_id: '24', ingredient_name: 'Honey', quantity: 0.1, unit: 'lbs' },
       { id: '44', ingredient_id: '25', ingredient_name: 'Walnuts', quantity: 0.1, unit: 'lbs' },
-    ]
+    ],
+    orders_today: 10,
+    orders_7d: 68,
+    orders_30d: 280,
+    trend: -2.4,
+    popularity_rank: 12,
+    daily_orders: [9, 10, 10, 10, 12, 11, 6],
+    revenue_7d: 612,
   },
 ]
 
 const categories = ['Appetizer', 'Salad', 'Soup', 'Entree - Seafood', 'Entree - Meat', 'Entree - Vegetarian', 'Dessert', 'Cocktail']
+
+type SortKey = 'popularity' | 'name' | 'revenue' | 'trend'
+
+// Rank badge component
+const RankBadge = ({ rank }: { rank: number }) => {
+  if (rank === 1) return (
+    <div className="w-7 h-7 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-lg flex items-center justify-center shadow-lg shadow-yellow-500/30">
+      <Crown className="w-4 h-4 text-white" />
+    </div>
+  )
+  if (rank === 2) return (
+    <div className="w-7 h-7 bg-gradient-to-br from-neutral-300 to-neutral-400 rounded-lg flex items-center justify-center shadow-lg shadow-neutral-400/30">
+      <Award className="w-4 h-4 text-white" />
+    </div>
+  )
+  if (rank === 3) return (
+    <div className="w-7 h-7 bg-gradient-to-br from-amber-600 to-orange-700 rounded-lg flex items-center justify-center shadow-lg shadow-amber-600/30">
+      <Award className="w-4 h-4 text-white" />
+    </div>
+  )
+  return null
+}
 
 export default function Dishes() {
   const [dishes, setDishes] = useState<Dish[]>([])
@@ -263,6 +377,7 @@ export default function Dishes() {
   const [showAddDish, setShowAddDish] = useState(false)
   const [newDish, setNewDish] = useState({ name: '', category: 'Main', price: '' })
   const [error, setError] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<SortKey>('popularity')
 
   useEffect(() => {
     const loadData = async () => {
@@ -281,7 +396,14 @@ export default function Dishes() {
               setDishes(dishesData.map((d: any) => ({
                 ...d,
                 is_active: d.is_active ?? true,
-                recipe: d.recipe || []
+                recipe: d.recipe || [],
+                orders_today: d.orders_today ?? 0,
+                orders_7d: d.orders_7d ?? 0,
+                orders_30d: d.orders_30d ?? 0,
+                trend: d.trend ?? 0,
+                popularity_rank: d.popularity_rank ?? 0,
+                daily_orders: d.daily_orders ?? [0, 0, 0, 0, 0, 0, 0],
+                revenue_7d: d.revenue_7d ?? 0,
               })))
             } else {
               setDishes(demoDishes)
@@ -325,7 +447,14 @@ export default function Dishes() {
       category: newDish.category,
       price: parseFloat(newDish.price),
       is_active: true,
-      recipe: []
+      recipe: [],
+      orders_today: 0,
+      orders_7d: 0,
+      orders_30d: 0,
+      trend: 0,
+      popularity_rank: 0,
+      daily_orders: [0, 0, 0, 0, 0, 0, 0],
+      revenue_7d: 0,
     }
     setDishes([...dishes, dish])
     setNewDish({ name: '', category: 'Main', price: '' })
@@ -378,6 +507,25 @@ export default function Dishes() {
     }))
   }
 
+  // Sorted dishes
+  const sortedDishes = [...dishes].sort((a, b) => {
+    switch (sortBy) {
+      case 'popularity': return a.popularity_rank - b.popularity_rank
+      case 'name': return a.name.localeCompare(b.name)
+      case 'revenue': return b.revenue_7d - a.revenue_7d
+      case 'trend': return b.trend - a.trend
+      default: return 0
+    }
+  })
+
+  // Popularity stats
+  const topDish = dishes.reduce((top, d) => d.popularity_rank === 1 ? d : top, dishes[0])
+  const totalOrders7d = dishes.reduce((sum, d) => sum + d.orders_7d, 0)
+  const trendingUpCount = dishes.filter(d => d.trend > 0).length
+  const totalRevenue7d = dishes.reduce((sum, d) => sum + d.revenue_7d, 0)
+  const top5 = [...dishes].sort((a, b) => a.popularity_rank - b.popularity_rank).slice(0, 5)
+  const maxOrders7d = Math.max(...dishes.map(d => d.orders_7d))
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -414,7 +562,7 @@ export default function Dishes() {
               )}
             </div>
             <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-              Define dishes and ingredient quantities for AI forecasting
+              Dish popularity, ingredient quantities & AI forecasting
             </p>
           </div>
         </div>
@@ -453,7 +601,7 @@ export default function Dishes() {
               onChange={e => setNewDish({ ...newDish, category: e.target.value })}
               className="px-4 py-3 border border-neutral-200 dark:border-neutral-600 rounded-xl text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
             >
-              {categories.map(c => <option key={c} value={c}>{categoryEmojis[c]} {c}</option>)}
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -477,62 +625,144 @@ export default function Dishes() {
         </div>
       )}
 
-      {/* Stats */}
+      {/* Popularity Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
+        <div className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-2xl p-5 border border-yellow-200 dark:border-yellow-900 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Total Dishes</p>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-red-600 rounded-xl flex items-center justify-center">
-              <UtensilsCrossed className="w-5 h-5 text-white" />
+            <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">Most Popular</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/30">
+              <Crown className="w-5 h-5 text-white" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-black dark:text-white">{dishes.length}</p>
+          <p className="text-lg font-bold text-black dark:text-white truncate">{topDish?.name || '-'}</p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{topDish?.orders_7d || 0} orders/wk</p>
         </div>
         <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Active</p>
-            <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Orders (7d)</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-white" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-green-600">{dishes.filter(d => d.is_active).length}</p>
+          <p className="text-3xl font-bold text-black dark:text-white font-mono">{totalOrders7d.toLocaleString()}</p>
+        </div>
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-5 border border-green-200 dark:border-green-900 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-green-600 dark:text-green-400 font-medium">Trending Up</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/30">
+              <Flame className="w-5 h-5 text-white" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-green-600 dark:text-green-400">{trendingUpCount}</p>
+          <p className="text-xs text-green-600 dark:text-green-400 mt-1">of {dishes.length} dishes</p>
         </div>
         <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Avg Ingredients</p>
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center">
-              <Package className="w-5 h-5 text-white" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-black dark:text-white font-mono">
-            {(dishes.reduce((sum, d) => sum + d.recipe.length, 0) / dishes.length || 0).toFixed(1)}
-          </p>
-        </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Avg Price</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Revenue (7d)</p>
             <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-white" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-black dark:text-white font-mono">
-            ${(dishes.reduce((sum, d) => sum + d.price, 0) / dishes.length || 0).toFixed(2)}
-          </p>
+          <p className="text-3xl font-bold text-black dark:text-white font-mono">${totalRevenue7d.toLocaleString()}</p>
         </div>
+      </div>
+
+      {/* Top Sellers Leaderboard */}
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700">
+        <div className="flex items-center space-x-2 mb-4">
+          <Flame className="w-5 h-5 text-orange-500" />
+          <h3 className="font-semibold text-black dark:text-white">Top Sellers This Week</h3>
+        </div>
+        <div className="space-y-3">
+          {top5.map((dish, i) => (
+            <div key={dish.id} className="flex items-center space-x-3">
+              {/* Rank */}
+              <div className="w-8 flex-shrink-0 text-center">
+                {i === 0 ? (
+                  <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-lg flex items-center justify-center shadow-lg shadow-yellow-500/30">
+                    <Crown className="w-4 h-4 text-white" />
+                  </div>
+                ) : i === 1 ? (
+                  <div className="w-8 h-8 bg-gradient-to-br from-neutral-300 to-neutral-400 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">2</span>
+                  </div>
+                ) : i === 2 ? (
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-600 to-orange-700 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">3</span>
+                  </div>
+                ) : (
+                  <span className="text-sm font-bold text-neutral-400">#{i + 1}</span>
+                )}
+              </div>
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-sm text-black dark:text-white truncate">{dish.name}</span>
+                  <div className="flex items-center space-x-3 flex-shrink-0 ml-3">
+                    <span className="text-sm font-mono text-neutral-500 dark:text-neutral-400">{dish.orders_7d} orders</span>
+                    <span className={`text-xs font-semibold flex items-center space-x-0.5 ${dish.trend > 0 ? 'text-green-600' : dish.trend < 0 ? 'text-red-500' : 'text-neutral-400'}`}>
+                      {dish.trend > 0 ? <TrendingUp className="w-3 h-3" /> : dish.trend < 0 ? <TrendingDown className="w-3 h-3" /> : null}
+                      <span>{dish.trend > 0 ? '+' : ''}{dish.trend.toFixed(1)}%</span>
+                    </span>
+                  </div>
+                </div>
+                {/* Bar */}
+                <div className="w-full bg-neutral-100 dark:bg-neutral-700 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full ${
+                      i === 0 ? 'bg-gradient-to-r from-yellow-400 to-amber-500' :
+                      i === 1 ? 'bg-gradient-to-r from-neutral-300 to-neutral-400' :
+                      i === 2 ? 'bg-gradient-to-r from-amber-600 to-orange-600' :
+                      'bg-gradient-to-r from-blue-400 to-indigo-500'
+                    }`}
+                    style={{ width: `${(dish.orders_7d / maxOrders7d) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Sort Controls */}
+      <div className="flex items-center space-x-2">
+        <span className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Sort by:</span>
+        {([
+          { key: 'popularity' as SortKey, label: 'Popularity' },
+          { key: 'name' as SortKey, label: 'Name' },
+          { key: 'revenue' as SortKey, label: 'Revenue' },
+          { key: 'trend' as SortKey, label: 'Trend' },
+        ]).map(opt => (
+          <button
+            key={opt.key}
+            onClick={() => setSortBy(opt.key)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+              sortBy === opt.key
+                ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg'
+                : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-600'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {/* Dishes List */}
       <div className="space-y-3">
-        {dishes.map(dish => (
+        {sortedDishes.map(dish => (
           <div key={dish.id} className="border border-neutral-200 dark:border-neutral-700 rounded-2xl overflow-hidden bg-white dark:bg-neutral-800 hover:shadow-lg transition-all">
             <div
               className="flex items-center justify-between p-4 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
               onClick={() => setExpandedDish(expandedDish === dish.id ? null : dish.id)}
             >
               <div className="flex items-center space-x-4">
-                {/* Category Emoji Badge */}
-                <div className={`w-12 h-12 bg-gradient-to-br ${categoryGradients[dish.category] || 'from-neutral-400 to-neutral-500'} rounded-xl flex items-center justify-center text-2xl shadow-lg`}>
-                  {categoryEmojis[dish.category] || '🍽️'}
+                {/* Rank badge for top 3 */}
+                {dish.popularity_rank >= 1 && dish.popularity_rank <= 3 && (
+                  <RankBadge rank={dish.popularity_rank} />
+                )}
+                {/* Category Icon Badge */}
+                <div className={`w-12 h-12 bg-gradient-to-br ${categoryGradients[dish.category] || 'from-neutral-400 to-neutral-500'} rounded-xl flex items-center justify-center shadow-lg`}>
+                  {(() => { const CatIcon = categoryIcons[dish.category] || UtensilsCrossed; return <CatIcon className="w-6 h-6 text-white" />; })()}
                 </div>
                 <div>
                   <h3 className="font-semibold text-black dark:text-white">{dish.name}</h3>
@@ -545,6 +775,14 @@ export default function Dishes() {
                 </div>
               </div>
               <div className="flex items-center space-x-3">
+                {/* Popularity info */}
+                <div className="hidden sm:flex items-center space-x-3 mr-2">
+                  <span className="text-sm font-mono text-neutral-500 dark:text-neutral-400">{dish.orders_7d}/wk</span>
+                  <span className={`text-xs font-semibold flex items-center space-x-0.5 ${dish.trend > 0 ? 'text-green-600' : dish.trend < 0 ? 'text-red-500' : 'text-neutral-400'}`}>
+                    {dish.trend > 0 ? <TrendingUp className="w-3 h-3" /> : dish.trend < 0 ? <TrendingDown className="w-3 h-3" /> : null}
+                    <span>{dish.trend > 0 ? '+' : ''}{dish.trend.toFixed(1)}%</span>
+                  </span>
+                </div>
                 <button
                   onClick={e => { e.stopPropagation(); handleToggleActive(dish.id) }}
                   className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all ${
@@ -569,6 +807,70 @@ export default function Dishes() {
 
             {expandedDish === dish.id && (
               <div className="border-t border-neutral-200 dark:border-neutral-700 p-5 bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-900/50 dark:to-neutral-800">
+                {/* 7-Day Orders Sparkline */}
+                {dish.daily_orders && dish.daily_orders.some(v => v > 0) && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 flex items-center space-x-2 mb-3">
+                      <BarChart3 className="w-4 h-4" />
+                      <span>7-Day Order Trend</span>
+                    </h4>
+                    <div className="h-32 bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 p-3">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={dish.daily_orders.map((val, i) => ({ day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i], orders: val }))}>
+                          <defs>
+                            <linearGradient id={`sparkGrad-${dish.id}`} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={dish.trend >= 0 ? '#22c55e' : '#ef4444'} stopOpacity={0.3} />
+                              <stop offset="100%" stopColor={dish.trend >= 0 ? '#22c55e' : '#ef4444'} stopOpacity={0.05} />
+                            </linearGradient>
+                          </defs>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'rgba(0,0,0,0.9)',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                              color: 'white',
+                            }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="orders"
+                            stroke={dish.trend >= 0 ? '#22c55e' : '#ef4444'}
+                            fill={`url(#sparkGrad-${dish.id})`}
+                            strokeWidth={2}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ingredient Impact */}
+                {dish.recipe.length > 0 && dish.orders_7d > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 flex items-center space-x-2 mb-3">
+                      <Package className="w-4 h-4" />
+                      <span>Ingredient Impact (Projected Weekly Consumption)</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {dish.recipe.map(r => {
+                        const weeklyUsage = dish.orders_7d * r.quantity
+                        return (
+                          <div key={r.id} className="flex items-center justify-between p-3 bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700">
+                            <span className="text-sm font-medium text-black dark:text-white">{r.ingredient_name}</span>
+                            <div className="text-right">
+                              <span className="text-sm font-mono font-bold text-orange-600 dark:text-orange-400">{weeklyUsage.toFixed(1)}</span>
+                              <span className="text-xs text-neutral-400 ml-1">{r.unit}/wk</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <p className="text-xs text-neutral-400 mt-2">Based on {dish.orders_7d} orders/week × recipe quantities</p>
+                  </div>
+                )}
+
+                {/* Recipe Ingredients */}
                 <div className="flex justify-between items-center mb-4">
                   <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 flex items-center space-x-2">
                     <Package className="w-4 h-4" />

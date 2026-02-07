@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react'
-import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, Zap, ChefHat, TrendingUp } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, Zap, ChefHat, TrendingUp, Users, ShoppingCart, X } from 'lucide-react'
 import { login, register } from '../services/api'
-
-interface LoginProps {
-  onLogin: () => void
-}
+import { useAuth, UserRole } from '../context/AuthContext'
 
 // Animated floating elements for background
 const FloatingIcon = ({ icon: Icon, delay, x, y }: { icon: any; delay: number; x: number; y: number }) => (
@@ -21,13 +19,33 @@ const FloatingIcon = ({ icon: Icon, delay, x, y }: { icon: any; delay: number; x
   </div>
 )
 
-export default function Login({ onLogin }: LoginProps) {
+const roleOptions: { role: UserRole; icon: typeof Shield; title: string; desc: string }[] = [
+  { role: 'restaurant_admin', icon: Shield, title: 'Restaurant Admin', desc: 'Full platform access, settings, keys' },
+  { role: 'manager', icon: Users, title: 'Manager', desc: 'Dashboard, POS, team management' },
+  { role: 'pos_user', icon: ShoppingCart, title: 'POS Staff', desc: 'Point of sale terminal' },
+]
+
+function getRoleRedirect(role: UserRole): string {
+  switch (role) {
+    case 'restaurant_admin': return '/admin'
+    case 'manager': return '/'
+    case 'pos_user': return '/pos'
+    default: return '/'
+  }
+}
+
+export default function Login() {
+  const { demoLogin } = useAuth()
+  const navigate = useNavigate()
+
   const [isRegister, setIsRegister] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showRolePicker, setShowRolePicker] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
   const [demoLoading, setDemoLoading] = useState(false)
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme')
@@ -63,7 +81,7 @@ export default function Login({ onLogin }: LoginProps) {
       }
       const data = await login(email, password)
       localStorage.setItem('token', data.access_token)
-      onLogin()
+      window.location.reload()
     } catch (err: any) {
       setError(err.response?.data?.detail || 'An error occurred')
     } finally {
@@ -71,12 +89,16 @@ export default function Login({ onLogin }: LoginProps) {
     }
   }
 
-  const handleDemoLogin = async () => {
+  const handleDemoClick = () => {
+    setShowRolePicker(true)
+  }
+
+  const handleStartDemo = async () => {
+    if (!selectedRole) return
     setDemoLoading(true)
-    // Small delay for visual feedback
-    await new Promise(resolve => setTimeout(resolve, 800))
-    localStorage.setItem('token', 'demo-token')
-    onLogin()
+    await new Promise(resolve => setTimeout(resolve, 600))
+    demoLogin(selectedRole)
+    navigate(getRoleRedirect(selectedRole))
   }
 
   const features = [
@@ -125,10 +147,10 @@ export default function Login({ onLogin }: LoginProps) {
         <div className="relative z-10">
           <div className="flex items-center space-x-3 mb-2">
             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-black/20">
-              <span className="text-red-600 font-mono text-xl font-bold">M</span>
+              <span className="text-red-600 font-mono text-xl font-bold">W</span>
             </div>
             <div>
-              <span className="text-white text-2xl font-bold">Mykonos</span>
+              <span className="text-white text-2xl font-bold">wdym86</span>
               <div className="flex items-center space-x-2 mt-0.5">
                 <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs text-white/80 backdrop-blur-sm">AI Inventory</span>
                 <span className="px-2 py-0.5 bg-amber-400/30 rounded-full text-xs text-amber-200 backdrop-blur-sm">Hackathon 2026</span>
@@ -143,7 +165,7 @@ export default function Login({ onLogin }: LoginProps) {
               Stop guessing.<br />
               <span className="bg-gradient-to-r from-amber-200 via-orange-200 to-pink-200 bg-clip-text text-transparent">Start predicting.</span>
             </h2>
-            <p className="text-white/70 mt-4 text-lg">AI-powered inventory intelligence for Mediterranean restaurants. Reduce waste, prevent stockouts, optimize orders.</p>
+            <p className="text-white/70 mt-4 text-lg">AI-powered inventory intelligence for restaurants. Reduce waste, prevent stockouts, optimize orders.</p>
           </div>
 
           {/* Stats */}
@@ -189,38 +211,99 @@ export default function Login({ onLogin }: LoginProps) {
           <div className="text-center mb-8 lg:hidden">
             <div className="relative w-16 h-16 mx-auto mb-4">
               <div className="w-16 h-16 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/30">
-                <span className="text-white font-mono text-2xl font-bold">M</span>
+                <span className="text-white font-mono text-2xl font-bold">W</span>
               </div>
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-pulse" />
             </div>
-            <h1 className="text-2xl font-bold text-black dark:text-white">Mykonos</h1>
+            <h1 className="text-2xl font-bold text-black dark:text-white">wdym86</h1>
             <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">AI-Powered Inventory Intelligence</p>
           </div>
 
           {/* Demo Button - Prominent */}
           <div className="mb-8">
-            <button
-              onClick={handleDemoLogin}
-              disabled={demoLoading}
-              className="w-full py-4 rounded-2xl font-semibold text-base bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white transition-all shadow-xl shadow-red-500/30 flex items-center justify-center space-x-3 hover:scale-[1.02] disabled:opacity-70 disabled:scale-100"
-            >
-              {demoLoading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Loading Demo...</span>
-                </>
-              ) : (
-                <>
+            {!showRolePicker ? (
+              <>
+                <button
+                  onClick={handleDemoClick}
+                  className="w-full py-4 rounded-2xl font-semibold text-base bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white transition-all shadow-xl shadow-red-500/30 flex items-center justify-center space-x-3 hover:scale-[1.02]"
+                >
                   <Sparkles className="w-5 h-5" />
                   <span>Try Interactive Demo</span>
                   <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
-            <p className="text-center text-xs text-neutral-400 dark:text-neutral-500 mt-3 flex items-center justify-center space-x-2">
-              <Shield className="w-3 h-3" />
-              <span>No account required · Full feature access</span>
-            </p>
+                </button>
+                <p className="text-center text-xs text-neutral-400 dark:text-neutral-500 mt-3 flex items-center justify-center space-x-2">
+                  <Shield className="w-3 h-3" />
+                  <span>No account required -- Full feature access</span>
+                </p>
+              </>
+            ) : (
+              <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-5 shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-black dark:text-white">Select a demo role</h3>
+                  <button
+                    onClick={() => { setShowRolePicker(false); setSelectedRole(null) }}
+                    className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-2.5">
+                  {roleOptions.map((opt) => {
+                    const isSelected = selectedRole === opt.role
+                    return (
+                      <button
+                        key={opt.role}
+                        onClick={() => setSelectedRole(opt.role)}
+                        className={`w-full flex items-center space-x-3 p-3.5 rounded-xl border-2 transition-all text-left ${
+                          isSelected
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20 shadow-sm'
+                            : 'border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-750'
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                          isSelected
+                            ? 'bg-gradient-to-br from-red-500 to-red-600 shadow-lg shadow-red-500/30'
+                            : 'bg-neutral-100 dark:bg-neutral-700'
+                        }`}>
+                          <opt.icon className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-neutral-500 dark:text-neutral-400'}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-semibold ${isSelected ? 'text-red-700 dark:text-red-400' : 'text-black dark:text-white'}`}>
+                            {opt.title}
+                          </p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{opt.desc}</p>
+                        </div>
+                        {isSelected && (
+                          <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                            <div className="w-2 h-2 rounded-full bg-white" />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <button
+                  onClick={handleStartDemo}
+                  disabled={!selectedRole || demoLoading}
+                  className="w-full mt-4 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white transition-all shadow-lg shadow-red-500/25 flex items-center justify-center space-x-2 hover:scale-[1.02] disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed"
+                >
+                  {demoLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Starting Demo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Start Demo</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="relative mb-6">
@@ -303,6 +386,17 @@ export default function Login({ onLogin }: LoginProps) {
               {isRegister ? 'Sign In' : 'Create one'}
             </button>
           </p>
+
+          {/* Staff Login Link */}
+          <div className="text-center mt-4">
+            <Link
+              to="/staff/login"
+              className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors inline-flex items-center space-x-1"
+            >
+              <span>Restaurant staff? Sign in here</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
 
           {/* Mobile Features */}
           <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-700 lg:hidden">

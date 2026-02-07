@@ -47,6 +47,8 @@ function AppRoutes() {
     return (
       <Layout>
         <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/" element={<AdminDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -80,6 +82,7 @@ function AppRoutes() {
     return (
       <Layout>
         <Routes>
+          <Route path="/login" element={<Login />} />
           <Route path="/" element={<POS />} />
           <Route path="/pos" element={<POS />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -93,6 +96,7 @@ function AppRoutes() {
     return (
       <Layout>
         <Routes>
+          <Route path="/login" element={<Login />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/ingredient/:id" element={<IngredientDetail />} />
           <Route path="/dishes" element={<Dishes />} />
@@ -120,6 +124,7 @@ function AppRoutes() {
   return (
     <Layout>
       <Routes>
+        <Route path="/login" element={<Login />} />
         <Route path="/" element={<AdminDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />

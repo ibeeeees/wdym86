@@ -36,8 +36,15 @@ function getRoleRedirect(role: UserRole): string {
 }
 
 export default function Login() {
-  const { demoLogin, login: authLogin } = useAuth()
+  const { demoLogin, login: authLogin, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
+
+  // Auto-logout when visiting /login while already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      logout()
+    }
+  }, [])
 
   const [isRegister, setIsRegister] = useState(false)
   const [email, setEmail] = useState('')

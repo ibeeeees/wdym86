@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, ChefHat, Users, ShoppingCart, X, ChevronLeft, LogIn, Flame, DollarSign, UtensilsCrossed, Soup, HelpCircle } from 'lucide-react'
+import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, ChefHat, Users, ShoppingCart, X, ChevronLeft, LogIn, Flame, DollarSign, UtensilsCrossed, Soup, HelpCircle, Monitor, Wallet } from 'lucide-react'
 import { register } from '../services/api'
 import { useAuth, UserRole } from '../context/AuthContext'
 import { CUISINE_OPTIONS } from '../data/cuisineTemplates'
@@ -126,6 +126,8 @@ export default function Login() {
     { icon: Brain, title: 'AI Agents', desc: 'Autonomous risk & reorder decisions', color: 'from-purple-400 to-pink-500' },
     { icon: Sparkles, title: 'Gemini Powered', desc: 'Natural language explanations', color: 'from-amber-400 to-orange-500' },
     { icon: Truck, title: 'Disruption Aware', desc: 'Weather, traffic, supplier risks', color: 'from-green-400 to-emerald-500' },
+    { icon: Monitor, title: 'NCR Voyix', desc: 'Live POS sync via BSP APIs', color: 'from-red-400 to-rose-500' },
+    { icon: Wallet, title: 'Solana Pay', desc: 'Crypto-ready payment rails', color: 'from-violet-400 to-indigo-500' },
   ]
 
 

@@ -6,6 +6,8 @@ import {
   Utensils, Package as PackageIcon, Truck, ChefHat, Bell
 } from 'lucide-react'
 import { checkApiHealth } from '../services/api'
+import { useAuth } from '../context/AuthContext'
+import { getCuisineTemplate } from '../data/cuisineTemplates'
 
 interface MenuItem {
   id: string
@@ -86,36 +88,7 @@ const getCategoryBadge = (category: string) => {
 }
 
 // Mykonos Mediterranean Menu
-const demoMenuItems: MenuItem[] = [
-  { id: '1', name: 'Classic Hummus', price: 12.00, category: 'Mezze', popular: true },
-  { id: '2', name: 'Spanakopita', price: 14.00, category: 'Mezze' },
-  { id: '3', name: 'Saganaki', price: 16.00, category: 'Mezze', popular: true },
-  { id: '4', name: 'Grilled Octopus', price: 24.00, category: 'Mezze', popular: true },
-  { id: '5', name: 'Dolmades', price: 13.00, category: 'Mezze' },
-  { id: '6', name: 'Tzatziki & Pita', price: 10.00, category: 'Mezze' },
-  { id: '7', name: 'Greek Salad', price: 14.00, category: 'Salads', popular: true },
-  { id: '8', name: 'Quinoa Bowl', price: 16.00, category: 'Salads' },
-  { id: '9', name: 'Fattoush', price: 13.00, category: 'Salads' },
-  { id: '10', name: 'Grilled Branzino', price: 34.00, category: 'Seafood', popular: true },
-  { id: '11', name: 'Shrimp Saganaki', price: 29.00, category: 'Seafood', popular: true },
-  { id: '12', name: 'Grilled Salmon', price: 32.00, category: 'Seafood' },
-  { id: '13', name: 'Seafood Platter', price: 48.00, category: 'Seafood' },
-  { id: '14', name: 'Lamb Souvlaki', price: 28.00, category: 'Mains', popular: true },
-  { id: '15', name: 'Moussaka', price: 26.00, category: 'Mains', popular: true },
-  { id: '16', name: 'Chicken Souvlaki', price: 22.00, category: 'Mains' },
-  { id: '17', name: 'Beef Kofta', price: 24.00, category: 'Mains' },
-  { id: '18', name: 'Stuffed Peppers', price: 21.00, category: 'Mains' },
-  { id: '19', name: 'Imam Bayildi', price: 19.00, category: 'Mains' },
-  { id: '20', name: 'Mykonos Sunset', price: 14.00, category: 'Drinks', popular: true },
-  { id: '21', name: 'Greek Wine', price: 12.00, category: 'Drinks' },
-  { id: '22', name: 'Ouzo', price: 9.00, category: 'Drinks' },
-  { id: '23', name: 'Greek Coffee', price: 5.00, category: 'Drinks' },
-  { id: '24', name: 'Fresh Lemonade', price: 6.00, category: 'Drinks' },
-  { id: '25', name: 'Baklava', price: 10.00, category: 'Desserts', popular: true },
-  { id: '26', name: 'Yogurt & Honey', price: 8.00, category: 'Desserts' },
-  { id: '27', name: 'Loukoumades', price: 9.00, category: 'Desserts', popular: true },
-  { id: '28', name: 'Galaktoboureko', price: 11.00, category: 'Desserts' },
-]
+
 
 const demoServers = ['Elena D.', 'Nikos S.', 'Sofia B.']
 
@@ -130,18 +103,7 @@ const demoTables: TableInfo[] = [
   { id: 8, capacity: 6, status: 'available' },
 ]
 
-const demoTakeoutOrders: TakeoutOrder[] = [
-  { id: 'TO-001', customerName: 'Maria K.', phone: '(555) 123-4567', pickupTime: '15 min', items: [{ name: 'Lamb Souvlaki', quantity: 2 }, { name: 'Greek Salad', quantity: 1 }], total: 70.00, status: 'preparing', createdAt: new Date(Date.now() - 10 * 60000).toISOString() },
-  { id: 'TO-002', customerName: 'Petros A.', phone: '(555) 234-5678', pickupTime: '30 min', items: [{ name: 'Moussaka', quantity: 1 }, { name: 'Baklava', quantity: 2 }], total: 46.00, status: 'pending', createdAt: new Date(Date.now() - 5 * 60000).toISOString() },
-  { id: 'TO-003', customerName: 'Anna S.', phone: '(555) 345-6789', pickupTime: '45 min', items: [{ name: 'Seafood Platter', quantity: 1 }], total: 48.00, status: 'ready', createdAt: new Date(Date.now() - 20 * 60000).toISOString() },
-]
 
-const demoDeliveryOrders: DeliveryPlatformOrder[] = [
-  { id: 'DEL-001', platform: 'doordash', platformId: 'DD-MYK91E', customerName: 'Nikos P.', items: [{ name: 'Grilled Branzino', quantity: 1, price: 34.00 }, { name: 'Greek Salad', quantity: 1, price: 14.00 }], total: 56.11, status: 'preparing', createdAt: new Date(Date.now() - 15 * 60000).toISOString() },
-  { id: 'DEL-002', platform: 'uber_eats', platformId: 'UE-MYK82F', customerName: 'Elena S.', items: [{ name: 'Lamb Souvlaki', quantity: 2, price: 56.00 }], total: 65.45, status: 'received', createdAt: new Date(Date.now() - 5 * 60000).toISOString() },
-  { id: 'DEL-003', platform: 'grubhub', platformId: 'GH-MYK93A', customerName: 'Sophia M.', items: [{ name: 'Moussaka', quantity: 2, price: 52.00 }], total: 63.27, status: 'ready', createdAt: new Date(Date.now() - 25 * 60000).toISOString() },
-  { id: 'DEL-004', platform: 'doordash', platformId: 'DD-MYK04B', customerName: 'Costa V.', items: [{ name: 'Grilled Octopus', quantity: 1, price: 24.00 }, { name: 'Shrimp Saganaki', quantity: 1, price: 29.00 }], total: 62.57, status: 'picked_up', createdAt: new Date(Date.now() - 35 * 60000).toISOString() },
-]
 
 const platformBranding: Record<string, { label: string; gradient: string; textColor: string }> = {
   doordash: { label: 'DD', gradient: 'from-red-500 to-red-600', textColor: 'text-white' },
@@ -172,7 +134,9 @@ const tipOptions = [
 type OrderTab = 'dine_in' | 'takeout' | 'delivery'
 
 export default function POS() {
-  const [menuItems] = useState<MenuItem[]>(demoMenuItems)
+  const { cuisineType } = useAuth()
+  const template = getCuisineTemplate(cuisineType)
+  const [menuItems] = useState<MenuItem[]>(template.menuItems)
   const [order, setOrder] = useState<Order>({
     items: [],
     subtotal: 0,
@@ -193,19 +157,19 @@ export default function POS() {
   const [cashReceived, setCashReceived] = useState('')
 
   // Dine-in state
-  const [tables, setTables] = useState<TableInfo[]>(demoTables)
+  const [tables, setTables] = useState<TableInfo[]>(demoTables.map((t, i) => i === 1 || i === 3 || i === 6 ? { ...t, server: template.serverNames[i === 1 ? 0 : i === 3 ? 1 : 2] } : t))
   const [selectedTable, setSelectedTable] = useState<number | null>(null)
   const [selectedServer, setSelectedServer] = useState('')
 
   // Takeout state
-  const [takeoutOrders, setTakeoutOrders] = useState<TakeoutOrder[]>(demoTakeoutOrders)
+  const [takeoutOrders, setTakeoutOrders] = useState<TakeoutOrder[]>(template.takeoutOrders)
   const [takeoutCustomerName, setTakeoutCustomerName] = useState('')
   const [takeoutPhone, setTakeoutPhone] = useState('')
   const [takeoutPickupTime, setTakeoutPickupTime] = useState('30')
   const [showSmsSent, setShowSmsSent] = useState(false)
 
   // Delivery state
-  const [deliveryOrders, setDeliveryOrders] = useState<DeliveryPlatformOrder[]>(demoDeliveryOrders)
+  const [deliveryOrders, setDeliveryOrders] = useState<DeliveryPlatformOrder[]>(template.deliveryPlatformOrders)
   const [deliveryPlatformFilter, setDeliveryPlatformFilter] = useState<string>('all')
 
   useEffect(() => {
@@ -305,7 +269,7 @@ export default function POS() {
     const table = tables.find(t => t.id === tableId)
     if (table?.status === 'available') {
       setSelectedTable(tableId)
-      setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'occupied' as const, server: selectedServer || demoServers[0] } : t))
+      setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'occupied' as const, server: selectedServer || template.serverNames[0] } : t))
     } else if (table?.status === 'occupied') {
       setSelectedTable(tableId)
     }
@@ -366,9 +330,8 @@ export default function POS() {
             <h1 className="text-xl font-bold text-black dark:text-white">Point of Sale</h1>
             <div className="flex items-center space-x-2">
               {apiConnected !== null && (
-                <span className={`flex items-center space-x-1 text-xs ${
-                  apiConnected ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'
-                }`}>
+                <span className={`flex items-center space-x-1 text-xs ${apiConnected ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'
+                  }`}>
                   {apiConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                   <span>{apiConnected ? 'Online' : 'Demo Mode'}</span>
                 </span>
@@ -387,11 +350,10 @@ export default function POS() {
             <button
               key={key}
               onClick={() => { setActiveTab(key); setOrder(prev => ({ ...prev, orderType: key })) }}
-              className={`flex items-center space-x-2 px-4 py-3 text-sm font-medium capitalize rounded-lg transition-all ${
-                activeTab === key
+              className={`flex items-center space-x-2 px-4 py-3 text-sm font-medium capitalize rounded-lg transition-all ${activeTab === key
                   ? 'bg-white dark:bg-neutral-700 text-black dark:text-white shadow-sm'
                   : 'text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white'
-              }`}
+                }`}
             >
               <Icon className="w-4 h-4" />
               <span>{label}</span>
@@ -429,9 +391,8 @@ export default function POS() {
                     <button
                       key={table.id}
                       onClick={() => handleSelectTable(table.id)}
-                      className={`p-4 rounded-xl border-2 transition-all min-h-[80px] flex flex-col items-center justify-center ${getTableColor(table.status)} ${
-                        selectedTable === table.id ? 'ring-2 ring-red-500 ring-offset-2 dark:ring-offset-neutral-900 scale-105' : 'hover:scale-[1.02]'
-                      }`}
+                      className={`p-4 rounded-xl border-2 transition-all min-h-[80px] flex flex-col items-center justify-center ${getTableColor(table.status)} ${selectedTable === table.id ? 'ring-2 ring-red-500 ring-offset-2 dark:ring-offset-neutral-900 scale-105' : 'hover:scale-[1.02]'
+                        }`}
                     >
                       <span className="text-lg font-bold">T{table.id}</span>
                       <span className="text-xs mt-1">{table.capacity} seats</span>
@@ -462,11 +423,10 @@ export default function POS() {
                     <button
                       key={category}
                       onClick={() => setSelectedCategory(category)}
-                      className={`flex items-center space-x-2 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                        selectedCategory === category
+                      className={`flex items-center space-x-2 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === category
                           ? `bg-gradient-to-r ${style.gradient} text-white shadow-lg`
                           : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:scale-[1.02]'
-                      }`}
+                        }`}
                     >
                       <CategoryIcon className="w-4 h-4" />
                       <span>{category}</span>
@@ -549,11 +509,10 @@ export default function POS() {
                     <button
                       key={category}
                       onClick={() => setSelectedCategory(category)}
-                      className={`flex items-center space-x-2 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                        selectedCategory === category
+                      className={`flex items-center space-x-2 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === category
                           ? `bg-gradient-to-r ${style.gradient} text-white shadow-lg`
                           : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:scale-[1.02]'
-                      }`}
+                        }`}
                     >
                       <CategoryIcon className="w-4 h-4" />
                       <span>{category}</span>
@@ -600,12 +559,11 @@ export default function POS() {
                       <div key={to.id} className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-3">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-semibold text-sm text-black dark:text-white">{to.customerName}</span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            to.status === 'ready' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                            to.status === 'preparing' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                            to.status === 'picked_up' ? 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400' :
-                            'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                          }`}>{to.status.replace('_', ' ')}</span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${to.status === 'ready' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              to.status === 'preparing' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                to.status === 'picked_up' ? 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400' :
+                                  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                            }`}>{to.status.replace('_', ' ')}</span>
                         </div>
                         <p className="text-xs text-neutral-500">{to.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</p>
                         <div className="flex items-center justify-between mt-2">
@@ -641,19 +599,17 @@ export default function POS() {
               <div className="flex items-center space-x-2 mb-4 flex-shrink-0">
                 <button
                   onClick={() => setDeliveryPlatformFilter('all')}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    deliveryPlatformFilter === 'all' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                  }`}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${deliveryPlatformFilter === 'all' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                    }`}
                 >All Platforms</button>
                 {Object.entries(platformBranding).slice(0, 4).map(([key, brand]) => (
                   <button
                     key={key}
                     onClick={() => setDeliveryPlatformFilter(deliveryPlatformFilter === key ? 'all' : key)}
-                    className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                      deliveryPlatformFilter === key
+                    className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${deliveryPlatformFilter === key
                         ? `bg-gradient-to-r ${brand.gradient} text-white shadow-lg`
                         : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                    }`}
+                      }`}
                   >
                     <span className={`w-6 h-6 bg-gradient-to-br ${brand.gradient} rounded-md flex items-center justify-center text-[10px] font-bold text-white`}>{brand.label}</span>
                     <span className="capitalize">{key.replace('_', ' ')}</span>
@@ -905,11 +861,10 @@ export default function POS() {
                       <button
                         key={tip.percentage}
                         onClick={() => { setTipPercentage(tip.percentage); setCustomTip('') }}
-                        className={`py-3 rounded-xl text-sm font-bold transition-all ${
-                          tipPercentage === tip.percentage
+                        className={`py-3 rounded-xl text-sm font-bold transition-all ${tipPercentage === tip.percentage
                             ? 'bg-gradient-to-br from-red-500 to-red-700 text-white shadow-lg shadow-red-500/30 scale-105'
                             : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 hover:scale-105'
-                        }`}
+                          }`}
                       >{tip.label}</button>
                     ))}
                     <input
@@ -930,11 +885,10 @@ export default function POS() {
                       <button
                         key={method.id}
                         onClick={() => setSelectedPayment(method.id)}
-                        className={`p-4 rounded-xl border-2 transition-all flex items-center space-x-3 ${
-                          selectedPayment === method.id
+                        className={`p-4 rounded-xl border-2 transition-all flex items-center space-x-3 ${selectedPayment === method.id
                             ? 'border-red-500 bg-red-50 dark:bg-red-900/30 scale-[1.02] shadow-lg'
                             : 'border-neutral-200 dark:border-neutral-700 hover:border-red-300 dark:hover:border-red-700 hover:scale-[1.02]'
-                        }`}
+                          }`}
                       >
                         <div className={`w-11 h-11 ${method.color} rounded-xl flex items-center justify-center shadow-lg`}>
                           <method.icon className="w-5 h-5 text-white" />

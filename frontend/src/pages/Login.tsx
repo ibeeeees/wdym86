@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, Zap, ChefHat, TrendingUp, Users, ShoppingCart, X } from 'lucide-react'
+import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, Zap, ChefHat, TrendingUp, Users, ShoppingCart, X, ChevronLeft } from 'lucide-react'
 import { login, register } from '../services/api'
 import { useAuth, UserRole } from '../context/AuthContext'
+import { CUISINE_OPTIONS } from '../data/cuisineTemplates'
 
 // Animated floating elements for background
 const FloatingIcon = ({ icon: Icon, delay, x, y }: { icon: any; delay: number; x: number; y: number }) => (
@@ -45,7 +46,9 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showRolePicker, setShowRolePicker] = useState(false)
+  const [showCuisinePicker, setShowCuisinePicker] = useState(false)
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
+  const [selectedCuisine, setSelectedCuisine] = useState<string>('mediterranean')
   const [demoLoading, setDemoLoading] = useState(false)
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme')
@@ -93,11 +96,17 @@ export default function Login() {
     setShowRolePicker(true)
   }
 
+  const handleRoleNext = () => {
+    if (!selectedRole) return
+    setShowRolePicker(false)
+    setShowCuisinePicker(true)
+  }
+
   const handleStartDemo = async () => {
     if (!selectedRole) return
     setDemoLoading(true)
     await new Promise(resolve => setTimeout(resolve, 600))
-    demoLogin(selectedRole)
+    demoLogin(selectedRole, selectedCuisine)
     navigate(getRoleRedirect(selectedRole))
   }
 
@@ -221,7 +230,7 @@ export default function Login() {
 
           {/* Demo Button - Prominent */}
           <div className="mb-8">
-            {!showRolePicker ? (
+            {!showRolePicker && !showCuisinePicker ? (
               <>
                 <button
                   onClick={handleDemoClick}
@@ -236,10 +245,10 @@ export default function Login() {
                   <span>No account required -- Full feature access</span>
                 </p>
               </>
-            ) : (
+            ) : showRolePicker ? (
               <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-5 shadow-lg">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-black dark:text-white">Select a demo role</h3>
+                  <h3 className="text-sm font-semibold text-black dark:text-white">Step 1: Select a role</h3>
                   <button
                     onClick={() => { setShowRolePicker(false); setSelectedRole(null) }}
                     className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
@@ -285,8 +294,59 @@ export default function Login() {
                 </div>
 
                 <button
+                  onClick={handleRoleNext}
+                  disabled={!selectedRole}
+                  className="w-full mt-4 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white transition-all shadow-lg shadow-red-500/25 flex items-center justify-center space-x-2 hover:scale-[1.02] disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed"
+                >
+                  <span>Next: Choose Cuisine</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-5 shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={() => { setShowCuisinePicker(false); setShowRolePicker(true) }}
+                    className="flex items-center space-x-1 text-sm text-neutral-500 hover:text-black dark:hover:text-white transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Back</span>
+                  </button>
+                  <h3 className="text-sm font-semibold text-black dark:text-white">Step 2: Choose cuisine</h3>
+                  <button
+                    onClick={() => { setShowCuisinePicker(false); setSelectedRole(null); setSelectedCuisine('mediterranean') }}
+                    className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {CUISINE_OPTIONS.map((opt) => {
+                    const isSelected = selectedCuisine === opt.key
+                    return (
+                      <button
+                        key={opt.key}
+                        onClick={() => setSelectedCuisine(opt.key)}
+                        className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all text-center ${
+                          isSelected
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20 shadow-sm'
+                            : 'border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-750'
+                        }`}
+                      >
+                        <span className="text-lg font-bold mb-1">{opt.flag}</span>
+                        <p className={`text-xs font-semibold ${isSelected ? 'text-red-700 dark:text-red-400' : 'text-black dark:text-white'}`}>
+                          {opt.label}
+                        </p>
+                        <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5 truncate w-full">{opt.restaurantName}</p>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <button
                   onClick={handleStartDemo}
-                  disabled={!selectedRole || demoLoading}
+                  disabled={demoLoading}
                   className="w-full mt-4 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white transition-all shadow-lg shadow-red-500/25 flex items-center justify-center space-x-2 hover:scale-[1.02] disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed"
                 >
                   {demoLoading ? (
@@ -297,7 +357,7 @@ export default function Login() {
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>Start Demo</span>
+                      <span>Launch Demo</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, ChevronDown, Wifi, WifiOff, UtensilsCrossed, DollarSign, ChefHat, Sparkles, Package, TrendingUp, TrendingDown, BarChart3, Flame, Crown, Award, Leaf, Fish, Beef, Cake, Coffee, Wine, Soup, Salad, Cherry } from 'lucide-react'
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 import { getDishes, getIngredients, checkApiHealth } from '../services/api'
+import { useAuth } from '../context/AuthContext'
+import { getCuisineTemplate } from '../data/cuisineTemplates'
 
 // Category icon mapping - Mediterranean themed (Lucide icons)
 const categoryIcons: Record<string, typeof Leaf> = {
@@ -65,284 +67,7 @@ interface AvailableIngredient {
   unit: string
 }
 
-// Mykonos Mediterranean Restaurant ingredients
-const demoIngredients: AvailableIngredient[] = [
-  { id: '1', name: 'Lamb Shoulder', unit: 'lbs' },
-  { id: '2', name: 'Lamb Chops', unit: 'lbs' },
-  { id: '3', name: 'Ground Lamb', unit: 'lbs' },
-  { id: '4', name: 'Chicken Thighs', unit: 'lbs' },
-  { id: '5', name: 'Branzino', unit: 'lbs' },
-  { id: '6', name: 'Shrimp (Jumbo)', unit: 'lbs' },
-  { id: '7', name: 'Octopus', unit: 'lbs' },
-  { id: '8', name: 'Feta Cheese', unit: 'lbs' },
-  { id: '9', name: 'Greek Yogurt', unit: 'lbs' },
-  { id: '10', name: 'Halloumi', unit: 'lbs' },
-  { id: '11', name: 'Tomatoes (Roma)', unit: 'lbs' },
-  { id: '12', name: 'Cucumbers', unit: 'lbs' },
-  { id: '13', name: 'Eggplant', unit: 'lbs' },
-  { id: '14', name: 'Fresh Spinach', unit: 'lbs' },
-  { id: '15', name: 'Phyllo Dough', unit: 'lbs' },
-  { id: '16', name: 'Chickpeas', unit: 'lbs' },
-  { id: '17', name: 'Tahini', unit: 'lbs' },
-  { id: '18', name: 'Olive Oil (EV)', unit: 'liters' },
-  { id: '19', name: 'Lemons', unit: 'units' },
-  { id: '20', name: 'Fresh Oregano', unit: 'lbs' },
-  { id: '21', name: 'Fresh Dill', unit: 'lbs' },
-  { id: '22', name: 'Fresh Mint', unit: 'lbs' },
-  { id: '23', name: 'Orzo Pasta', unit: 'lbs' },
-  { id: '24', name: 'Honey', unit: 'lbs' },
-  { id: '25', name: 'Walnuts', unit: 'lbs' },
-  { id: '26', name: 'Pistachios', unit: 'lbs' },
-  { id: '27', name: 'Red Onions', unit: 'lbs' },
-  { id: '28', name: 'Garlic', unit: 'lbs' },
-  { id: '29', name: 'Kalamata Olives', unit: 'lbs' },
-  { id: '30', name: 'Pine Nuts', unit: 'lbs' },
-]
 
-// Mykonos Mediterranean Restaurant menu
-const demoDishes: Dish[] = [
-  // Appetizers (Meze)
-  {
-    id: '1',
-    name: 'Classic Hummus',
-    category: 'Appetizer',
-    price: 12.00,
-    is_active: true,
-    recipe: [
-      { id: '1', ingredient_id: '16', ingredient_name: 'Chickpeas', quantity: 1.0, unit: 'lbs' },
-      { id: '2', ingredient_id: '17', ingredient_name: 'Tahini', quantity: 0.25, unit: 'lbs' },
-      { id: '3', ingredient_id: '28', ingredient_name: 'Garlic', quantity: 0.125, unit: 'lbs' },
-      { id: '4', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.125, unit: 'liters' },
-    ],
-    orders_today: 22,
-    orders_7d: 145,
-    orders_30d: 580,
-    trend: 5.2,
-    popularity_rank: 4,
-    daily_orders: [18, 20, 19, 22, 24, 26, 16],
-    revenue_7d: 1740,
-  },
-  {
-    id: '2',
-    name: 'Spanakopita',
-    category: 'Appetizer',
-    price: 14.00,
-    is_active: true,
-    recipe: [
-      { id: '5', ingredient_id: '14', ingredient_name: 'Fresh Spinach', quantity: 1.5, unit: 'lbs' },
-      { id: '6', ingredient_id: '8', ingredient_name: 'Feta Cheese', quantity: 0.5, unit: 'lbs' },
-      { id: '7', ingredient_id: '15', ingredient_name: 'Phyllo Dough', quantity: 0.75, unit: 'lbs' },
-      { id: '8', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.2, unit: 'liters' },
-    ],
-    orders_today: 15,
-    orders_7d: 98,
-    orders_30d: 400,
-    trend: -3.1,
-    popularity_rank: 8,
-    daily_orders: [15, 14, 13, 14, 15, 16, 11],
-    revenue_7d: 1372,
-  },
-  {
-    id: '3',
-    name: 'Saganaki',
-    category: 'Appetizer',
-    price: 16.00,
-    is_active: true,
-    recipe: [
-      { id: '9', ingredient_id: '10', ingredient_name: 'Halloumi', quantity: 0.5, unit: 'lbs' },
-      { id: '10', ingredient_id: '19', ingredient_name: 'Lemons', quantity: 2, unit: 'units' },
-    ],
-    orders_today: 18,
-    orders_7d: 120,
-    orders_30d: 470,
-    trend: 8.5,
-    popularity_rank: 6,
-    daily_orders: [14, 16, 17, 18, 20, 22, 13],
-    revenue_7d: 1920,
-  },
-  {
-    id: '4',
-    name: 'Grilled Octopus',
-    category: 'Appetizer',
-    price: 22.00,
-    is_active: true,
-    recipe: [
-      { id: '11', ingredient_id: '7', ingredient_name: 'Octopus', quantity: 0.75, unit: 'lbs' },
-      { id: '12', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.1, unit: 'liters' },
-      { id: '13', ingredient_id: '20', ingredient_name: 'Fresh Oregano', quantity: 0.05, unit: 'lbs' },
-    ],
-    orders_today: 14,
-    orders_7d: 88,
-    orders_30d: 360,
-    trend: 2.0,
-    popularity_rank: 9,
-    daily_orders: [11, 12, 13, 14, 14, 15, 9],
-    revenue_7d: 1936,
-  },
-  // Salads
-  {
-    id: '5',
-    name: 'Greek Salad (Horiatiki)',
-    category: 'Salad',
-    price: 14.00,
-    is_active: true,
-    recipe: [
-      { id: '14', ingredient_id: '11', ingredient_name: 'Tomatoes (Roma)', quantity: 0.4, unit: 'lbs' },
-      { id: '15', ingredient_id: '12', ingredient_name: 'Cucumbers', quantity: 0.3, unit: 'lbs' },
-      { id: '16', ingredient_id: '27', ingredient_name: 'Red Onions', quantity: 0.15, unit: 'lbs' },
-      { id: '17', ingredient_id: '8', ingredient_name: 'Feta Cheese', quantity: 0.25, unit: 'lbs' },
-      { id: '18', ingredient_id: '29', ingredient_name: 'Kalamata Olives', quantity: 0.1, unit: 'lbs' },
-    ],
-    orders_today: 28,
-    orders_7d: 175,
-    orders_30d: 720,
-    trend: 6.8,
-    popularity_rank: 2,
-    daily_orders: [22, 24, 25, 26, 28, 30, 20],
-    revenue_7d: 2450,
-  },
-  // Seafood Entrees
-  {
-    id: '6',
-    name: 'Grilled Branzino',
-    category: 'Entree - Seafood',
-    price: 34.00,
-    is_active: true,
-    recipe: [
-      { id: '19', ingredient_id: '5', ingredient_name: 'Branzino', quantity: 1.5, unit: 'lbs' },
-      { id: '20', ingredient_id: '19', ingredient_name: 'Lemons', quantity: 2, unit: 'units' },
-      { id: '21', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.1, unit: 'liters' },
-      { id: '22', ingredient_id: '20', ingredient_name: 'Fresh Oregano', quantity: 0.05, unit: 'lbs' },
-      { id: '23', ingredient_id: '21', ingredient_name: 'Fresh Dill', quantity: 0.05, unit: 'lbs' },
-    ],
-    orders_today: 20,
-    orders_7d: 130,
-    orders_30d: 510,
-    trend: -5.2,
-    popularity_rank: 5,
-    daily_orders: [20, 19, 18, 20, 22, 21, 10],
-    revenue_7d: 4420,
-  },
-  {
-    id: '7',
-    name: 'Shrimp Saganaki',
-    category: 'Entree - Seafood',
-    price: 32.00,
-    is_active: true,
-    recipe: [
-      { id: '24', ingredient_id: '6', ingredient_name: 'Shrimp (Jumbo)', quantity: 0.5, unit: 'lbs' },
-      { id: '25', ingredient_id: '11', ingredient_name: 'Tomatoes (Roma)', quantity: 0.3, unit: 'lbs' },
-      { id: '26', ingredient_id: '8', ingredient_name: 'Feta Cheese', quantity: 0.2, unit: 'lbs' },
-    ],
-    orders_today: 16,
-    orders_7d: 105,
-    orders_30d: 430,
-    trend: 12.3,
-    popularity_rank: 7,
-    daily_orders: [12, 14, 15, 16, 18, 19, 11],
-    revenue_7d: 3360,
-  },
-  // Meat Entrees
-  {
-    id: '8',
-    name: 'Lamb Souvlaki',
-    category: 'Entree - Meat',
-    price: 28.00,
-    is_active: true,
-    recipe: [
-      { id: '27', ingredient_id: '2', ingredient_name: 'Lamb Chops', quantity: 1.25, unit: 'lbs' },
-      { id: '28', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.15, unit: 'liters' },
-      { id: '29', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.5, unit: 'lbs' },
-      { id: '30', ingredient_id: '20', ingredient_name: 'Fresh Oregano', quantity: 0.05, unit: 'lbs' },
-    ],
-    orders_today: 32,
-    orders_7d: 195,
-    orders_30d: 780,
-    trend: 11.4,
-    popularity_rank: 1,
-    daily_orders: [24, 26, 28, 30, 32, 35, 20],
-    revenue_7d: 5460,
-  },
-  {
-    id: '9',
-    name: 'Moussaka',
-    category: 'Entree - Meat',
-    price: 26.00,
-    is_active: true,
-    recipe: [
-      { id: '31', ingredient_id: '13', ingredient_name: 'Eggplant', quantity: 2.0, unit: 'lbs' },
-      { id: '32', ingredient_id: '3', ingredient_name: 'Ground Lamb', quantity: 1.0, unit: 'lbs' },
-      { id: '33', ingredient_id: '11', ingredient_name: 'Tomatoes (Roma)', quantity: 0.5, unit: 'lbs' },
-      { id: '34', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.25, unit: 'lbs' },
-    ],
-    orders_today: 19,
-    orders_7d: 135,
-    orders_30d: 550,
-    trend: -1.5,
-    popularity_rank: 3,
-    daily_orders: [18, 19, 20, 19, 22, 24, 13],
-    revenue_7d: 3510,
-  },
-  {
-    id: '10',
-    name: 'Chicken Souvlaki',
-    category: 'Entree - Meat',
-    price: 23.00,
-    is_active: true,
-    recipe: [
-      { id: '35', ingredient_id: '4', ingredient_name: 'Chicken Thighs', quantity: 1.0, unit: 'lbs' },
-      { id: '36', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.1, unit: 'liters' },
-      { id: '37', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.3, unit: 'lbs' },
-    ],
-    orders_today: 12,
-    orders_7d: 82,
-    orders_30d: 340,
-    trend: -7.8,
-    popularity_rank: 10,
-    daily_orders: [13, 12, 11, 12, 14, 13, 7],
-    revenue_7d: 1886,
-  },
-  // Desserts
-  {
-    id: '11',
-    name: 'Baklava',
-    category: 'Dessert',
-    price: 10.00,
-    is_active: true,
-    recipe: [
-      { id: '38', ingredient_id: '15', ingredient_name: 'Phyllo Dough', quantity: 1.0, unit: 'lbs' },
-      { id: '39', ingredient_id: '25', ingredient_name: 'Walnuts', quantity: 0.5, unit: 'lbs' },
-      { id: '40', ingredient_id: '26', ingredient_name: 'Pistachios', quantity: 0.25, unit: 'lbs' },
-      { id: '41', ingredient_id: '24', ingredient_name: 'Honey', quantity: 0.75, unit: 'lbs' },
-    ],
-    orders_today: 25,
-    orders_7d: 160,
-    orders_30d: 640,
-    trend: 9.1,
-    popularity_rank: 11,
-    daily_orders: [20, 22, 23, 24, 26, 28, 17],
-    revenue_7d: 1600,
-  },
-  {
-    id: '12',
-    name: 'Greek Yogurt with Honey',
-    category: 'Dessert',
-    price: 9.00,
-    is_active: true,
-    recipe: [
-      { id: '42', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.5, unit: 'lbs' },
-      { id: '43', ingredient_id: '24', ingredient_name: 'Honey', quantity: 0.1, unit: 'lbs' },
-      { id: '44', ingredient_id: '25', ingredient_name: 'Walnuts', quantity: 0.1, unit: 'lbs' },
-    ],
-    orders_today: 10,
-    orders_7d: 68,
-    orders_30d: 280,
-    trend: -2.4,
-    popularity_rank: 12,
-    daily_orders: [9, 10, 10, 10, 12, 11, 6],
-    revenue_7d: 612,
-  },
-]
 
 const categories = ['Appetizer', 'Salad', 'Soup', 'Entree - Seafood', 'Entree - Meat', 'Entree - Vegetarian', 'Dessert', 'Cocktail']
 
@@ -369,8 +94,10 @@ const RankBadge = ({ rank }: { rank: number }) => {
 }
 
 export default function Dishes() {
+  const { cuisineType } = useAuth()
+  const template = getCuisineTemplate(cuisineType)
   const [dishes, setDishes] = useState<Dish[]>([])
-  const [availableIngredients, setAvailableIngredients] = useState<AvailableIngredient[]>(demoIngredients)
+  const [availableIngredients, setAvailableIngredients] = useState<AvailableIngredient[]>(template.dishIngredients)
   const [loading, setLoading] = useState(true)
   const [apiConnected, setApiConnected] = useState<boolean | null>(null)
   const [expandedDish, setExpandedDish] = useState<string | null>(null)
@@ -406,10 +133,10 @@ export default function Dishes() {
                 revenue_7d: d.revenue_7d ?? 0,
               })))
             } else {
-              setDishes(demoDishes)
+              setDishes(template.dishes)
             }
           } catch {
-            setDishes(demoDishes)
+            setDishes(template.dishes)
           }
 
           // Fetch ingredients for recipe editing
@@ -426,10 +153,10 @@ export default function Dishes() {
             // Keep demo ingredients
           }
         } else {
-          setDishes(demoDishes)
+          setDishes(template.dishes)
         }
       } catch (err) {
-        setDishes(demoDishes)
+        setDishes(template.dishes)
         setApiConnected(false)
         setError('Could not connect to server. Using demo data.')
       } finally {
@@ -551,11 +278,10 @@ export default function Dishes() {
             <div className="flex items-center space-x-2">
               <h1 className="text-xl font-bold text-black dark:text-white">Menu & Recipes</h1>
               {apiConnected !== null && (
-                <span className={`flex items-center space-x-1 text-xs px-2.5 py-1 rounded-full font-medium ${
-                  apiConnected
+                <span className={`flex items-center space-x-1 text-xs px-2.5 py-1 rounded-full font-medium ${apiConnected
                     ? 'bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-700 dark:text-green-400'
                     : 'bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 text-amber-700 dark:text-amber-400'
-                }`}>
+                  }`}>
                   {apiConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                   <span>{apiConnected ? 'Live' : 'Demo'}</span>
                 </span>
@@ -709,12 +435,11 @@ export default function Dishes() {
                 {/* Bar */}
                 <div className="w-full bg-neutral-100 dark:bg-neutral-700 rounded-full h-2">
                   <div
-                    className={`h-2 rounded-full ${
-                      i === 0 ? 'bg-gradient-to-r from-yellow-400 to-amber-500' :
-                      i === 1 ? 'bg-gradient-to-r from-neutral-300 to-neutral-400' :
-                      i === 2 ? 'bg-gradient-to-r from-amber-600 to-orange-600' :
-                      'bg-gradient-to-r from-blue-400 to-indigo-500'
-                    }`}
+                    className={`h-2 rounded-full ${i === 0 ? 'bg-gradient-to-r from-yellow-400 to-amber-500' :
+                        i === 1 ? 'bg-gradient-to-r from-neutral-300 to-neutral-400' :
+                          i === 2 ? 'bg-gradient-to-r from-amber-600 to-orange-600' :
+                            'bg-gradient-to-r from-blue-400 to-indigo-500'
+                      }`}
                     style={{ width: `${(dish.orders_7d / maxOrders7d) * 100}%` }}
                   />
                 </div>
@@ -736,11 +461,10 @@ export default function Dishes() {
           <button
             key={opt.key}
             onClick={() => setSortBy(opt.key)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
-              sortBy === opt.key
+            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${sortBy === opt.key
                 ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg'
                 : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-600'
-            }`}
+              }`}
           >
             {opt.label}
           </button>
@@ -785,11 +509,10 @@ export default function Dishes() {
                 </div>
                 <button
                   onClick={e => { e.stopPropagation(); handleToggleActive(dish.id) }}
-                  className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all ${
-                    dish.is_active
+                  className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all ${dish.is_active
                       ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-lg shadow-green-500/30'
                       : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400'
-                  }`}
+                    }`}
                 >
                   {dish.is_active ? 'Active' : 'Inactive'}
                 </button>

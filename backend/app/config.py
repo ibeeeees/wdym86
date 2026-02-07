@@ -89,6 +89,10 @@ class Settings(BaseSettings):
     stripe_price_enterprise_monthly: Optional[str] = None
     stripe_price_enterprise_yearly: Optional[str] = None
 
+    # TaxJar API for Sales Tax Calculation
+    taxjar_api_key: Optional[str] = None
+    taxjar_enabled: bool = False
+
     class Config:
         env_file = [
             ".env",                                                          # CWD (when running from backend/)

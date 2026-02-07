@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Banknote, Users, DollarSign, Clock, AlertTriangle, Receipt,
   Check, Plug, Search, Download, FileText,
@@ -7,6 +7,17 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
+import { 
+  getEmployees, 
+  getPayRuns, 
+  getTipsSummary, 
+  getExpenses, 
+  createExpense, 
+  exportPaychecksToS3, 
+  exportExpensesToS3,
+  getSalesSummary 
+} from '../services/payroll'
+import { checkApiHealth } from '../services/api'
 
 // ==========================================
 // Types
@@ -247,15 +258,18 @@ const tabs = [
 ]
 
 export default function Payroll() {
-  const { cuisineType, restaurantName } = useAuth()
+  const { cuisineType, restaurantName, restaurantId } = useAuth()
   const template = useMemo(() => getCuisineTemplate(cuisineType || 'mediterranean'), [cuisineType])
-  const employees = useMemo(() => buildDemoEmployees(template, restaurantName), [template, restaurantName])
-
+  
+  // State
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [payRuns, setPayRuns] = useState<PayRunRecord[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [loading, setLoading] = useState(true)
+  const [apiConnected, setApiConnected] = useState<boolean | null>(null)
   const [activeTab, setActiveTab] = useState<typeof tabs[number]['id']>('roster')
   const [searchQuery, setSearchQuery] = useState('')
   const [departmentFilter, setDepartmentFilter] = useState('all')
-  const [payRuns, setPayRuns] = useState<PayRunRecord[]>(demoPayRuns)
-  const [expenses, setExpenses] = useState<Expense[]>(demoExpenses)
   const [integrations, setIntegrations] = useState<PayrollIntegration[]>(payrollProviders)
   const [expandedIntegration, setExpandedIntegration] = useState<string | null>(null)
   const [configForm, setConfigForm] = useState({ apiKey: '', webhookUrl: '' })
@@ -264,6 +278,107 @@ export default function Payroll() {
   const [newExpense, setNewExpense] = useState({ category: 'Food & Beverage', description: '', amount: '', date: '2026-02-07', vendor: '' })
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000) }
+
+  // Load data from API
+  useEffect(() => {
+    loadAllData()
+  }, [restaurantId])
+
+  const loadAllData = async () => {
+    setLoading(true)
+    try {
+      const connected = await checkApiHealth()
+      setApiConnected(connected)
+
+      if (connected && restaurantId) {
+        await Promise.all([
+          loadEmployees(),
+          loadPayRuns(),
+          loadExpenses(),
+        ])
+      } else {
+        // Fallback to demo data
+        loadDemoData()
+      }
+    } catch (error) {
+      console.error('Failed to load payroll data:', error)
+      loadDemoData()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadEmployees = async () => {
+    if (!restaurantId) return
+    try {
+      const data = await getEmployees(restaurantId)
+      setEmployees(data.map((e: any) => ({
+        id: e.id,
+        name: e.name,
+        email: e.email || '',
+        role: e.role,
+        department: e.department,
+        employmentType: e.employment_type,
+        compensationType: e.compensation_type,
+        hourlyRate: e.hourly_rate || 0,
+        annualSalary: e.annual_salary || 0,
+        hoursThisPeriod: 0, // Would come from time tracking
+        overtimeHours: 0,
+        tipsThisPeriod: 0,
+        status: e.status,
+        startDate: e.start_date || '',
+      })))
+    } catch (error) {
+      console.error('Failed to load employees:', error)
+      loadDemoData()
+    }
+  }
+
+  const loadPayRuns = async () => {
+    if (!restaurantId) return
+    try {
+      const data = await getPayRuns(restaurantId, 10)
+      setPayRuns(data.map((run: any) => ({
+        id: run.id,
+        periodStart: run.period_start,
+        periodEnd: run.period_end,
+        runDate: run.run_date,
+        totalGross: run.total_gross,
+        totalNet: run.total_net,
+        totalTaxes: run.total_taxes,
+        totalTips: run.total_tips,
+        employeeCount: run.employee_count,
+        status: run.status,
+      })))
+    } catch (error) {
+      console.error('Failed to load pay runs:', error)
+    }
+  }
+
+  const loadExpenses = async () => {
+    if (!restaurantId) return
+    try {
+      const data = await getExpenses(restaurantId, undefined, 50)
+      setExpenses(data.map((exp: any) => ({
+        id: exp.id,
+        date: exp.date,
+        category: exp.category,
+        description: exp.description,
+        amount: exp.amount,
+        vendor: exp.vendor || '',
+        status: exp.status,
+      })))
+    } catch (error) {
+      console.error('Failed to load expenses:', error)
+    }
+  }
+
+  const loadDemoData = () => {
+    setApiConnected(false)
+    setEmployees(buildDemoEmployees(template, restaurantName))
+    setPayRuns(demoPayRuns)
+    setExpenses(demoExpenses)
+  }
 
   // Filtered employees
   const filteredEmployees = employees.filter(e => {

@@ -10,6 +10,7 @@ import { checkApiHealth } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
 import PaymentModal from '../components/PaymentModal'
+import { calculateTax } from '../services/tax'
 
 interface MenuItem {
   id: string
@@ -227,9 +228,20 @@ export default function POS() {
     })
   }
 
-  const calculateTotals = (currentOrder: Order): Order => {
+  const calculateTotals = async (currentOrder: Order): Promise<Order> => {
     const subtotal = currentOrder.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    const tax = subtotal * 0.08
+    
+    // Calculate tax using TaxJar API (falls back to default rate)
+    let tax = subtotal * 0.08 // Default fallback
+    try {
+      if (restaurantId) {
+        const taxResult = await calculateTax(restaurantId, subtotal)
+        tax = taxResult.tax_amount
+      }
+    } catch (error) {
+      console.warn('Failed to calculate tax, using default rate:', error)
+    }
+    
     const tip = tipPercentage ? subtotal * (tipPercentage / 100) : parseFloat(customTip) || 0
     const total = subtotal + tax + tip
     return {
@@ -242,7 +254,7 @@ export default function POS() {
   }
 
   useEffect(() => {
-    setOrder(prev => calculateTotals(prev))
+    calculateTotals(order).then(setOrder)
   }, [tipPercentage, customTip])
 
   const handleCheckout = () => {

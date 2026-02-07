@@ -80,6 +80,14 @@ class Restaurant(Base):
     cuisine_type = Column(String, nullable=True)
     subscription_tier = Column(String, default="free")  # free, starter, pro, enterprise
     created_at = Column(DateTime, server_default=func.now())
+    
+    # Address for tax calculation
+    address_street = Column(String, nullable=True)
+    address_city = Column(String, nullable=True)
+    address_state = Column(String, nullable=True)
+    address_zip = Column(String, nullable=True)
+    address_country = Column(String, default="US")
+    default_tax_rate = Column(Float, default=0.08)  # Fallback rate when TaxJar not available
 
 
 class Subscription(Base):

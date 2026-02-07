@@ -25,6 +25,7 @@ from .pos_integration import router as pos_integration_router
 from .payroll import router as payroll_router
 from .stripe_webhooks import router as stripe_webhooks_router
 from .pos_payments import router as pos_payments_router
+from .tax import router as tax_router
 
 __all__ = [
     'auth_router',
@@ -52,4 +53,5 @@ __all__ = [
     'payroll_router',
     'stripe_webhooks_router',
     'pos_payments_router',
+    'tax_router',
 ]

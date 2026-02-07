@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     # AWS S3
     s3_enabled: bool = False
     s3_bucket_name: Optional[str] = None
+    aws_s3_bucket: Optional[str] = None  # Alternative env var name
 
     # AWS Cognito
     cognito_enabled: bool = False
@@ -62,6 +63,11 @@ class Settings(BaseSettings):
     # AWS Secrets Manager
     secrets_enabled: bool = False
     db_secret_name: Optional[str] = None
+
+    # Solana Pay
+    solana_network: str = "devnet"
+    solana_wallet_address: Optional[str] = None
+    solana_rpc_url: str = "https://api.devnet.solana.com"
 
     class Config:
         env_file = ".env"

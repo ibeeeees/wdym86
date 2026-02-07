@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, RefreshCw, TrendingUp, TrendingDown, Package, AlertTriangle, Wifi, WifiOff, Sparkles, ChevronDown, Calendar, Download, Zap, X, Brain, BarChart3, LayoutDashboard, CheckCircle, Crown, Flame, Search } from 'lucide-react'
+import { ArrowRight, RefreshCw, TrendingUp, TrendingDown, Package, AlertTriangle, Wifi, WifiOff, Sparkles, ChevronDown, Calendar, Download, Zap, X, Brain, BarChart3, CheckCircle, Crown, Flame, Search } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts'
 import { getIngredients, runAgentPipeline, checkApiHealth, getDailySummary, getActiveEvents } from '../services/api'
 import { useAuth } from '../context/AuthContext'

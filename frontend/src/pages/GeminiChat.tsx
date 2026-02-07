@@ -10,11 +10,11 @@ interface Message {
 }
 
 const suggestedQuestions = [
-  { text: "Why is Chicken Breast showing urgent risk?", icon: AlertTriangle, color: 'from-red-400 to-orange-500' },
-  { text: "What if the supplier is delayed by 2 days?", icon: TrendingDown, color: 'from-blue-400 to-cyan-500' },
-  { text: "Should I order more Salmon before the weekend?", icon: Lightbulb, color: 'from-amber-400 to-yellow-500' },
-  { text: "Explain the forecast model", icon: Zap, color: 'from-purple-400 to-pink-500' },
-  { text: "How do dish recipes affect demand?", icon: MessageCircle, color: 'from-green-400 to-emerald-500' },
+  { text: "What's my inventory status?", icon: AlertTriangle, color: 'from-red-400 to-orange-500' },
+  { text: "How do the AI agents work?", icon: Zap, color: 'from-purple-400 to-pink-500' },
+  { text: "Show me today's orders", icon: MessageCircle, color: 'from-blue-400 to-cyan-500' },
+  { text: "Which suppliers are most reliable?", icon: TrendingDown, color: 'from-green-400 to-emerald-500' },
+  { text: "Tell me about Solana Pay", icon: Lightbulb, color: 'from-amber-400 to-yellow-500' },
 ]
 
 // Smart fallback response generator when API is unavailable
@@ -217,6 +217,154 @@ The system automatically adjusts forecasts for day-of-week patterns. For this we
 Check the Dashboard for specific ingredient recommendations.`
   }
 
+  // POS and orders questions
+  if (q.includes('pos') || q.includes('point of sale') || q.includes('orders') || q.includes('table') || q.includes('checkout')) {
+    return `**POS System Overview:**
+
+Your Mykonos POS handles all order types:
+
+**Order Types:**
+• **Dine-in**: Table assignment, course timing, split checks
+• **Takeout**: Quick checkout, scheduled pickups
+• **Delivery**: Integrated with 5 platforms (DoorDash, Uber Eats, etc.)
+
+**Key Features:**
+1. Real-time order tracking from kitchen to table
+2. Automatic inventory deduction when dishes are sold
+3. Multiple payment methods including Solana Pay
+4. Table management with status indicators
+
+**Today's Quick Stats:**
+• Orders sync automatically to the dashboard
+• Each sale updates ingredient forecasts
+• Sales patterns feed into demand prediction
+
+Open the **POS** tab to view current orders and process payments.`
+  }
+
+  // Delivery platform questions
+  if (q.includes('delivery') || q.includes('doordash') || q.includes('uber eats') || q.includes('grubhub') || q.includes('postmates') || q.includes('seamless')) {
+    return `**Delivery Platform Integration:**
+
+Mykonos is connected to all major platforms:
+
+**Active Platforms:**
+• 🚗 DoorDash - Most popular, best for lunch
+• 🚙 Uber Eats - Strong dinner performance
+• 🍔 Grubhub - Good corporate orders
+• 📦 Postmates - Quick local delivery
+• 🍽️ Seamless - NYC/urban focus
+
+**How It Works:**
+1. Orders sync automatically to your POS
+2. Menu and pricing managed centrally
+3. Delivery status tracked in real-time
+4. Commission reports generated weekly
+
+**Performance Insights:**
+• Track which platform drives most revenue
+• Monitor average order values
+• Identify peak delivery hours
+• Optimize menu for delivery packaging
+
+Check the **Delivery** tab to manage platform settings and view analytics.`
+  }
+
+  // Solana Pay and crypto questions
+  if (q.includes('solana') || q.includes('crypto') || q.includes('bitcoin') || q.includes('wallet') || q.includes('sol') || q.includes('blockchain')) {
+    return `**Solana Pay Integration:**
+
+Accept cryptocurrency payments directly at Mykonos!
+
+**How It Works:**
+1. Generate a QR code for the order amount
+2. Customer scans with their Solana wallet
+3. Payment confirms in ~400ms (sub-second!)
+4. Automatic USD conversion tracking
+
+**Benefits:**
+• **Speed**: Faster than card processing
+• **Fees**: Lower than 2.9% card fees
+• **Global**: Accept payments from anywhere
+• **Modern**: Appeal to crypto-native customers
+
+**Current SOL Price:** Updated in real-time
+• Amount shown in both USD and SOL
+• Historical rate tracking
+
+**Getting Started:**
+1. Go to **Crypto Pay** tab
+2. Enter payment amount
+3. Show QR code to customer
+4. Confirm when payment received
+
+The system tracks all crypto transactions for accounting.`
+  }
+
+  // Subscription and pricing questions
+  if (q.includes('subscription') || q.includes('tier') || q.includes('pricing') || q.includes('plan') || q.includes('upgrade')) {
+    return `**WDYM86 Subscription Tiers:**
+
+**🆓 Free Tier**
+• 10 ingredients, 1 location
+• Basic forecasting
+• 30-day data retention
+
+**⚡ Starter - $49/month**
+• 50 ingredients, 3 team members
+• Gemini AI Chat
+• POS integration
+• 90-day data retention
+
+**👑 Pro - $149/month** *(Most Popular)*
+• 200 ingredients, 3 locations
+• Supplier Strategy Agent
+• Delivery integrations
+• API access, Custom reports
+• 1-year data retention
+
+**🏢 Enterprise - $399/month**
+• Unlimited everything
+• Dedicated account manager
+• Custom integrations
+• Unlimited data retention
+
+**Current Plan Benefits:**
+Check the **Pricing** tab to see feature comparison and upgrade options.`
+  }
+
+  // Menu and dishes questions (Mykonos specific)
+  if (q.includes('menu') || q.includes('moussaka') || q.includes('souvlaki') || q.includes('spanakopita') || q.includes('mediterranean')) {
+    return `**Mykonos Mediterranean Menu:**
+
+Your menu features authentic Greek & Mediterranean dishes:
+
+**Popular Appetizers:**
+• Classic Hummus - $12
+• Spanakopita - $14
+• Saganaki (Halloumi) - $16
+• Grilled Octopus - $24
+
+**Best-Selling Entrees:**
+• Lamb Souvlaki - $28
+• Moussaka - $26
+• Grilled Branzino - $34
+• Chicken Souvlaki - $22
+
+**Recipe Integration:**
+Each dish links to ingredient quantities:
+• Moussaka uses: Ground Lamb, Eggplant, Tomatoes, Greek Yogurt
+• When sold, ingredients automatically deduct from inventory
+
+**Menu Analytics:**
+• Track dish popularity over time
+• Identify slow-moving items
+• Calculate profit margins
+• Optimize pricing
+
+Manage dishes and recipes in the **Dishes** tab.`
+  }
+
   // Default intelligent response
   return `I can help with that question about "${question.slice(0, 50)}${question.length > 50 ? '...' : ''}".
 
@@ -245,14 +393,18 @@ What specific aspect would you like me to dive deeper into?`
 // Helper to extract ingredient name from question
 const extractIngredient = (question: string): string | null => {
   const ingredients = [
-    'chicken', 'chicken breast', 'salmon', 'salmon fillet', 'beef', 'ground beef',
-    'lettuce', 'romaine', 'tomatoes', 'cheese', 'flour', 'rice', 'olive oil',
-    'avocado', 'avocados', 'eggs', 'butter', 'cream', 'milk'
+    // Mediterranean ingredients
+    'lamb', 'lamb leg', 'ground lamb', 'chicken', 'chicken thighs',
+    'branzino', 'octopus', 'shrimp', 'feta', 'feta cheese', 'halloumi',
+    'greek yogurt', 'yogurt', 'tomatoes', 'cucumbers', 'red onions',
+    'eggplant', 'bell peppers', 'spinach', 'lemons', 'orzo', 'arborio rice',
+    'phyllo', 'phyllo dough', 'chickpeas', 'olive oil', 'tahini',
+    'oregano', 'dill', 'mint', 'ouzo', 'metaxa', 'wine', 'pomegranate', 'honey'
   ]
   const q = question.toLowerCase()
   for (const ing of ingredients) {
     if (q.includes(ing)) {
-      return ing.charAt(0).toUpperCase() + ing.slice(1)
+      return ing.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
     }
   }
   return null
@@ -269,7 +421,7 @@ export default function GeminiChat() {
     {
       id: '1',
       role: 'assistant',
-      content: "Hello! I'm your AI inventory advisor powered by Google Gemini. I can explain the agents' decisions, analyze risk factors, and answer questions about your inventory. What would you like to know?"
+      content: "Kalimera! 🏝️ I'm your AI assistant for Mykonos Mediterranean Restaurant. I can help with:\n\n• **Inventory** - Stock levels, forecasts, reorder recommendations\n• **AI Agents** - Risk assessment, optimization decisions\n• **Menu** - Dishes, recipes, pricing\n• **Orders** - POS, delivery platforms\n• **Payments** - Including Solana Pay crypto\n• **Suppliers** - Lead times, reliability\n\nWhat would you like to know?"
     }
   ])
   const [input, setInput] = useState('')
@@ -301,10 +453,11 @@ export default function GeminiChat() {
           )
         }
       } catch {
-        // Demo fallback
+        // Demo fallback with Mykonos ingredients
         setInventoryContext([
-          { name: 'Salmon Fillet', risk_level: 'CRITICAL', days_of_cover: 1 },
-          { name: 'Chicken Breast', risk_level: 'URGENT', days_of_cover: 2 },
+          { name: 'Lamb Leg', risk_level: 'URGENT', days_of_cover: 2 },
+          { name: 'Feta Cheese', risk_level: 'MONITOR', days_of_cover: 4 },
+          { name: 'Branzino', risk_level: 'CRITICAL', days_of_cover: 1 },
         ])
       }
     }

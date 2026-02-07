@@ -2,15 +2,21 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from typing import Dict, Any, Optional
-from datetime import datetime
+from sqlalchemy import select, func
+from typing import Dict, Any, Optional, List
+from datetime import datetime, timedelta
 
 from ..database import (
     get_session,
     AgentDecision as AgentDecisionDB,
     Ingredient as IngredientDB,
-    User as UserDB
+    Supplier as SupplierDB,
+    Dish as DishDB,
+    Order as OrderDB,
+    InventoryState as InventoryDB,
+    Recipe as RecipeDB,
+    User as UserDB,
+    Restaurant as RestaurantDB
 )
 from ..models.forecast import (
     GeminiExplanationRequest,
@@ -28,6 +34,109 @@ router = APIRouter()
 def get_explainer() -> DecisionExplainer:
     use_mock = not settings.gemini_api_key
     return DecisionExplainer(use_mock=use_mock)
+
+
+async def get_restaurant_context(db: AsyncSession, restaurant_id: str = "demo-restaurant-id") -> Dict[str, Any]:
+    """Build comprehensive context from all restaurant data"""
+    context = {
+        "restaurant": {},
+        "inventory": [],
+        "suppliers": [],
+        "dishes": [],
+        "orders": [],
+        "alerts": []
+    }
+
+    # Get restaurant info
+    result = await db.execute(select(RestaurantDB).where(RestaurantDB.id == restaurant_id))
+    restaurant = result.scalar_one_or_none()
+    if restaurant:
+        context["restaurant"] = {
+            "name": restaurant.name,
+            "location": restaurant.location,
+            "subscription_tier": restaurant.subscription_tier or "free"
+        }
+
+    # Get ingredients with inventory
+    result = await db.execute(
+        select(IngredientDB).where(IngredientDB.restaurant_id == restaurant_id)
+    )
+    ingredients = result.scalars().all()
+
+    for ing in ingredients:
+        inv_result = await db.execute(
+            select(InventoryDB).where(InventoryDB.ingredient_id == ing.id)
+            .order_by(InventoryDB.recorded_at.desc()).limit(1)
+        )
+        inv = inv_result.scalar_one_or_none()
+
+        ing_data = {
+            "name": ing.name,
+            "category": ing.category,
+            "unit": ing.unit,
+            "current_stock": inv.quantity if inv else 0,
+            "unit_cost": ing.unit_cost or 0,
+            "is_perishable": ing.is_perishable,
+            "shelf_life_days": ing.shelf_life_days
+        }
+
+        # Check for low stock alerts
+        if inv and inv.quantity < 10:
+            context["alerts"].append(f"Low stock: {ing.name} ({inv.quantity} {ing.unit})")
+
+        context["inventory"].append(ing_data)
+
+    # Get suppliers
+    result = await db.execute(
+        select(SupplierDB).where(SupplierDB.restaurant_id == restaurant_id)
+    )
+    suppliers = result.scalars().all()
+    for sup in suppliers:
+        context["suppliers"].append({
+            "name": sup.name,
+            "lead_time_days": sup.lead_time_days,
+            "reliability_score": sup.reliability_score,
+            "min_order_quantity": sup.min_order_quantity
+        })
+
+    # Get dishes
+    result = await db.execute(
+        select(DishDB).where(DishDB.restaurant_id == restaurant_id)
+    )
+    dishes = result.scalars().all()
+    for dish in dishes:
+        context["dishes"].append({
+            "name": dish.name,
+            "category": dish.category,
+            "price": dish.price,
+            "is_active": dish.is_active
+        })
+
+    # Get recent orders
+    result = await db.execute(
+        select(OrderDB).where(OrderDB.restaurant_id == restaurant_id)
+        .order_by(OrderDB.created_at.desc()).limit(10)
+    )
+    orders = result.scalars().all()
+    for order in orders:
+        context["orders"].append({
+            "order_id": order.order_id,
+            "status": order.status,
+            "order_type": order.order_type,
+            "total": order.total,
+            "created_at": order.created_at.isoformat() if order.created_at else None
+        })
+
+    # Summary stats
+    context["summary"] = {
+        "total_ingredients": len(context["inventory"]),
+        "total_dishes": len(context["dishes"]),
+        "total_suppliers": len(context["suppliers"]),
+        "recent_orders": len(context["orders"]),
+        "active_alerts": len(context["alerts"])
+    }
+
+    return context
 
 
 @router.post("/explain", response_model=Dict[str, Any])
@@ -79,18 +188,20 @@ async def chat_with_advisor(
     db: AsyncSession = Depends(get_session)
 ):
     """
-    Chat with the AI inventory advisor
+    Chat with the AI restaurant advisor
 
-    Provides conversational interface for managers to ask questions
-    about inventory decisions, get clarifications, and understand
-    the AI's reasoning.
+    Comprehensive conversational interface for managers to ask questions
+    about ANY aspect of restaurant operations: inventory, orders, suppliers,
+    dishes, delivery, payments, and more.
     """
     explainer = get_explainer()
 
-    # Build context from ingredient if provided
-    context = {}
+    # Build comprehensive context from all restaurant data
+    restaurant_id = "demo-restaurant-id"  # In production, get from user
+    full_context = await get_restaurant_context(db, restaurant_id)
+
+    # Add ingredient-specific context if provided
     if request.ingredient_id:
-        # Get latest decision for ingredient
         result = await db.execute(
             select(AgentDecisionDB)
             .where(AgentDecisionDB.ingredient_id == request.ingredient_id)
@@ -99,12 +210,12 @@ async def chat_with_advisor(
         )
         decision = result.scalar_one_or_none()
         if decision:
-            context = decision.decision_data.get('gemini_context', {})
+            full_context["agent_decision"] = decision.decision_data.get('gemini_context', {})
 
-    # Get response
+    # Get response with full context
     response = explainer.answer_question_sync(
         question=request.message,
-        context=context,
+        context=full_context,
         session_id=request.session_id
     )
 
@@ -112,6 +223,19 @@ async def chat_with_advisor(
         response=response,
         session_id=request.session_id
     )
+
+
+@router.get("/context", response_model=Dict[str, Any])
+async def get_full_context(
+    current_user: UserDB = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Get full restaurant context for debugging and frontend display
+    """
+    restaurant_id = "demo-restaurant-id"
+    context = await get_restaurant_context(db, restaurant_id)
+    return context
 
 
 @router.post("/what-if", response_model=Dict[str, Any])

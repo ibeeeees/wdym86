@@ -12,6 +12,7 @@ const suggestedQuestions = [
   "What if the supplier is delayed by 2 days?",
   "Should I order more Salmon before the weekend?",
   "Explain the forecast model",
+  "How do dish recipes affect demand?",
 ]
 
 const demoResponses: Record<string, string> = {
@@ -76,7 +77,26 @@ Input Features:
 • Week of year (sin/cos)
 • Event flags, weather severity, traffic index
 
-Trained using manual gradient computation and custom Adam optimizer.`
+Trained using manual gradient computation and custom Adam optimizer.`,
+
+  "How do dish recipes affect demand?": `Great question! Dish recipes are a key input to our demand model.
+
+How it works:
+1. You define dishes and their ingredient quantities (e.g., Salmon Bowl uses 0.4 lbs salmon)
+2. We forecast dish sales using historical POS data
+3. Ingredient demand = Σ(predicted dish sales × recipe quantity)
+
+Example:
+• Predicted Salmon Bowl sales tomorrow: 50 orders
+• Recipe: 0.4 lbs salmon per bowl
+• Salmon demand: 50 × 0.4 = 20 lbs
+
+This "build-up" approach is more accurate than forecasting ingredients directly because:
+• Dish sales patterns are more stable
+• Promotions affect dishes, not ingredients
+• Menu changes are automatically reflected
+
+You can manage recipes in the Dishes tab.`
 }
 
 export default function GeminiChat() {
@@ -84,7 +104,7 @@ export default function GeminiChat() {
     {
       id: '1',
       role: 'assistant',
-      content: "Hello. I'm your AI inventory advisor powered by Google Gemini. I can explain the agents' decisions, analyze risk factors, and answer questions about your inventory. What would you like to know?"
+      content: "Hello! I'm your AI inventory advisor powered by Google Gemini. I can explain the agents' decisions, analyze risk factors, and answer questions about your inventory. What would you like to know?"
     }
   ])
   const [input, setInput] = useState('')
@@ -139,12 +159,12 @@ export default function GeminiChat() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-black">AI Advisor</h1>
-          <p className="text-neutral-500 text-sm">Powered by Google Gemini</p>
+          <h1 className="text-2xl font-semibold text-black dark:text-white">AI Advisor</h1>
+          <p className="text-neutral-500 dark:text-neutral-400 text-sm">Powered by Google Gemini</p>
         </div>
         <button
           onClick={() => setMessages([messages[0]])}
-          className="flex items-center space-x-2 px-3 py-1.5 text-sm text-neutral-500 hover:text-black border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors"
+          className="flex items-center space-x-2 px-3 py-1.5 text-sm text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
         >
           <RotateCcw className="w-4 h-4" />
           <span>Clear</span>
@@ -152,7 +172,7 @@ export default function GeminiChat() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto border border-neutral-200 rounded-lg p-4 space-y-4 bg-white">
+      <div className="flex-1 overflow-y-auto border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 space-y-4 bg-white dark:bg-neutral-800">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -161,8 +181,8 @@ export default function GeminiChat() {
             <div className={`max-w-[75%] ${message.role === 'user' ? 'order-1' : ''}`}>
               <div className={`rounded-lg px-4 py-3 ${
                 message.role === 'user'
-                  ? 'bg-black text-white'
-                  : 'bg-neutral-100 text-black'
+                  ? 'bg-black dark:bg-white text-white dark:text-black'
+                  : 'bg-neutral-100 dark:bg-neutral-700 text-black dark:text-white'
               }`}>
                 <p className="text-sm whitespace-pre-line">{message.content}</p>
               </div>
@@ -172,7 +192,7 @@ export default function GeminiChat() {
 
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-neutral-100 rounded-lg px-4 py-3">
+            <div className="bg-neutral-100 dark:bg-neutral-700 rounded-lg px-4 py-3">
               <div className="flex space-x-1">
                 <div className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                 <div className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -194,7 +214,7 @@ export default function GeminiChat() {
               <button
                 key={i}
                 onClick={() => handleSend(question)}
-                className="text-xs bg-neutral-100 hover:bg-neutral-200 text-neutral-700 px-3 py-1.5 rounded-full transition-colors"
+                className="text-xs bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-3 py-1.5 rounded-full transition-colors"
               >
                 {question}
               </button>
@@ -211,13 +231,13 @@ export default function GeminiChat() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask about inventory decisions..."
-          className="flex-1 px-4 py-3 border border-neutral-200 rounded-lg text-sm focus:border-black focus:ring-0 transition-colors"
+          className="flex-1 px-4 py-3 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:border-black dark:focus:border-white focus:ring-0 transition-colors bg-white dark:bg-neutral-800 text-black dark:text-white"
           disabled={loading}
         />
         <button
           onClick={() => handleSend()}
           disabled={!input.trim() || loading}
-          className="bg-black text-white p-3 rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-30"
+          className="bg-black dark:bg-white text-white dark:text-black p-3 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-30"
         >
           <Send className="w-4 h-4" />
         </button>

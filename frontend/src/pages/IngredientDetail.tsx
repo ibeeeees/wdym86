@@ -51,10 +51,10 @@ Key factors: Current inventory of 45 lbs provides only 2 days of cover. Expected
 }
 
 const riskStyles: Record<string, string> = {
-  SAFE: 'text-green-600',
-  MONITOR: 'text-yellow-600',
-  URGENT: 'text-orange-600',
-  CRITICAL: 'text-red-600',
+  SAFE: 'text-green-600 dark:text-green-400',
+  MONITOR: 'text-yellow-600 dark:text-yellow-400',
+  URGENT: 'text-orange-600 dark:text-orange-400',
+  CRITICAL: 'text-red-600 dark:text-red-400',
 }
 
 export default function IngredientDetail() {
@@ -71,18 +71,18 @@ export default function IngredientDetail() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link to="/" className="p-2 hover:bg-neutral-100 rounded-lg transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+          <Link to="/" className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors">
+            <ArrowLeft className="w-5 h-5 text-black dark:text-white" />
           </Link>
           <div>
-            <h1 className="text-2xl font-semibold text-black">{demoIngredient.name}</h1>
-            <p className="text-neutral-500 text-sm capitalize">{demoIngredient.category} • {demoIngredient.unit}</p>
+            <h1 className="text-2xl font-semibold text-black dark:text-white">{demoIngredient.name}</h1>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm capitalize">{demoIngredient.category} · {demoIngredient.unit}</p>
           </div>
         </div>
         <button
           onClick={handleRunAnalysis}
           disabled={loading}
-          className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition-colors disabled:opacity-50"
+          className="flex items-center space-x-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           <span>Run Pipeline</span>
@@ -91,62 +91,63 @@ export default function IngredientDetail() {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="border border-neutral-200 rounded-lg p-4">
-          <p className="text-sm text-neutral-500">Inventory</p>
-          <p className="text-2xl font-semibold font-mono">{demoIngredient.current_inventory}</p>
+        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Inventory</p>
+          <p className="text-2xl font-semibold font-mono text-black dark:text-white">{demoIngredient.current_inventory}</p>
           <p className="text-xs text-neutral-400">{demoIngredient.unit}</p>
         </div>
-        <div className="border border-neutral-200 rounded-lg p-4">
-          <p className="text-sm text-neutral-500">Risk Level</p>
+        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Risk Level</p>
           <p className={`text-2xl font-semibold ${riskStyles[demoIngredient.risk_level]}`}>
             {demoIngredient.risk_level}
           </p>
         </div>
-        <div className="border border-neutral-200 rounded-lg p-4">
-          <p className="text-sm text-neutral-500">Stockout Prob</p>
-          <p className="text-2xl font-semibold font-mono">{(demoIngredient.stockout_probability * 100).toFixed(0)}%</p>
+        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Stockout Prob</p>
+          <p className="text-2xl font-semibold font-mono text-black dark:text-white">{(demoIngredient.stockout_probability * 100).toFixed(0)}%</p>
         </div>
-        <div className="border border-neutral-200 rounded-lg p-4">
-          <p className="text-sm text-neutral-500">Days Cover</p>
-          <p className="text-2xl font-semibold font-mono">{demoIngredient.days_of_cover}</p>
+        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Days Cover</p>
+          <p className="text-2xl font-semibold font-mono text-black dark:text-white">{demoIngredient.days_of_cover}</p>
         </div>
       </div>
 
       {/* Chart */}
-      <div className="border border-neutral-200 rounded-lg p-6">
-        <h2 className="text-sm font-medium text-neutral-500 mb-4">Demand Forecast (Negative Binomial)</h2>
+      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6 bg-white dark:bg-neutral-800">
+        <h2 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-4">Demand Forecast (Negative Binomial)</h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={demoForecast}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
               <XAxis dataKey="date" stroke="#737373" fontSize={12} />
               <YAxis stroke="#737373" fontSize={12} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e5e5',
+                  backgroundColor: 'rgba(0,0,0,0.8)',
+                  border: 'none',
                   borderRadius: '8px',
-                  fontSize: '12px'
+                  fontSize: '12px',
+                  color: 'white'
                 }}
               />
-              <Area type="monotone" dataKey="upper" stroke="none" fill="#e5e5e5" />
-              <Area type="monotone" dataKey="lower" stroke="none" fill="white" />
-              <Line type="monotone" dataKey="forecast" stroke="#000" strokeWidth={2} dot={{ fill: '#000', r: 3 }} />
-              <Line type="monotone" dataKey="actual" stroke="#737373" strokeWidth={2} strokeDasharray="4 4" dot={{ fill: '#737373', r: 3 }} />
+              <Area type="monotone" dataKey="upper" stroke="none" fill="#404040" fillOpacity={0.3} />
+              <Area type="monotone" dataKey="lower" stroke="none" fill="#1a1a1a" fillOpacity={1} />
+              <Line type="monotone" dataKey="forecast" stroke="#fff" strokeWidth={2} dot={{ fill: '#fff', r: 3 }} />
+              <Line type="monotone" dataKey="actual" stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" dot={{ fill: '#22c55e', r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
         <div className="flex items-center justify-center space-x-6 mt-4 text-xs text-neutral-500">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-0.5 bg-black" />
+            <div className="w-3 h-0.5 bg-black dark:bg-white" />
             <span>Forecast</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-0.5 bg-neutral-400" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #737373, #737373 2px, transparent 2px, transparent 4px)' }} />
+            <div className="w-3 h-0.5 bg-green-500" />
             <span>Actual</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-neutral-200 rounded-sm" />
+            <div className="w-3 h-3 bg-neutral-300 dark:bg-neutral-600 rounded-sm" />
             <span>90% CI</span>
           </div>
         </div>
@@ -155,23 +156,23 @@ export default function IngredientDetail() {
       {/* Agents */}
       <div className="grid grid-cols-3 gap-4">
         {/* Risk Agent */}
-        <div className="border border-neutral-200 rounded-lg p-5">
+        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-5 bg-white dark:bg-neutral-800">
           <div className="flex items-center space-x-2 mb-4">
-            <div className="w-6 h-6 bg-black rounded text-white flex items-center justify-center text-xs font-mono">1</div>
-            <h3 className="font-medium">Risk Agent</h3>
+            <div className="w-6 h-6 bg-black dark:bg-white rounded text-white dark:text-black flex items-center justify-center text-xs font-mono">1</div>
+            <h3 className="font-medium text-black dark:text-white">Risk Agent</h3>
           </div>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-neutral-500">Level</span>
+              <span className="text-neutral-500 dark:text-neutral-400">Level</span>
               <span className={`font-medium ${riskStyles[demoDecision.risk.level]}`}>{demoDecision.risk.level}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-neutral-500">Probability</span>
-              <span className="font-mono">{(demoDecision.risk.probability * 100).toFixed(0)}%</span>
+              <span className="text-neutral-500 dark:text-neutral-400">Probability</span>
+              <span className="font-mono text-black dark:text-white">{(demoDecision.risk.probability * 100).toFixed(0)}%</span>
             </div>
-            <div className="pt-2 border-t border-neutral-100">
-              <p className="text-neutral-500 mb-1">Factors</p>
-              <ul className="text-xs text-neutral-600 space-y-1">
+            <div className="pt-2 border-t border-neutral-100 dark:border-neutral-700">
+              <p className="text-neutral-500 dark:text-neutral-400 mb-1">Factors</p>
+              <ul className="text-xs text-neutral-600 dark:text-neutral-300 space-y-1">
                 {demoDecision.risk.factors.map((f, i) => (
                   <li key={i}>• {f}</li>
                 ))}
@@ -181,63 +182,63 @@ export default function IngredientDetail() {
         </div>
 
         {/* Reorder Agent */}
-        <div className="border border-neutral-200 rounded-lg p-5">
+        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-5 bg-white dark:bg-neutral-800">
           <div className="flex items-center space-x-2 mb-4">
-            <div className="w-6 h-6 bg-black rounded text-white flex items-center justify-center text-xs font-mono">2</div>
-            <h3 className="font-medium">Reorder Agent</h3>
+            <div className="w-6 h-6 bg-black dark:bg-white rounded text-white dark:text-black flex items-center justify-center text-xs font-mono">2</div>
+            <h3 className="font-medium text-black dark:text-white">Reorder Agent</h3>
           </div>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-neutral-500">Action</span>
-              <span className="font-medium text-orange-600">ORDER NOW</span>
+              <span className="text-neutral-500 dark:text-neutral-400">Action</span>
+              <span className="font-medium text-orange-600 dark:text-orange-400">ORDER NOW</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-neutral-500">Quantity</span>
-              <span className="font-mono">{demoDecision.reorder.quantity} {demoIngredient.unit}</span>
+              <span className="text-neutral-500 dark:text-neutral-400">Quantity</span>
+              <span className="font-mono text-black dark:text-white">{demoDecision.reorder.quantity} {demoIngredient.unit}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-neutral-500">By Date</span>
-              <span className="font-mono">{demoDecision.reorder.date}</span>
+              <span className="text-neutral-500 dark:text-neutral-400">By Date</span>
+              <span className="font-mono text-black dark:text-white">{demoDecision.reorder.date}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-neutral-500">Confidence</span>
-              <span className="font-mono">{(demoDecision.reorder.confidence * 100).toFixed(0)}%</span>
+              <span className="text-neutral-500 dark:text-neutral-400">Confidence</span>
+              <span className="font-mono text-black dark:text-white">{(demoDecision.reorder.confidence * 100).toFixed(0)}%</span>
             </div>
           </div>
         </div>
 
         {/* Strategy Agent */}
-        <div className="border border-neutral-200 rounded-lg p-5">
+        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-5 bg-white dark:bg-neutral-800">
           <div className="flex items-center space-x-2 mb-4">
-            <div className="w-6 h-6 bg-black rounded text-white flex items-center justify-center text-xs font-mono">3</div>
-            <h3 className="font-medium">Strategy Agent</h3>
+            <div className="w-6 h-6 bg-black dark:bg-white rounded text-white dark:text-black flex items-center justify-center text-xs font-mono">3</div>
+            <h3 className="font-medium text-black dark:text-white">Strategy Agent</h3>
           </div>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-neutral-500">Strategy</span>
-              <span className="font-medium capitalize">{demoDecision.strategy.type.replace('_', ' ')}</span>
+              <span className="text-neutral-500 dark:text-neutral-400">Strategy</span>
+              <span className="font-medium capitalize text-black dark:text-white">{demoDecision.strategy.type.replace('_', ' ')}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-neutral-500">Lead Time</span>
-              <span className="font-mono">{demoDecision.strategy.adjusted_lead_time} days</span>
+              <span className="text-neutral-500 dark:text-neutral-400">Lead Time</span>
+              <span className="font-mono text-black dark:text-white">{demoDecision.strategy.adjusted_lead_time} days</span>
             </div>
-            <div className="pt-2 border-t border-neutral-100">
-              <p className="text-xs text-neutral-600">{demoDecision.strategy.description}</p>
+            <div className="pt-2 border-t border-neutral-100 dark:border-neutral-700">
+              <p className="text-xs text-neutral-600 dark:text-neutral-300">{demoDecision.strategy.description}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Gemini Explanation */}
-      <div className="border border-neutral-200 rounded-lg p-6 bg-neutral-50">
+      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6 bg-neutral-50 dark:bg-neutral-800/50">
         <div className="flex items-center space-x-2 mb-4">
-          <div className="w-6 h-6 bg-black rounded text-white flex items-center justify-center text-xs">G</div>
-          <h3 className="font-medium">Gemini Explanation</h3>
-          <Link to="/chat" className="ml-auto text-sm text-neutral-500 hover:text-black">
+          <div className="w-6 h-6 bg-black dark:bg-white rounded text-white dark:text-black flex items-center justify-center text-xs">G</div>
+          <h3 className="font-medium text-black dark:text-white">Gemini Explanation</h3>
+          <Link to="/chat" className="ml-auto text-sm text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white">
             Ask follow-up →
           </Link>
         </div>
-        <p className="text-sm text-neutral-700 leading-relaxed whitespace-pre-line">
+        <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-line">
           {demoDecision.explanation}
         </p>
       </div>

@@ -10,6 +10,8 @@ from .agents import router as agents_router
 from .gemini import router as gemini_router
 from .dishes import router as dishes_router
 from .events import router as events_router
+from .pos import router as pos_router
+from .payments import router as payments_router
 
 __all__ = [
     'auth_router',
@@ -22,4 +24,6 @@ __all__ = [
     'gemini_router',
     'dishes_router',
     'events_router',
+    'pos_router',
+    'payments_router',
 ]

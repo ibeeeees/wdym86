@@ -7,6 +7,7 @@ import IngredientDetail from './pages/IngredientDetail'
 import GeminiChat from './pages/GeminiChat'
 import Dishes from './pages/Dishes'
 import Suppliers from './pages/Suppliers'
+import POS from './pages/POS'
 import Login from './pages/Login'
 
 function App() {
@@ -46,6 +47,7 @@ function App() {
           <Route path="/ingredient/:id" element={<IngredientDetail />} />
           <Route path="/dishes" element={<Dishes />} />
           <Route path="/suppliers" element={<Suppliers />} />
+          <Route path="/pos" element={<POS />} />
           <Route path="/chat" element={<GeminiChat />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
 interface LayoutProps {
@@ -35,6 +35,7 @@ export default function Layout({ children, onLogout }: LayoutProps) {
         const handleNextKey = (e2: KeyboardEvent) => {
           switch (e2.key) {
             case 'd': navigate('/'); break
+            case 'p': navigate('/pos'); break
             case 'i': navigate('/dishes'); break
             case 's': navigate('/suppliers'); break
             case 'c': navigate('/chat'); break
@@ -57,6 +58,7 @@ export default function Layout({ children, onLogout }: LayoutProps) {
 
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/pos', icon: ShoppingCart, label: 'POS' },
     { path: '/dishes', icon: UtensilsCrossed, label: 'Dishes' },
     { path: '/suppliers', icon: Truck, label: 'Suppliers' },
     { path: '/chat', icon: MessageSquare, label: 'AI Advisor' },

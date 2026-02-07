@@ -5,7 +5,7 @@ SQLAlchemy async setup with SQLite (easily swappable to PostgreSQL).
 """
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy import Column, String, Float, Integer, Boolean, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.sql import func
 from typing import AsyncGenerator
@@ -184,6 +184,106 @@ class DishSales(Base):
     date = Column(DateTime, nullable=False)
     quantity_sold = Column(Integer, nullable=False)
     revenue = Column(Float)
+
+
+# ==========================================
+# POS System Models
+# ==========================================
+
+class Order(Base):
+    """POS Order"""
+    __tablename__ = "orders"
+
+    order_id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    table_number = Column(Integer)
+    customer_name = Column(String)
+    status = Column(String, nullable=False, default="pending")  # pending, preparing, ready, completed, cancelled
+    order_type = Column(String, nullable=False, default="dine_in")  # dine_in, takeout, delivery
+    subtotal = Column(Float, default=0.0)
+    tax = Column(Float, default=0.0)
+    tip = Column(Float, default=0.0)
+    total = Column(Float, default=0.0)
+    payment_status = Column(String, default="unpaid")  # unpaid, paid, refunded, partial
+    payment_method = Column(String)  # cash, card, mobile
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+    # Relationships
+    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    table = relationship("Table", back_populates="current_order", foreign_keys="Table.current_order_id", uselist=False)
+    transactions = relationship("PaymentTransaction", back_populates="order", cascade="all, delete-orphan")
+    restaurant = relationship("Restaurant", backref="orders")
+
+
+class OrderItem(Base):
+    """Individual item in an order"""
+    __tablename__ = "order_items"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    order_id = Column(String, ForeignKey("orders.order_id"), nullable=False)
+    ingredient_id = Column(String, ForeignKey("ingredients.id"))  # Links to menu item/ingredient
+    name = Column(String, nullable=False)
+    quantity = Column(Integer, nullable=False, default=1)
+    unit_price = Column(Float, nullable=False)
+    modifiers = Column(JSON, default=list)  # e.g., [{"name": "extra cheese", "price": 1.50}]
+    special_instructions = Column(Text)
+    subtotal = Column(Float, nullable=False)
+
+    # Relationships
+    order = relationship("Order", back_populates="items")
+    ingredient = relationship("Ingredient", backref="order_items")
+
+
+class Table(Base):
+    """Restaurant table"""
+    __tablename__ = "tables"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    table_number = Column(Integer, nullable=False)
+    capacity = Column(Integer, default=4)
+    status = Column(String, default="available")  # available, occupied, reserved, cleaning
+    current_order_id = Column(String, ForeignKey("orders.order_id"))
+
+    # Relationships
+    current_order = relationship("Order", back_populates="table", foreign_keys=[current_order_id])
+    restaurant = relationship("Restaurant", backref="tables")
+
+
+class Customer(Base):
+    """Customer for loyalty and saved payments"""
+    __tablename__ = "customers"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    name = Column(String, nullable=False)
+    email = Column(String, index=True)
+    phone = Column(String, index=True)
+    loyalty_points = Column(Integer, default=0)
+    payment_tokens = Column(JSON, default=list)  # Saved payment methods (tokenized)
+    created_at = Column(DateTime, server_default=func.now())
+
+    # Relationships
+    restaurant = relationship("Restaurant", backref="customers")
+
+
+class PaymentTransaction(Base):
+    """Payment transaction record"""
+    __tablename__ = "payment_transactions"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    order_id = Column(String, ForeignKey("orders.order_id"), nullable=False)
+    payment_provider = Column(String, nullable=False)  # stripe, square, cash
+    transaction_id = Column(String)  # External transaction ID from provider
+    amount = Column(Float, nullable=False)
+    status = Column(String, nullable=False, default="pending")  # pending, completed, failed, refunded
+    payment_method_type = Column(String)  # credit_card, debit_card, cash, apple_pay, etc.
+    transaction_data = Column(JSON, default=dict)  # Additional provider-specific data
+    created_at = Column(DateTime, server_default=func.now())
+
+    # Relationships
+    order = relationship("Order", back_populates="transactions")
 
 
 # ==========================================

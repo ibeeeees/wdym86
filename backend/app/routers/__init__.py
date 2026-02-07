@@ -22,6 +22,7 @@ from .inventory_items import router as inventory_items_router
 from .staff import router as staff_router
 from .timeline import router as timeline_router
 from .pos_integration import router as pos_integration_router
+from .payroll import router as payroll_router
 
 __all__ = [
     'auth_router',
@@ -46,4 +47,5 @@ __all__ = [
     'staff_router',
     'timeline_router',
     'pos_integration_router',
+    'payroll_router',
 ]

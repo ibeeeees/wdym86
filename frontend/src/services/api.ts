@@ -610,4 +610,75 @@ export const removePosIntegration = async (restaurantId: string, integrationId: 
 }
 
 
+// ==========================================
+// Payroll
+// ==========================================
+
+export const getPayrollEmployees = async (restaurantId: string, department?: string) => {
+  const params: Record<string, unknown> = {}
+  if (department) params.department = department
+  const response = await api.get(`/payroll/${restaurantId}/employees`, { params })
+  return response.data
+}
+
+export const createPayrollEmployee = async (restaurantId: string, data: Record<string, unknown>) => {
+  const response = await api.post(`/payroll/${restaurantId}/employees`, data)
+  return response.data
+}
+
+export const getPayRuns = async (restaurantId: string) => {
+  const response = await api.get(`/payroll/${restaurantId}/pay-runs`)
+  return response.data
+}
+
+export const runPayroll = async (restaurantId: string, data: { period_start: string; period_end: string }) => {
+  const response = await api.post(`/payroll/${restaurantId}/pay-runs`, data)
+  return response.data
+}
+
+export const getExpenses = async (restaurantId: string, category?: string) => {
+  const params: Record<string, unknown> = {}
+  if (category) params.category = category
+  const response = await api.get(`/payroll/${restaurantId}/expenses`, { params })
+  return response.data
+}
+
+export const createExpense = async (restaurantId: string, data: Record<string, unknown>) => {
+  const response = await api.post(`/payroll/${restaurantId}/expenses`, data)
+  return response.data
+}
+
+export const importTipsFromS3 = async (restaurantId: string) => {
+  const response = await api.post(`/payroll/${restaurantId}/tips/import-s3`)
+  return response.data
+}
+
+export const exportPaychecksToS3 = async (restaurantId: string, payRunId?: string) => {
+  const response = await api.post(`/payroll/${restaurantId}/paychecks/export-s3`, null, {
+    params: payRunId ? { pay_run_id: payRunId } : {}
+  })
+  return response.data
+}
+
+export const importExpensesFromS3 = async (restaurantId: string) => {
+  const response = await api.post(`/payroll/${restaurantId}/expenses/import-s3`)
+  return response.data
+}
+
+export const exportExpensesToS3 = async (restaurantId: string) => {
+  const response = await api.post(`/payroll/${restaurantId}/expenses/export-s3`)
+  return response.data
+}
+
+export const importSalesFromS3 = async (restaurantId: string) => {
+  const response = await api.post(`/payroll/${restaurantId}/sales/import-s3`)
+  return response.data
+}
+
+export const exportSalesToS3 = async (restaurantId: string) => {
+  const response = await api.post(`/payroll/${restaurantId}/sales/export-s3`)
+  return response.data
+}
+
+
 export default api

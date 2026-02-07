@@ -541,6 +541,71 @@ class POSIntegration(Base):
 
 
 # ==========================================
+# Payroll System
+# ==========================================
+
+class PayrollEmployee(Base):
+    """Employee with compensation data for payroll"""
+    __tablename__ = "payroll_employees"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    staff_member_id = Column(String, ForeignKey("staff_members.id"))
+    name = Column(String, nullable=False)
+    role = Column(String, nullable=False)  # restaurant_admin, manager, server, bartender, line_cook, prep_cook, dishwasher, host
+    department = Column(String, nullable=False)  # Management, Front of House, Back of House
+    employment_type = Column(String, nullable=False, default="full_time")  # full_time, part_time
+    compensation_type = Column(String, nullable=False, default="hourly")  # hourly, salary
+    hourly_rate = Column(Float)
+    annual_salary = Column(Float)
+    status = Column(String, default="active")  # active, on_leave, terminated
+    start_date = Column(DateTime)
+    created_at = Column(DateTime, server_default=func.now())
+
+    restaurant = relationship("Restaurant", backref="payroll_employees")
+    staff_member = relationship("StaffMember", backref="payroll_info")
+
+
+class PayRun(Base):
+    """Payroll run record"""
+    __tablename__ = "pay_runs"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    period_start = Column(DateTime, nullable=False)
+    period_end = Column(DateTime, nullable=False)
+    run_date = Column(DateTime, nullable=False)
+    total_gross = Column(Float, default=0)
+    total_net = Column(Float, default=0)
+    total_taxes = Column(Float, default=0)
+    total_tips = Column(Float, default=0)
+    employee_count = Column(Integer, default=0)
+    status = Column(String, default="pending")  # pending, processing, completed, failed
+    s3_export_key = Column(String)  # S3 key for exported paycheck CSV
+    created_at = Column(DateTime, server_default=func.now())
+
+    restaurant = relationship("Restaurant", backref="pay_runs")
+
+
+class ExpenseRecord(Base):
+    """Business expense tracking"""
+    __tablename__ = "expenses"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    date = Column(DateTime, nullable=False)
+    category = Column(String, nullable=False)  # food_beverage, labor, rent_utilities, equipment, marketing, insurance, supplies, other
+    description = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    vendor = Column(String)
+    status = Column(String, default="pending")  # approved, pending, rejected
+    receipt_s3_key = Column(String)  # S3 key for receipt image/PDF
+    created_at = Column(DateTime, server_default=func.now())
+
+    restaurant = relationship("Restaurant", backref="expenses")
+
+
+# ==========================================
 # Database Lifecycle
 # ==========================================
 

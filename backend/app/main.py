@@ -33,6 +33,7 @@ from .routers import (
     staff_router,
     timeline_router,
     pos_integration_router,
+    payroll_router,
 )
 
 
@@ -98,6 +99,7 @@ app.include_router(inventory_items_router, tags=["Full Inventory"])
 app.include_router(staff_router, tags=["Staff & Roles"])
 app.include_router(timeline_router, tags=["Timeline Analytics"])
 app.include_router(pos_integration_router, tags=["POS Integrations"])
+app.include_router(payroll_router, tags=["Payroll"])
 
 
 @app.get("/")

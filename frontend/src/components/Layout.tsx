@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package, Wallet, Monitor, Settings, Key, Users, Shield, ChevronDown, Search, BarChart3, Grid3X3, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package, Wallet, Monitor, Settings, Key, Users, Shield, ChevronDown, Search, BarChart3, Grid3X3, ClipboardList, Banknote } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -129,6 +129,7 @@ export default function Layout({ children }: LayoutProps) {
             { path: '/solana-pay', icon: Wallet, label: 'Crypto Pay' },
             { path: '/chat', icon: MessageSquare, label: 'AI Advisor' },
             { path: '/team', icon: Users, label: 'Team' },
+            { path: '/payroll', icon: Banknote, label: 'Payroll' },
             { path: '/floor-plan', icon: Grid3X3, label: 'Floor Plan' },
             { path: '/timeline', icon: BarChart3, label: 'Analytics' },
             { path: '/inventory-tracking', icon: ClipboardList, label: 'Inventory' },
@@ -166,6 +167,7 @@ export default function Layout({ children }: LayoutProps) {
           { path: '/restaurant/keys', icon: Key, label: 'Keys' },
           { path: '/restaurant/users', icon: Users, label: 'Users' },
           { path: '/team', icon: Users, label: 'Team' },
+          { path: '/payroll', icon: Banknote, label: 'Payroll' },
         ],
       },
     ]
@@ -187,6 +189,7 @@ export default function Layout({ children }: LayoutProps) {
         { path: '/solana-pay', icon: Wallet, label: 'Crypto Pay' },
         { path: '/chat', icon: MessageSquare, label: 'AI Advisor' },
         { path: '/team', icon: Users, label: 'Team' },
+        { path: '/payroll', icon: Banknote, label: 'Payroll' },
         { path: '/floor-plan', icon: Grid3X3, label: 'Floor Plan' },
         { path: '/timeline', icon: BarChart3, label: 'Analytics' },
         { path: '/inventory-tracking', icon: ClipboardList, label: 'Inventory' },
@@ -206,6 +209,7 @@ export default function Layout({ children }: LayoutProps) {
       { path: '/timeline', icon: BarChart3, label: 'Analytics' },
       { path: '/inventory-tracking', icon: ClipboardList, label: 'Inventory' },
       { path: '/team', icon: Users, label: 'Team' },
+      { path: '/payroll', icon: Banknote, label: 'Payroll' },
       { path: '/restaurant/settings', icon: Settings, label: 'Settings' },
     ]
   }

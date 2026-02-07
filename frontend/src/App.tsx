@@ -23,6 +23,7 @@ import TeamManagement from './pages/TeamManagement'
 import FloorPlanEditor from './pages/FloorPlanEditor'
 import TimelineAnalytics from './pages/TimelineAnalytics'
 import InventoryTracking from './pages/InventoryTracking'
+import Payroll from './pages/Payroll'
 
 function AppRoutes() {
   const { isAuthenticated, role, onboardingCompleted } = useAuth()
@@ -72,6 +73,7 @@ function AppRoutes() {
           <Route path="/floor-plan" element={<FloorPlanEditor />} />
           <Route path="/timeline" element={<TimelineAnalytics />} />
           <Route path="/inventory-tracking" element={<InventoryTracking />} />
+          <Route path="/payroll" element={<Payroll />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
@@ -110,6 +112,7 @@ function AppRoutes() {
           <Route path="/floor-plan" element={<FloorPlanEditor />} />
           <Route path="/timeline" element={<TimelineAnalytics />} />
           <Route path="/inventory-tracking" element={<InventoryTracking />} />
+          <Route path="/payroll" element={<Payroll />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
@@ -139,6 +142,7 @@ function AppRoutes() {
         <Route path="/floor-plan" element={<FloorPlanEditor />} />
         <Route path="/timeline" element={<TimelineAnalytics />} />
         <Route path="/inventory-tracking" element={<InventoryTracking />} />
+        <Route path="/payroll" element={<Payroll />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

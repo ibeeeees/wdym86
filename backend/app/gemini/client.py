@@ -211,16 +211,8 @@ class GeminiClient:
         try:
             response = chat.send_message(full_message)
             return response.text
-        except Exception:
-            # Fall back to mock client on API error (rate limit, network, etc.)
-            fallback = MockGeminiClient()
-            # Pass the original message (not the context-formatted one) so keyword matching works
-            return fallback.chat_sync(
-                message=message,
-                session_id=session_id,
-                context=context,
-                system_prompt=system_prompt
-            )
+        except Exception as e:
+            return f"I'm having trouble connecting to Gemini right now. Please try again in a moment. ({str(e)})"
 
     def clear_session(self, session_id: str):
         """Clear a chat session"""

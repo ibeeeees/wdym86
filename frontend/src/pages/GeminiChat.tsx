@@ -3,6 +3,7 @@ import { Send, RotateCcw, Wifi, WifiOff, AlertTriangle, TrendingDown, Sparkles, 
 import { chatWithAdvisor, checkApiHealth, getIngredients } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 interface Message {
   id: string
@@ -19,362 +20,75 @@ const suggestedQuestions = [
   { text: "Tell me about Solana Pay", icon: Lightbulb, color: 'from-amber-400 to-yellow-500' },
 ]
 
-// Smart fallback response generator when API is unavailable
-const generateSmartResponse = (question: string, restName: string, ingredientKeywords: string[]): string => {
-  const q = question.toLowerCase()
+// Build restaurant context from cuisine template for Gemini
+function buildRestaurantContext(template: ReturnType<typeof getCuisineTemplate>): string {
+  const topIngredients = template.ingredients.slice(0, 15).map(i =>
+    `- ${i.name} (${i.category}): ${i.current_inventory} ${i.unit}, risk=${i.risk_level}, days_of_cover=${i.days_of_cover}`
+  ).join('\n')
 
-  // Risk and stockout questions
-  if (q.includes('risk') || q.includes('urgent') || q.includes('critical') || q.includes('stockout')) {
-    const ingredient = extractIngredient(question, ingredientKeywords) || 'this ingredient'
-    return `Based on my analysis of ${ingredient}:
+  const topDishes = template.dishes.slice(0, 8).map(d =>
+    `- ${d.name} ($${d.price}): ${d.orders_today} orders today, ${d.orders_7d} this week`
+  ).join('\n')
 
-**Risk Assessment:**
-• The stockout probability has crossed our threshold based on current inventory levels
-• Lead time considerations suggest ordering within the next 24-48 hours
-• External factors (weather, traffic) may impact delivery timing
+  const supplierInfo = template.suppliers.map(s =>
+    `- ${s.name}: ${s.lead_time_days}d lead time, ${(s.reliability_score * 100).toFixed(0)}% reliable, $${s.shipping_cost} shipping`
+  ).join('\n')
 
-**Contributing Factors:**
-1. Current inventory is below the safety stock threshold
-2. Demand forecast shows elevated usage in the coming days
-3. Supplier lead time of 2-3 days means acting now is prudent
+  return `RESTAURANT: ${template.restaurantName} (${template.label} cuisine, ${template.country})
 
-**Recommendation:** The Reorder Agent suggests placing an order today to maintain adequate stock levels through the weekend.
+CURRENT INVENTORY (top items):
+${topIngredients}
 
-Would you like me to analyze specific quantities or timing?`
-  }
+MENU HIGHLIGHTS:
+${topDishes}
 
-  // Supplier and delay questions
-  if (q.includes('supplier') || q.includes('delay') || q.includes('late') || q.includes('delivery')) {
-    return `Analyzing supplier impact...
+SUPPLIERS:
+${supplierInfo}
 
-**Scenario Analysis:**
-If suppliers are delayed, here's what happens:
-• Days of cover decreases by the delay duration
-• Stockout probability increases significantly
-• The Strategy Agent activates backup protocols
-
-**Mitigation Strategies:**
-1. **Multi-source procurement** — Split orders between primary and backup suppliers
-2. **Safety stock increase** — Temporarily raise inventory targets
-3. **Expedited shipping** — Use faster delivery options for critical items
-
-**Current Backup Options:**
-• QuickSupply: 2-day lead time (vs. 3-day standard)
-• FreshDirect: Next-day available for premium items
-
-The Strategy Agent continuously monitors supplier reliability scores to anticipate issues.`
-  }
-
-  // Ordering questions
-  if (q.includes('order') || q.includes('reorder') || q.includes('buy') || q.includes('quantity')) {
-    const ingredient = extractIngredient(question, ingredientKeywords) || 'the ingredient'
-    return `Let me check the optimal order for ${ingredient}...
-
-**Reorder Analysis:**
-• The Reorder Agent calculates quantities using the newsvendor model
-• We target a 95% service level (5% stockout tolerance)
-• Order quantity = Expected demand + Safety stock - Current inventory
-
-**Current Recommendation:**
-• Order Quantity: Calculated based on 7-day forecast horizon
-• Order Date: Within 24 hours for critical items
-• Supplier: Primary supplier unless reliability concerns exist
-
-**Cost Considerations:**
-• Holding cost vs. stockout cost tradeoff
-• Minimum order quantities factored in
-• Bulk discounts applied when beneficial
-
-The system automatically generates reorder suggestions each morning.`
-  }
-
-  // Forecast model questions
-  if (q.includes('forecast') || q.includes('model') || q.includes('predict') || q.includes('tcn') || q.includes('ml') || q.includes('machine learning')) {
-    return `Our forecasting model is built **entirely from scratch** using NumPy (no PyTorch/TensorFlow).
-
-**Architecture: Temporal Convolutional Network (TCN)**
-• Processes 28 days of historical data
-• Uses dilated causal convolutions (rates: 1, 2, 4, 8)
-• Captures both short-term patterns and weekly seasonality
-
-**Output: Negative Binomial Distribution**
-Instead of a single number, we output:
-• μ (mu): Expected demand
-• k: Dispersion parameter
-• Variance = μ + μ²/k
-
-This properly models the **overdispersion** common in restaurant demand.
-
-**Input Features (14 dimensions):**
-• Historical usage (normalized)
-• Day of week one-hot encoding
-• Week of year (sin/cos for continuity)
-• Event/promotion flags
-• Weather severity index
-• Traffic congestion index
-
-**Training:** Manual gradient computation with custom Adam optimizer implementation.
-
-This ground-up approach demonstrates deep understanding of ML fundamentals.`
-  }
-
-  // Dish and recipe questions
-  if (q.includes('dish') || q.includes('recipe') || q.includes('menu') || q.includes('ingredient')) {
-    return `Great question about how dishes affect inventory planning!
-
-**Recipe-Based Demand Forecasting:**
-1. Each dish has defined ingredient quantities (e.g., Salmon Bowl uses 0.4 lbs salmon)
-2. We forecast dish sales using historical POS data
-3. Ingredient demand = Σ(predicted dish sales × recipe quantity)
-
-**Example Calculation:**
-• Predicted Salmon Bowl sales tomorrow: 50 orders
-• Recipe: 0.4 lbs salmon per bowl
-• Salmon demand: 50 × 0.4 = 20 lbs
-
-**Why This Approach Works Better:**
-• Dish sales patterns are more stable than raw ingredients
-• Promotions and events affect dishes, not ingredients directly
-• Menu changes are automatically reflected in forecasts
-• Seasonal menu items handled correctly
-
-You can manage recipes in the **Dishes** tab to keep forecasts accurate.`
-  }
-
-  // Agent questions
-  if (q.includes('agent') || q.includes('ai') || q.includes('autonomous') || q.includes('decision')) {
-    return `Our system uses **three autonomous AI agents** that work together:
-
-**1. Inventory Risk Agent**
-• Monitors stockout probability for all ingredients
-• Considers lead times, weather, and traffic disruptions
-• Classifies risk as SAFE, MONITOR, URGENT, or CRITICAL
-
-**2. Reorder Optimization Agent**
-• Calculates optimal order quantities and timing
-• Balances holding costs vs. stockout costs
-• Respects supplier MOQs and budget constraints
-
-**3. Supplier Strategy Agent**
-• Evaluates supplier reliability continuously
-• Suggests backup suppliers when needed
-• Recommends multi-sourcing for critical items
-
-**How They Work Together:**
-Risk Agent → Identifies problems
-Reorder Agent → Proposes solutions
-Strategy Agent → Optimizes execution
-
-I (Gemini) explain their decisions in natural language.`
-  }
-
-  // Weather and external factors
-  if (q.includes('weather') || q.includes('traffic') || q.includes('disruption') || q.includes('external')) {
-    return `**External Factor Monitoring:**
-
-Our system continuously monitors disruptions that affect inventory:
-
-**Weather Impact:**
-• Severe weather can delay supplier deliveries
-• Weather also affects customer demand (storms → more delivery orders)
-• We factor weather forecasts into demand predictions
-
-**Traffic Conditions:**
-• Rush hour patterns affect delivery windows
-• Major events (sports, concerts) create congestion
-• Real-time traffic data adjusts lead time estimates
-
-**How It Affects Decisions:**
-• Risk Agent raises stockout probability during disruptions
-• Reorder Agent suggests ordering earlier as buffer
-• Strategy Agent may recommend expedited shipping
-
-**Data Sources:**
-• Weather: National Weather Service API
-• Traffic: Real-time congestion indices
-• Events: Local event calendars
-
-This "disruption-aware" forecasting is a key differentiator.`
-  }
-
-  // Weekend and timing questions
-  if (q.includes('weekend') || q.includes('saturday') || q.includes('sunday') || q.includes('friday') || q.includes('busy')) {
-    return `**Weekend Demand Analysis:**
-
-Weekends typically show **25-40% higher demand** for most ingredients.
-
-**Pattern Breakdown:**
-• Friday: +15-20% (date nights, end of week celebrations)
-• Saturday: +30-40% (peak day for most restaurants)
-• Sunday: +20-25% (brunch rush, family dinners)
-
-**What This Means for Inventory:**
-1. Orders should arrive by Thursday for weekend coverage
-2. Safety stock should be higher going into Friday
-3. Fresh items need extra attention due to shelf life
-
-**Current Recommendations:**
-The system automatically adjusts forecasts for day-of-week patterns. For this weekend, ensure high-demand items are well-stocked by Thursday EOD.
-
-Check the Dashboard for specific ingredient recommendations.`
-  }
-
-  // POS and orders questions
-  if (q.includes('pos') || q.includes('point of sale') || q.includes('orders') || q.includes('table') || q.includes('checkout')) {
-    return `**POS System Overview:**
-
-Your ${restName} POS handles all order types:
-
-**Order Types:**
-• **Dine-in**: Table assignment, course timing, split checks
-• **Takeout**: Quick checkout, scheduled pickups
-• **Delivery**: Integrated with 5 platforms (DoorDash, Uber Eats, etc.)
-
-**Key Features:**
-1. Real-time order tracking from kitchen to table
-2. Automatic inventory deduction when dishes are sold
-3. Multiple payment methods including Solana Pay
-4. Table management with status indicators
-
-**Today's Quick Stats:**
-• Orders sync automatically to the dashboard
-• Each sale updates ingredient forecasts
-• Sales patterns feed into demand prediction
-
-Open the **POS** tab to view current orders and process payments.`
-  }
-
-  // Delivery platform questions
-  if (q.includes('delivery') || q.includes('doordash') || q.includes('uber eats') || q.includes('grubhub') || q.includes('postmates') || q.includes('seamless')) {
-    return `**Delivery Platform Integration:**
-
-${restName} is connected to all major platforms:
-
-**Active Platforms:**
-• 🚗 DoorDash - Most popular, best for lunch
-• 🚙 Uber Eats - Strong dinner performance
-• 🍔 Grubhub - Good corporate orders
-• 📦 Postmates - Quick local delivery
-• 🍽️ Seamless - NYC/urban focus
-
-**How It Works:**
-1. Orders sync automatically to your POS
-2. Menu and pricing managed centrally
-3. Delivery status tracked in real-time
-4. Commission reports generated weekly
-
-**Performance Insights:**
-• Track which platform drives most revenue
-• Monitor average order values
-• Identify peak delivery hours
-• Optimize menu for delivery packaging
-
-Check the **Delivery** tab to manage platform settings and view analytics.`
-  }
-
-  // Solana Pay and crypto questions
-  if (q.includes('solana') || q.includes('crypto') || q.includes('bitcoin') || q.includes('wallet') || q.includes('sol') || q.includes('blockchain')) {
-    return `**Solana Pay Integration:**
-
-Accept cryptocurrency payments directly at ${restName}!
-
-**How It Works:**
-1. Generate a QR code for the order amount
-2. Customer scans with their Solana wallet
-3. Payment confirms in ~400ms (sub-second!)
-4. Automatic USD conversion tracking
-
-**Benefits:**
-• **Speed**: Faster than card processing
-• **Fees**: Lower than 2.9% card fees
-• **Global**: Accept payments from anywhere
-• **Modern**: Appeal to crypto-native customers
-
-**Current SOL Price:** Updated in real-time
-• Amount shown in both USD and SOL
-• Historical rate tracking
-
-**Getting Started:**
-1. Go to **Crypto Pay** tab
-2. Enter payment amount
-3. Show QR code to customer
-4. Confirm when payment received
-
-The system tracks all crypto transactions for accounting.`
-  }
-
-  // Subscription and pricing questions
-  if (q.includes('subscription') || q.includes('tier') || q.includes('pricing') || q.includes('plan') || q.includes('upgrade')) {
-    return `**WDYM86 Subscription Tiers:**
-
-**🆓 Free Tier**
-• 10 ingredients, 1 location
-• Basic forecasting
-• 30-day data retention
-
-**⚡ Starter - $49/month**
-• 50 ingredients, 3 team members
-• Gemini AI Chat
-• POS integration
-• 90-day data retention
-
-**👑 Pro - $149/month** *(Most Popular)*
-• 200 ingredients, 3 locations
-• Supplier Strategy Agent
-• Delivery integrations
-• API access, Custom reports
-• 1-year data retention
-
-**🏢 Enterprise - $399/month**
-• Unlimited everything
-• Dedicated account manager
-• Custom integrations
-• Unlimited data retention
-
-**Current Plan Benefits:**
-Check the **Pricing** tab to see feature comparison and upgrade options.`
-  }
-
-  // Default intelligent response
-  return `I can help with that question about "${question.slice(0, 50)}${question.length > 50 ? '...' : ''}".
-
-Based on the current inventory analysis:
-
-**System Status:**
-• The forecasting model is actively monitoring demand patterns across all ingredients
-• Risk agents are evaluating stockout probabilities in real-time
-• Reorder agents have calculated optimal quantities for items needing attention
-
-**Quick Actions I Can Help With:**
-1. Explain why specific ingredients show certain risk levels
-2. Analyze "what-if" scenarios (supplier delays, demand spikes)
-3. Break down how the ML model generates forecasts
-4. Recommend ordering strategies
-
-**Try asking about:**
-• A specific ingredient's risk status
-• How weather affects your inventory
-• The TCN forecasting model architecture
-• Optimal reorder timing and quantities
-
-What specific aspect would you like me to dive deeper into?`
+DAILY BRIEFING: ${template.dailyBriefing}`
 }
 
-// Helper to extract ingredient name from question
-const extractIngredient = (question: string, keywords: string[]): string | null => {
-  const q = question.toLowerCase()
-  for (const ing of keywords) {
-    if (q.includes(ing)) {
-      return ing.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-    }
-  }
-  return null
+// Build system prompt for frontend Gemini calls
+function buildFrontendSystemPrompt(restaurantName: string, cuisineType: string, restaurantContext: string): string {
+  return `You are an AI-powered assistant for ${restaurantName}, a ${cuisineType} restaurant using the WDYM86 platform.
+
+You help with ALL aspects of restaurant operations: inventory management, menu planning, supplier strategy, order analytics, staffing, delivery platforms, payments (including Solana Pay crypto), and business optimization.
+
+CURRENT RESTAURANT DATA:
+${restaurantContext}
+
+PLATFORM FEATURES you can discuss:
+- AI forecasting with NumPy TCN model (Negative Binomial output)
+- 3 autonomous AI agents: Inventory Risk Agent, Reorder Optimization Agent, Supplier Strategy Agent
+- POS system with dine-in, takeout, delivery
+- Floor plan editor
+- Delivery integrations (DoorDash, Uber Eats, Grubhub, Postmates, Seamless)
+- Solana Pay cryptocurrency payments
+- Timeline analytics (daily/weekly/monthly/seasonal)
+- Automated disruption monitoring (weather, supply chain, local events)
+- Subscription tiers: Free, Starter ($49), Pro ($149), Enterprise ($399)
+
+CRITICAL BEHAVIOR RULE:
+If the user asks about topics UNRELATED to restaurant operations, inventory, food service, business management, or the WDYM86 platform, politely redirect them. Example: "That's an interesting question! However, I'm specialized in helping you run ${restaurantName} efficiently. I can help with inventory, menu planning, suppliers, orders, analytics, staffing, and more. What would you like to know about your restaurant?"
+
+Always be:
+- Concise and practical
+- Specific with numbers from the restaurant data when relevant
+- Focused on actionable insights
+- Clear about what the AI agents handle vs what you explain`
 }
 
 interface InventoryContext {
   name: string
   risk_level: string
   days_of_cover: number
+}
+
+// Initialize Gemini client for frontend direct calls
+const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY
+let geminiClient: GoogleGenerativeAI | null = null
+if (geminiApiKey) {
+  geminiClient = new GoogleGenerativeAI(geminiApiKey)
 }
 
 export default function GeminiChat() {
@@ -395,6 +109,14 @@ export default function GeminiChat() {
   const [inventoryContext, setInventoryContext] = useState<InventoryContext[]>([])
   const [showContext, setShowContext] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const geminiChatRef = useRef<any>(null)
+
+  // Build context once from template
+  const restaurantContext = useMemo(() => buildRestaurantContext(template), [template])
+  const systemPrompt = useMemo(
+    () => buildFrontendSystemPrompt(restaurantName, template.label, restaurantContext),
+    [restaurantName, template.label, restaurantContext]
+  )
 
   useEffect(() => {
     const init = async () => {
@@ -436,6 +158,46 @@ export default function GeminiChat() {
     scrollToBottom()
   }, [messages])
 
+  // Call Gemini directly from frontend when backend is unavailable
+  const callGeminiFrontend = async (userMessage: string): Promise<string> => {
+    if (!geminiClient) {
+      return "I'm having trouble connecting to the AI service. Please check your configuration and try again."
+    }
+
+    try {
+      const model = geminiClient.getGenerativeModel({ model: 'gemini-2.0-flash' })
+
+      // Start or reuse chat session
+      if (!geminiChatRef.current) {
+        geminiChatRef.current = model.startChat({
+          history: [
+            {
+              role: 'user',
+              parts: [{ text: `[System Instructions]\n${systemPrompt}` }],
+            },
+            {
+              role: 'model',
+              parts: [{ text: `I understand. I'm the AI assistant for ${restaurantName}. I'll help with inventory, menu, suppliers, orders, and all restaurant operations using the actual data provided. I'll redirect off-topic questions back to restaurant management.` }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1024,
+            topP: 0.95,
+          },
+        })
+      }
+
+      const result = await geminiChatRef.current.sendMessage(userMessage)
+      const response = await result.response
+      return response.text()
+    } catch (error: any) {
+      // If chat session errored, reset it for next attempt
+      geminiChatRef.current = null
+      return `I'm having trouble connecting right now. Please try again in a moment. (${error?.message || 'Connection error'})`
+    }
+  }
+
   const handleSend = async (text: string = input) => {
     if (!text.trim()) return
 
@@ -450,7 +212,7 @@ export default function GeminiChat() {
     setLoading(true)
 
     try {
-      // Try to call the API first
+      // Try backend API first
       const result = await chatWithAdvisor(text, sessionId)
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -459,8 +221,8 @@ export default function GeminiChat() {
       }
       setMessages(prev => [...prev, assistantMessage])
     } catch {
-      // Fallback to smart demo responses with keyword matching
-      const response = generateSmartResponse(text, restaurantName, template.chatIngredientKeywords)
+      // Backend unavailable — call Gemini directly from frontend
+      const response = await callGeminiFrontend(text)
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -478,6 +240,12 @@ export default function GeminiChat() {
       e.preventDefault()
       handleSend()
     }
+  }
+
+  // Reset chat session when starting new chat
+  const handleNewChat = () => {
+    setMessages([messages[0]])
+    geminiChatRef.current = null
   }
 
   return (
@@ -506,7 +274,7 @@ export default function GeminiChat() {
           </div>
         </div>
         <button
-          onClick={() => setMessages([messages[0]])}
+          onClick={handleNewChat}
           className="flex items-center space-x-2 px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white border border-neutral-200 dark:border-neutral-700 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all hover:scale-105"
         >
           <RotateCcw className="w-4 h-4" />

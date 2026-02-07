@@ -9,6 +9,7 @@ import {
 import { checkApiHealth } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
+import PaymentModal from '../components/PaymentModal'
 
 interface MenuItem {
   id: string
@@ -136,7 +137,7 @@ const tipOptions = [
 type OrderTab = 'dine_in' | 'takeout' | 'delivery'
 
 export default function POS() {
-  const { cuisineType } = useAuth()
+  const { cuisineType, restaurantId } = useAuth()
   const template = getCuisineTemplate(cuisineType)
   const [menuItems] = useState<MenuItem[]>(template.menuItems)
   const [order, setOrder] = useState<Order>({
@@ -150,6 +151,7 @@ export default function POS() {
   const [activeTab, setActiveTab] = useState<OrderTab>('dine_in')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [showPayment, setShowPayment] = useState(false)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null)
   const [tipPercentage, setTipPercentage] = useState<number | null>(null)
   const [customTip, setCustomTip] = useState('')
@@ -157,6 +159,7 @@ export default function POS() {
   const [paymentComplete, setPaymentComplete] = useState(false)
   const [apiConnected, setApiConnected] = useState<boolean | null>(null)
   const [cashReceived, setCashReceived] = useState('')
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null)
 
   // Dine-in state
   const [tables, setTables] = useState<TableInfo[]>(demoTables.map((t, i) => i === 1 || i === 3 || i === 6 ? { ...t, server: template.serverNames[i === 1 ? 0 : i === 3 ? 1 : 2] } : t))
@@ -242,12 +245,22 @@ export default function POS() {
     setOrder(prev => calculateTotals(prev))
   }, [tipPercentage, customTip])
 
-  const handlePayment = async () => {
-    if (!selectedPayment) return
-    setProcessing(true)
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setProcessing(false)
+  const handleCheckout = () => {
+    if (order.items.length === 0) return
+    
+    // Generate order ID
+    const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    setCurrentOrderId(orderId)
+    
+    // Open payment modal
+    setShowPaymentModal(true)
+  }
+
+  const handlePaymentComplete = (transactionId: string, method: 'card' | 'cash') => {
+    console.log('Payment completed:', { transactionId, method })
+    
     setPaymentComplete(true)
+    setShowPaymentModal(false)
 
     // If dine-in, free the table
     if (activeTab === 'dine_in' && selectedTable) {
@@ -257,6 +270,7 @@ export default function POS() {
       }, 5000)
     }
 
+    // Reset order after delay
     setTimeout(() => {
       setPaymentComplete(false)
       setShowPayment(false)
@@ -267,6 +281,7 @@ export default function POS() {
       setCashReceived('')
       setSelectedTable(null)
       setSelectedServer('')
+      setCurrentOrderId(null)
     }, 2000)
   }
 
@@ -929,7 +944,7 @@ export default function POS() {
                     <span>Send to Kitchen</span>
                   </button>
                   <button
-                    onClick={() => setShowPayment(true)}
+                    onClick={handleCheckout}
                     disabled={order.items.length === 0}
                     className="w-full py-5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-bold text-lg shadow-lg shadow-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3 transition-all"
                   >
@@ -939,7 +954,7 @@ export default function POS() {
                 </div>
               ) : (
                 <button
-                  onClick={() => setShowPayment(true)}
+                  onClick={handleCheckout}
                   disabled={order.items.length === 0}
                   className="w-full py-5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-bold text-lg shadow-lg shadow-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center space-x-3 transition-all"
                 >
@@ -1216,6 +1231,16 @@ export default function POS() {
           </div>
         </div>
       )}
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        order={order}
+        onPaymentComplete={handlePaymentComplete}
+        restaurantId={restaurantId}
+        orderId={currentOrderId || undefined}
+      />
     </div>
   )
 }

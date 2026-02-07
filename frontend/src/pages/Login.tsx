@@ -160,11 +160,11 @@ export default function Login() {
         </div>
 
         <div className="relative z-10">
-          <div className="flex items-center space-x-3 mb-2">
-            <img src="/logo.jpg" alt="wdym86" className="w-12 h-12 rounded-xl shadow-lg shadow-black/20 object-cover" />
+          <div className="flex items-center space-x-4 mb-2">
+            <img src="/logo.jpg" alt="wdym86" className="w-28 h-28 rounded-2xl shadow-2xl shadow-black/30 object-cover" />
             <div>
-              <span className="text-white text-2xl font-bold">wdym86</span>
-              <div className="flex items-center space-x-2 mt-0.5">
+              <span className="text-white text-3xl font-bold">wdym86</span>
+              <div className="flex items-center space-x-2 mt-1">
                 <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs text-white/80 backdrop-blur-sm">AI Inventory</span>
                 <span className="px-2 py-0.5 bg-amber-400/30 rounded-full text-xs text-amber-200 backdrop-blur-sm">Hackathon 2026</span>
               </div>
@@ -216,13 +216,7 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="text-white/50 text-sm relative z-10 flex items-center space-x-4">
-          <span>Built for Hackathon 2026</span>
-          <span>·</span>
-          <span>Ground-Up Model Track</span>
-          <span>·</span>
-          <span>Best Use of Gemini API</span>
-        </div>
+        <div className="relative z-10" />
       </div>
 
       {/* Right Side - Login Form */}

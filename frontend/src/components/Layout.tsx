@@ -1,11 +1,30 @@
-import { ReactNode, useState, useEffect } from 'react'
+import { ReactNode, useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package, Wallet, Monitor, Download, Sparkles, Settings, Key, Users, Shield, ChevronDown } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package, Wallet, Monitor, Download, Settings, Key, Users, Shield, ChevronDown } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 
 interface LayoutProps {
   children: ReactNode
+}
+
+interface NavItem {
+  path: string
+  icon: typeof LayoutDashboard
+  label: string
+}
+
+interface NavDropdown {
+  id: string
+  icon: typeof LayoutDashboard
+  label: string
+  items: NavItem[]
+}
+
+type NavEntry = NavItem | NavDropdown
+
+function isDropdown(entry: NavEntry): entry is NavDropdown {
+  return 'items' in entry
 }
 
 export default function Layout({ children }: LayoutProps) {
@@ -16,7 +35,8 @@ export default function Layout({ children }: LayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [adminDropdown, setAdminDropdown] = useState(false)
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Handle scroll for navbar effect
   useEffect(() => {
@@ -25,14 +45,16 @@ export default function Layout({ children }: LayoutProps) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Close admin dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
-    const handleClick = () => setAdminDropdown(false)
-    if (adminDropdown) {
-      document.addEventListener('click', handleClick)
-      return () => document.removeEventListener('click', handleClick)
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null)
+      }
     }
-  }, [adminDropdown])
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -73,12 +95,72 @@ export default function Layout({ children }: LayoutProps) {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [navigate, showShortcuts])
 
-  // Role-based nav items
-  const getNavItems = () => {
+  // Check if any path in a dropdown is active
+  const isDropdownActive = (items: NavItem[]) =>
+    items.some(item => location.pathname === item.path)
+
+  // Role-based nav structure with dropdowns
+  const getNavEntries = (): NavEntry[] => {
     if (role === 'pos_user') {
       return [
         { path: '/', icon: ShoppingCart, label: 'POS' },
       ]
+    }
+
+    if (role === 'manager') {
+      return [
+        { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+        { path: '/pos', icon: ShoppingCart, label: 'POS' },
+        {
+          id: 'manage',
+          icon: Package,
+          label: 'Manage',
+          items: [
+            { path: '/delivery', icon: Package, label: 'Delivery' },
+            { path: '/dishes', icon: UtensilsCrossed, label: 'Dishes' },
+            { path: '/suppliers', icon: Truck, label: 'Suppliers' },
+            { path: '/solana-pay', icon: Wallet, label: 'Crypto Pay' },
+            { path: '/chat', icon: MessageSquare, label: 'AI Advisor' },
+            { path: '/team', icon: Users, label: 'Team' },
+          ],
+        },
+      ]
+    }
+
+    // restaurant_admin
+    return [
+      { path: '/', icon: LayoutDashboard, label: 'Overview' },
+      { path: '/pos', icon: ShoppingCart, label: 'POS' },
+      {
+        id: 'manage',
+        icon: Package,
+        label: 'Manage',
+        items: [
+          { path: '/dashboard', icon: LayoutDashboard, label: 'Inventory' },
+          { path: '/delivery', icon: Package, label: 'Delivery' },
+          { path: '/dishes', icon: UtensilsCrossed, label: 'Dishes' },
+          { path: '/suppliers', icon: Truck, label: 'Suppliers' },
+          { path: '/solana-pay', icon: Wallet, label: 'Crypto Pay' },
+          { path: '/chat', icon: MessageSquare, label: 'AI Advisor' },
+        ],
+      },
+      {
+        id: 'admin',
+        icon: Shield,
+        label: 'Admin',
+        items: [
+          { path: '/restaurant/settings', icon: Settings, label: 'Settings' },
+          { path: '/restaurant/keys', icon: Key, label: 'Keys' },
+          { path: '/restaurant/users', icon: Users, label: 'Users' },
+        ],
+      },
+    ]
+  }
+
+  // Flat list for mobile nav
+  const getMobileItems = (): NavItem[] => {
+    if (role === 'pos_user') {
+      return [{ path: '/', icon: ShoppingCart, label: 'POS' }]
     }
 
     if (role === 'manager') {
@@ -94,7 +176,6 @@ export default function Layout({ children }: LayoutProps) {
       ]
     }
 
-    // restaurant_admin
     return [
       { path: '/', icon: LayoutDashboard, label: 'Overview' },
       { path: '/dashboard', icon: LayoutDashboard, label: 'Inventory' },
@@ -113,7 +194,8 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/restaurant/users', icon: Users, label: 'Users' },
   ]
 
-  const navItems = getNavItems()
+  const navEntries = getNavEntries()
+  const mobileItems = getMobileItems()
 
   const roleBadge = () => {
     if (role === 'restaurant_admin') return { label: 'Admin', color: 'from-red-500 to-red-600' }
@@ -132,6 +214,10 @@ export default function Layout({ children }: LayoutProps) {
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+
+  const toggleDropdown = (id: string) => {
+    setOpenDropdown(prev => prev === id ? null : id)
   }
 
   return (
@@ -164,63 +250,76 @@ export default function Layout({ children }: LayoutProps) {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-1 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-2xl p-1.5 border border-neutral-200/50 dark:border-neutral-700/50 shadow-lg shadow-black/5">
-              {navItems.map(({ path, icon: Icon, label }) => (
-                <Link
-                  key={path + label}
-                  to={path}
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    location.pathname === path
-                      ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md shadow-red-500/30'
-                      : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{label}</span>
-                </Link>
-              ))}
+            <nav ref={dropdownRef} className="hidden lg:flex items-center space-x-1 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-2xl p-1.5 border border-neutral-200/50 dark:border-neutral-700/50 shadow-lg shadow-black/5">
+              {navEntries.map((entry) => {
+                if (isDropdown(entry)) {
+                  const active = isDropdownActive(entry.items)
+                  const isOpen = openDropdown === entry.id
+                  return (
+                    <div key={entry.id} className="relative">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleDropdown(entry.id) }}
+                        className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          active
+                            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md shadow-red-500/30'
+                            : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                        }`}
+                      >
+                        <entry.icon className="w-4 h-4" />
+                        <span>{entry.label}</span>
+                        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {isOpen && (
+                        <div className="absolute left-0 top-full mt-2 w-52 bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 shadow-xl py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                          {entry.items.map(({ path, icon: Icon, label }) => (
+                            <Link
+                              key={path}
+                              to={path}
+                              onClick={() => setOpenDropdown(null)}
+                              className={`flex items-center space-x-3 px-4 py-2.5 text-sm transition-colors ${
+                                location.pathname === path
+                                  ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold'
+                                  : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:text-black dark:hover:text-white'
+                              }`}
+                            >
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                location.pathname === path
+                                  ? 'bg-red-100 dark:bg-red-900/30'
+                                  : 'bg-neutral-100 dark:bg-neutral-700'
+                              }`}>
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <span>{label}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
 
-              {/* Admin dropdown */}
-              {role === 'restaurant_admin' && (
-                <div className="relative">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setAdminDropdown(!adminDropdown) }}
-                    className={`flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      ['/restaurant/settings', '/restaurant/keys', '/restaurant/users'].includes(location.pathname)
+                // Regular nav item
+                return (
+                  <Link
+                    key={entry.path + entry.label}
+                    to={entry.path}
+                    onClick={() => setOpenDropdown(null)}
+                    className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      location.pathname === entry.path
                         ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md shadow-red-500/30'
                         : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700'
                     }`}
                   >
-                    <Shield className="w-4 h-4" />
-                    <span>Admin</span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${adminDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-                  {adminDropdown && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 shadow-xl py-1 z-50">
-                      {adminItems.map(({ path, icon: Icon, label }) => (
-                        <Link
-                          key={path}
-                          to={path}
-                          onClick={() => setAdminDropdown(false)}
-                          className={`flex items-center space-x-3 px-4 py-3 text-sm transition-colors ${
-                            location.pathname === path
-                              ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold'
-                              : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700'
-                          }`}
-                        >
-                          <Icon className="w-4 h-4" />
-                          <span>{label}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                    <entry.icon className="w-4 h-4" />
+                    <span>{entry.label}</span>
+                  </Link>
+                )
+              })}
             </nav>
 
-            {/* Tablet Navigation (md screens) */}
+            {/* Tablet Navigation (md screens) - icon-only top items */}
             <nav className="hidden md:flex lg:hidden items-center space-x-1 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl p-1 border border-neutral-200/50 dark:border-neutral-700/50">
-              {navItems.slice(0, 5).map(({ path, icon: Icon, label }) => (
+              {navEntries.filter((e): e is NavItem => !isDropdown(e)).slice(0, 4).map(({ path, icon: Icon, label }) => (
                 <Link
                   key={path + label}
                   to={path}
@@ -234,44 +333,44 @@ export default function Layout({ children }: LayoutProps) {
                   <Icon className="w-5 h-5" />
                 </Link>
               ))}
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="flex items-center justify-center p-2.5 rounded-lg text-neutral-500 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all"
+                title="More"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
             </nav>
 
             {/* Right Side Actions */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              {/* User name (hidden on small screens) */}
-              {user && role !== 'pos_user' && (
-                <span className="hidden xl:block text-sm text-neutral-500 dark:text-neutral-400 font-medium">
-                  {user.name}
-                </span>
-              )}
+            <div className="flex items-center space-x-1.5">
               {role !== 'pos_user' && (
                 <Link
                   to="/downloads"
-                  className="hidden sm:flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-red-500 via-red-600 to-red-700 text-white text-sm font-semibold rounded-xl hover:from-red-600 hover:via-red-700 hover:to-red-800 transition-all duration-300 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-105"
+                  className="hidden sm:flex p-2 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-400 bg-white/60 dark:bg-neutral-800/60 hover:bg-red-50 dark:hover:bg-red-900/20 border border-neutral-200/50 dark:border-neutral-700/50 transition-all duration-200 shadow-sm"
+                  title="Download App"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Get App</span>
-                  <Sparkles className="w-3 h-3 opacity-70" />
                 </Link>
               )}
               <button
                 onClick={toggleTheme}
-                className="p-2.5 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white bg-white/60 dark:bg-neutral-800/60 hover:bg-white dark:hover:bg-neutral-700 border border-neutral-200/50 dark:border-neutral-700/50 transition-all duration-200 hover:scale-105 shadow-sm"
+                className="p-2 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white bg-white/60 dark:bg-neutral-800/60 hover:bg-white dark:hover:bg-neutral-700 border border-neutral-200/50 dark:border-neutral-700/50 transition-all duration-200 shadow-sm"
                 title={`Theme: ${theme} (click to cycle)`}
               >
                 {getThemeIcon()}
               </button>
               <button
                 onClick={handleLogout}
-                className="hidden sm:flex items-center space-x-2 px-4 py-2.5 text-sm text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-all font-semibold border border-red-200/50 dark:border-red-800/50"
+                className="hidden sm:flex p-2 rounded-xl text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200/50 dark:border-red-800/50 transition-all shadow-sm"
+                title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Exit</span>
               </button>
               {/* Mobile menu button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2.5 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white bg-white/60 dark:bg-neutral-800/60 hover:bg-white dark:hover:bg-neutral-700 border border-neutral-200/50 dark:border-neutral-700/50 transition-all"
+                className="md:hidden p-2 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white bg-white/60 dark:bg-neutral-800/60 hover:bg-white dark:hover:bg-neutral-700 border border-neutral-200/50 dark:border-neutral-700/50 transition-all"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
@@ -283,19 +382,17 @@ export default function Layout({ children }: LayoutProps) {
         <div className={`lg:hidden fixed inset-0 top-16 z-40 transition-all duration-300 ${
           mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}>
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
 
-          {/* Menu Panel */}
           <div className={`relative bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 shadow-2xl transition-transform duration-300 ${
             mobileMenuOpen ? 'translate-y-0' : '-translate-y-4'
           }`}>
-            <nav className="px-4 py-4 space-y-2 max-h-[calc(100vh-8rem)] overflow-y-auto">
-              {/* Role badge on mobile */}
-              <div className="flex items-center space-x-2 px-3 py-2 mb-2">
+            <nav className="px-4 py-4 space-y-1 max-h-[calc(100vh-8rem)] overflow-y-auto">
+              {/* Role badge + user */}
+              <div className="flex items-center space-x-2 px-3 py-2 mb-3">
                 <span className={`px-2.5 py-1 text-xs font-bold text-white rounded-full bg-gradient-to-r ${badge.color}`}>
                   {badge.label}
                 </span>
@@ -304,23 +401,24 @@ export default function Layout({ children }: LayoutProps) {
                 )}
               </div>
 
-              {navItems.map(({ path, icon: Icon, label }) => (
+              {/* Main nav items */}
+              {mobileItems.map(({ path, icon: Icon, label }) => (
                 <Link
                   key={path + label}
                   to={path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center space-x-4 px-5 py-4 rounded-2xl text-base font-medium transition-all ${
+                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all ${
                     location.pathname === path
                       ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
                       : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:scale-[0.98]'
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                     location.pathname === path
                       ? 'bg-white/20'
                       : 'bg-neutral-100 dark:bg-neutral-800'
                   }`}>
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4.5 h-4.5" />
                   </div>
                   <span>{label}</span>
                 </Link>
@@ -328,25 +426,25 @@ export default function Layout({ children }: LayoutProps) {
 
               {/* Admin section in mobile */}
               {role === 'restaurant_admin' && (
-                <div className="pt-2 mt-2 border-t border-neutral-200 dark:border-neutral-700">
-                  <p className="px-5 py-2 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Admin</p>
+                <div className="pt-3 mt-3 border-t border-neutral-200 dark:border-neutral-700">
+                  <p className="px-4 py-2 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Admin</p>
                   {adminItems.map(({ path, icon: Icon, label }) => (
                     <Link
                       key={path}
                       to={path}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center space-x-4 px-5 py-4 rounded-2xl text-base font-medium transition-all ${
+                      className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all ${
                         location.pathname === path
                           ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
                           : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:scale-[0.98]'
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                         location.pathname === path
                           ? 'bg-white/20'
                           : 'bg-neutral-100 dark:bg-neutral-800'
                       }`}>
-                        <Icon className="w-5 h-5" />
+                        <Icon className="w-4.5 h-4.5" />
                       </div>
                       <span>{label}</span>
                     </Link>
@@ -355,25 +453,25 @@ export default function Layout({ children }: LayoutProps) {
               )}
 
               {/* Mobile-only actions */}
-              <div className="pt-4 mt-4 border-t border-neutral-200 dark:border-neutral-700 space-y-2">
+              <div className="pt-3 mt-3 border-t border-neutral-200 dark:border-neutral-700 space-y-1">
                 {role !== 'pos_user' && (
                   <Link
                     to="/downloads"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center space-x-4 px-5 py-4 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30"
+                    className="flex items-center space-x-3 px-4 py-3.5 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                      <Download className="w-5 h-5" />
+                    <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center">
+                      <Download className="w-4.5 h-4.5" />
                     </div>
-                    <span className="font-medium">Download App</span>
+                    <span className="font-medium text-sm">Download App</span>
                   </Link>
                 )}
                 <button
                   onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                  className="w-full flex items-center space-x-4 px-5 py-4 rounded-2xl text-base font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                    <LogOut className="w-5 h-5" />
+                  <div className="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <LogOut className="w-4.5 h-4.5" />
                   </div>
                   <span>Sign Out</span>
                 </button>

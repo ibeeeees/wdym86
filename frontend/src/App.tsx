@@ -9,6 +9,7 @@ import Dishes from './pages/Dishes'
 import Suppliers from './pages/Suppliers'
 import POS from './pages/POS'
 import Delivery from './pages/Delivery'
+import Pricing from './pages/Pricing'
 import Login from './pages/Login'
 
 function App() {
@@ -50,6 +51,7 @@ function App() {
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/pos" element={<POS />} />
           <Route path="/delivery" element={<Delivery />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/chat" element={<GeminiChat />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

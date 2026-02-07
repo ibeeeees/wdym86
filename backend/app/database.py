@@ -74,7 +74,26 @@ class Restaurant(Base):
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     location = Column(String)
+    subscription_tier = Column(String, default="free")  # free, starter, pro, enterprise
     created_at = Column(DateTime, server_default=func.now())
+
+
+class Subscription(Base):
+    """Restaurant subscription"""
+    __tablename__ = "subscriptions"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False, unique=True)
+    tier = Column(String, nullable=False, default="free")  # free, starter, pro, enterprise
+    status = Column(String, nullable=False, default="active")  # active, cancelled, past_due, trialing
+    billing_cycle = Column(String, default="monthly")  # monthly, yearly
+    stripe_customer_id = Column(String)
+    stripe_subscription_id = Column(String)
+    current_period_start = Column(DateTime)
+    current_period_end = Column(DateTime)
+    cancel_at_period_end = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
 
 
 class Ingredient(Base):

@@ -14,6 +14,7 @@ from .pos import router as pos_router
 from .payments import router as payments_router
 from .delivery import router as delivery_router
 from .aws_status import router as aws_router
+from .subscriptions import router as subscriptions_router
 
 __all__ = [
     'auth_router',
@@ -30,4 +31,5 @@ __all__ = [
     'payments_router',
     'delivery_router',
     'aws_router',
+    'subscriptions_router',
 ]

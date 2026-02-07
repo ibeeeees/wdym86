@@ -161,7 +161,7 @@ export default function Login() {
 
         <div className="relative z-10">
           <div className="flex items-center space-x-4 mb-2">
-            <img src="/logo.jpg" alt="wdym86" className="w-28 h-28 rounded-2xl shadow-2xl shadow-black/30 object-cover" />
+            <img src="/logo.jpg" alt="wdym86" className="w-28 h-28 object-contain" />
             <div>
               <span className="text-white text-3xl font-bold">wdym86</span>
               <div className="flex items-center space-x-2 mt-1">

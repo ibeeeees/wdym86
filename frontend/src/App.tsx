@@ -19,6 +19,9 @@ import RestaurantSettings from './pages/RestaurantSettings'
 import KeyManagement from './pages/KeyManagement'
 import UserManagement from './pages/UserManagement'
 import TeamManagement from './pages/TeamManagement'
+import FloorPlanEditor from './pages/FloorPlanEditor'
+import TimelineAnalytics from './pages/TimelineAnalytics'
+import InventoryTracking from './pages/InventoryTracking'
 
 function AppRoutes() {
   const { isAuthenticated, role } = useAuth()
@@ -62,6 +65,9 @@ function AppRoutes() {
           <Route path="/team" element={<TeamManagement />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/downloads" element={<Downloads />} />
+          <Route path="/floor-plan" element={<FloorPlanEditor />} />
+          <Route path="/timeline" element={<TimelineAnalytics />} />
+          <Route path="/inventory-tracking" element={<InventoryTracking />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
@@ -88,6 +94,9 @@ function AppRoutes() {
         <Route path="/restaurant/keys" element={<KeyManagement />} />
         <Route path="/restaurant/users" element={<UserManagement />} />
         <Route path="/team" element={<TeamManagement />} />
+        <Route path="/floor-plan" element={<FloorPlanEditor />} />
+        <Route path="/timeline" element={<TimelineAnalytics />} />
+        <Route path="/inventory-tracking" element={<InventoryTracking />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

@@ -238,13 +238,18 @@ class GeminiClient:
 
 class MockGeminiClient:
     """
-    Mock Gemini client for testing without API calls
+    Mock Gemini client — LABELED FALLBACK/DEMO ONLY
 
-    Returns smart, context-aware responses for testing the integration.
+    Used when no Gemini API key is configured. Generates context-aware
+    responses from ACTUAL restaurant data passed in context — NEVER
+    hardcoded answers.
+
+    All responses are grounded in the restaurant's real data.
+    Responses always include a [Demo Mode] indicator.
     """
 
     def __init__(self, *args, **kwargs):
-        self.chat_sessions = {}
+        self.chat_sessions: Dict[str, List[Dict]] = {}
 
     async def generate(
         self,
@@ -252,7 +257,7 @@ class MockGeminiClient:
         context: Optional[Dict[str, Any]] = None,
         system_prompt: Optional[str] = None
     ) -> str:
-        return self._generate_smart_response(prompt, context)
+        return self._generate_from_context(prompt, context)
 
     def generate_sync(
         self,
@@ -260,7 +265,7 @@ class MockGeminiClient:
         context: Optional[Dict[str, Any]] = None,
         system_prompt: Optional[str] = None
     ) -> str:
-        return self._generate_smart_response(prompt, context)
+        return self._generate_from_context(prompt, context)
 
     async def chat(
         self,
@@ -269,7 +274,13 @@ class MockGeminiClient:
         context: Optional[Dict[str, Any]] = None,
         system_prompt: Optional[str] = None
     ) -> str:
-        return self._generate_smart_response(message, context)
+        # Track conversation history
+        if session_id not in self.chat_sessions:
+            self.chat_sessions[session_id] = []
+        self.chat_sessions[session_id].append({"role": "user", "content": message})
+        response = self._generate_from_context(message, context)
+        self.chat_sessions[session_id].append({"role": "assistant", "content": response})
+        return response
 
     def chat_sync(
         self,
@@ -278,154 +289,134 @@ class MockGeminiClient:
         context: Optional[Dict[str, Any]] = None,
         system_prompt: Optional[str] = None
     ) -> str:
-        return self._generate_smart_response(message, context)
+        if session_id not in self.chat_sessions:
+            self.chat_sessions[session_id] = []
+        self.chat_sessions[session_id].append({"role": "user", "content": message})
+        response = self._generate_from_context(message, context)
+        self.chat_sessions[session_id].append({"role": "assistant", "content": response})
+        return response
 
-    def _generate_smart_response(
+    def _generate_from_context(
         self,
         prompt: str,
         context: Optional[Dict[str, Any]] = None
     ) -> str:
-        """Generate smart, context-aware responses based on keywords"""
+        """
+        Generate response grounded ONLY in actual restaurant data from context.
+        Never hardcoded. Always business-specific.
+        """
+        DEMO_TAG = "🔧 *[Demo Mode — Connect Gemini API key for full AI responses]*\n\n"
+
+        if not context:
+            return f"{DEMO_TAG}I need restaurant context to provide specific recommendations. Please ensure your restaurant data is loaded."
+
+        # Extract actual data from context
+        restaurant = context.get('restaurant', {})
+        r_name = restaurant.get('name', 'your restaurant')
+        inventory = context.get('inventory', [])
+        dishes = context.get('dishes', [])
+        suppliers = context.get('suppliers', [])
+        orders = context.get('orders', [])
+        alerts = context.get('alerts', [])
+        summary = context.get('summary', {})
+        agent_decision = context.get('agent_decision', {})
+        disruptions = context.get('disruptions', [])
+
         prompt_lower = prompt.lower()
 
-        # Extract context data
-        summary = context.get('summary', {}) if context else {}
-        inventory = context.get('inventory', []) if context else []
-        dishes = context.get('dishes', []) if context else []
-        suppliers = context.get('suppliers', []) if context else []
-        orders = context.get('orders', []) if context else []
-        alerts = context.get('alerts', []) if context else []
+        # ---- Build responses from REAL data only ----
 
-        # INVENTORY & STOCK related questions
-        if any(word in prompt_lower for word in ['inventory', 'stock', 'ingredient', 'running low', 'out of']):
+        # Agent decision explanation
+        if agent_decision:
+            ing = agent_decision.get('ingredient', 'Unknown')
+            risk = agent_decision.get('risk_level', 'Unknown')
+            prob = agent_decision.get('stockout_prob', 0)
+            reorder = agent_decision.get('should_reorder', False)
+            qty = agent_decision.get('quantity', 0)
+            unit = agent_decision.get('unit', 'units')
+            return (
+                f"{DEMO_TAG}**{ing} — Risk: {risk}**\n\n"
+                f"The Inventory Risk Agent assessed a {prob:.0%} stockout probability. "
+                f"{'The Reorder Agent recommends ordering ' + str(qty) + ' ' + unit + ' now.' if reorder else 'No reorder needed at this time.'} "
+                f"This assessment is based on {r_name}'s actual usage patterns and current stock levels."
+            )
+
+        # Inventory-related
+        if any(w in prompt_lower for w in ['inventory', 'stock', 'ingredient', 'running low', 'out of', 'reorder']):
             if inventory:
-                low_stock = [i for i in inventory if i.get('current_stock', 0) < 20]
-                if low_stock:
-                    items = ', '.join([f"{i['name']} ({i['current_stock']} {i['unit']})" for i in low_stock[:3]])
-                    return f"Based on current inventory levels, these items need attention: {items}. I recommend placing orders with your suppliers soon to avoid stockouts. The AI forecasting model predicts increased demand this week."
-                return f"Your inventory looks healthy! You're tracking {len(inventory)} ingredients. All stock levels are within safe ranges. The AI risk assessment shows no urgent reorders needed."
-            return "I can help you monitor inventory levels. Your system tracks ingredients with real-time stock updates and AI-powered demand forecasting to prevent stockouts."
+                low = [i for i in inventory if (i.get('current_stock', 0) or 0) < 20]
+                total = len(inventory)
+                if low:
+                    items_str = ', '.join(f"**{i['name']}** ({i.get('current_stock', 0)} {i.get('unit', 'units')})" for i in low[:5])
+                    return f"{DEMO_TAG}At {r_name}, {len(low)} of {total} tracked ingredients are below threshold:\n\n{items_str}\n\nThe Risk Agent flags these for review. Check supplier lead times before ordering."
+                return f"{DEMO_TAG}{r_name} is tracking {total} ingredients. All stock levels are currently within safe ranges based on the AI risk assessment."
+            return f"{DEMO_TAG}No inventory data loaded for {r_name} yet. Add ingredients to begin AI-powered tracking."
 
-        # DISH & MENU related questions
-        if any(word in prompt_lower for word in ['dish', 'menu', 'recipe', 'food', 'meal', 'best seller', 'popular']):
+        # Menu/dish-related
+        if any(w in prompt_lower for w in ['dish', 'menu', 'recipe', 'food', 'meal', 'popular', 'best seller']):
             if dishes:
-                active_dishes = [d for d in dishes if d.get('is_active', True)]
-                categories = set(d.get('category', 'Main') for d in active_dishes)
-                return f"Your menu has {len(active_dishes)} active dishes across {len(categories)} categories: {', '.join(categories)}. Popular items include Mediterranean classics like Moussaka, Lamb Souvlaki, and Grilled Branzino. Each dish is linked to its ingredient recipe for automatic inventory tracking."
-            return "I can help you manage your menu. Add dishes with their recipes, and I'll automatically track ingredient usage and costs."
+                active = [d for d in dishes if d.get('is_active', True)]
+                cats = list(set(d.get('category', 'Main') for d in active))
+                dish_names = ', '.join(d['name'] for d in active[:5])
+                return f"{DEMO_TAG}{r_name} has {len(active)} active dishes across {len(cats)} categories ({', '.join(cats[:4])}). Items include: {dish_names}. Each dish is linked to ingredient recipes for automatic cost tracking."
+            return f"{DEMO_TAG}No menu data loaded for {r_name} yet. Add dishes with their recipes for cost analysis."
 
-        # SUPPLIER related questions
-        if any(word in prompt_lower for word in ['supplier', 'vendor', 'order', 'delivery', 'lead time']):
+        # Supplier-related
+        if any(w in prompt_lower for w in ['supplier', 'vendor', 'delivery', 'lead time', 'procurement']):
             if suppliers:
-                avg_lead = sum(s.get('lead_time_days', 3) for s in suppliers) / len(suppliers)
-                return f"You have {len(suppliers)} suppliers. Average lead time is {avg_lead:.1f} days. Aegean Imports has the highest reliability (94%). For urgent orders, Athens Fresh Market offers 2-day delivery. The Supplier Strategy Agent can recommend alternatives during disruptions."
-            return "I can help you manage suppliers and optimize your procurement strategy. Add suppliers with their lead times and reliability scores for smart recommendations."
+                sup_info = [f"**{s.get('name', 'Unknown')}** ({s.get('lead_time_days', '?')}d lead, {s.get('reliability_score', 0):.0%} reliable)" for s in suppliers[:4]]
+                return f"{DEMO_TAG}{r_name} works with {len(suppliers)} supplier(s):\n\n" + '\n'.join(f"- {s}" for s in sup_info) + "\n\nThe Supplier Strategy Agent monitors reliability and recommends alternatives during disruptions."
+            return f"{DEMO_TAG}No supplier data loaded for {r_name}. Add suppliers for AI-powered procurement optimization."
 
-        # ORDER & POS related questions
-        if any(word in prompt_lower for word in ['order', 'pos', 'sale', 'table', 'checkout', 'payment']):
+        # Order/POS-related
+        if any(w in prompt_lower for w in ['order', 'pos', 'sale', 'table', 'payment', 'revenue']):
             if orders:
-                recent = orders[:5]
-                total_sales = sum(o.get('total', 0) or 0 for o in recent)
-                return f"Recent activity: {len(recent)} orders totaling ${total_sales:.2f}. Your POS system handles dine-in, takeout, and delivery orders. Tables can be managed with real-time status updates, and payments are processed through multiple methods including Solana Pay."
-            return "The POS system handles complete order management - from table assignments to payment processing. You can track sales by shift, day, or custom date ranges."
+                total_rev = sum(o.get('total', 0) or 0 for o in orders)
+                return f"{DEMO_TAG}Recent activity at {r_name}: {len(orders)} orders totaling ${total_rev:.2f}. The POS tracks dine-in, takeout, and delivery across all table layouts."
+            return f"{DEMO_TAG}No recent order data for {r_name}. Orders will appear here once the POS is active."
 
-        # DELIVERY related questions
-        if any(word in prompt_lower for word in ['deliver', 'doordash', 'uber eats', 'grubhub', 'postmates']):
-            return "Your restaurant is integrated with major delivery platforms: DoorDash, Uber Eats, Grubhub, Postmates, and Seamless. Orders sync automatically to your POS. Track delivery performance, manage menus per platform, and monitor commission costs all in one place."
-
-        # PAYMENT & CRYPTO related questions
-        if any(word in prompt_lower for word in ['payment', 'crypto', 'solana', 'bitcoin', 'wallet', 'sol']):
-            return "WDYM86 supports multiple payment methods including traditional card/cash and cryptocurrency via Solana Pay. Generate QR codes for crypto payments, track SOL/USD conversions in real-time. Current SOL price integration helps with accurate pricing."
-
-        # FORECAST & PREDICTION related questions
-        if any(word in prompt_lower for word in ['forecast', 'predict', 'demand', 'future', 'tomorrow', 'next week']):
-            return """Our AI forecasting uses a custom NumPy TCN (Temporal Convolutional Network) with Negative Binomial output. Here's how it works:
-
-**Model Architecture:**
-- Temporal Convolutional Network built from scratch in NumPy
-- Dilated causal convolutions (dilation rates: 1, 2, 4)
-- Negative Binomial distribution output for count data
-- Adam optimizer with manual gradient computation
-
-**Input Features:**
-- Historical usage patterns (28-day lookback)
-- Day-of-week encoding (Mon-Sun patterns)
-- Seasonal adjustments
-- Weather severity signals
-- Event/promotion flags
-
-**Output:**
-- μ (mu): Expected demand
-- k (dispersion): Uncertainty measure
-- Probability intervals for risk assessment
-
-The model predicts increased demand on weekends (Fri-Sat typically 25% higher) and adjusts for weather conditions."""
-
-        # AI AGENTS related questions
-        if any(word in prompt_lower for word in ['agent', 'risk agent', 'reorder agent', 'supplier agent', 'ai decision', 'why recommend']):
-            return """WDYM86 uses three autonomous AI agents working in a pipeline:
-
-**1. Inventory Risk Agent** 🎯
-- Monitors stockout probability for each ingredient
-- Aggregates demand forecasts over supplier lead time
-- Uses Normal approximation for sum of Negative Binomial
-- Classifies risk: SAFE (<5%), MONITOR (5-20%), URGENT (>20%)
-
-**2. Reorder Optimization Agent** 📦
-- Determines optimal order timing and quantity
-- Considers: lead time, MOQ, shelf life, storage constraints
-- Calculates safety stock: z × σ (where z = 1.65 for 95% service level)
-- Balances stockout risk vs. overstocking costs
-
-**3. Supplier Strategy Agent** 🚚
-- Adapts procurement during disruptions
-- Monitors weather, traffic, supplier reliability
-- Recommends: earlier ordering, split shipments, alternative suppliers
-- Adjusts lead time estimates based on conditions
-
-The agents work sequentially: Risk → Reorder → Strategy, passing context to each step."""
-
-        # RISK & ALERT related questions
-        if any(word in prompt_lower for word in ['risk', 'alert', 'warning', 'urgent', 'critical']):
+        # Disruption-related
+        if any(w in prompt_lower for w in ['disruption', 'weather', 'supply chain', 'event', 'risk']):
+            if disruptions:
+                d_list = [f"- **{d.get('type', 'Unknown')}** ({d.get('severity', 'unknown')} severity): {d.get('description', '')}" for d in disruptions[:3]]
+                return f"{DEMO_TAG}Current automated disruptions affecting {r_name}:\n\n" + '\n'.join(d_list) + "\n\nThese are auto-generated from regional data — not user-triggered."
             if alerts:
-                return f"Current alerts: {'; '.join(alerts)}. The Inventory Risk Agent continuously monitors stockout probabilities. Items are classified as SAFE (<5% risk), MONITOR (5-20%), or URGENT (>20%). Take action on urgent items first."
-            return "No critical alerts at the moment. The AI Risk Agent monitors all ingredients and will flag items when stockout probability exceeds safe thresholds."
+                return f"{DEMO_TAG}Active alerts for {r_name}: {'; '.join(alerts[:5])}. The disruption engine monitors weather, supply chain, and local events automatically."
+            return f"{DEMO_TAG}No active disruptions detected for {r_name}. The engine monitors regional weather, supply chain events, and local patterns automatically."
 
-        # SUBSCRIPTION & PRICING related questions
-        if any(word in prompt_lower for word in ['subscription', 'tier', 'pricing', 'plan', 'upgrade', 'feature']):
-            restaurant = context.get('restaurant', {}) if context else {}
-            current_tier = restaurant.get('subscription_tier', 'free')
-            return f"You're on the {current_tier.upper()} tier. Upgrade options: Starter ($49/mo) adds Gemini AI Chat and 50 ingredients. Pro ($149/mo) includes Supplier Strategy Agent and 200 ingredients. Enterprise ($399/mo) offers unlimited everything with dedicated support."
+        # Forecast/AI-related
+        if any(w in prompt_lower for w in ['forecast', 'predict', 'demand', 'ai', 'model', 'agent']):
+            return (
+                f"{DEMO_TAG}The WDYM86 forecasting pipeline for {r_name} uses:\n\n"
+                f"1. **NumPy TCN** — Temporal Convolutional Network with Negative Binomial output\n"
+                f"2. **Inventory Risk Agent** — Monitors stockout probabilities\n"
+                f"3. **Reorder Optimization Agent** — Determines optimal order timing/quantity\n"
+                f"4. **Supplier Strategy Agent** — Adapts procurement during disruptions\n\n"
+                f"All agents work on {r_name}'s actual data. I explain their decisions — I don't override them."
+            )
 
-        # HOW TO / HELP related questions
-        if any(word in prompt_lower for word in ['how', 'help', 'what can', 'tell me about', 'explain']):
-            return """I can help you with all aspects of restaurant management:
+        # Greeting
+        if any(w in prompt_lower for w in ['hello', 'hi', 'hey', 'good morning', 'good afternoon']):
+            items = summary.get('total_ingredients', 0)
+            ds = summary.get('total_dishes', 0)
+            al = summary.get('active_alerts', 0)
+            alert_msg = f"⚠️ {al} alert(s) need attention." if al else "✅ All systems nominal."
+            return f"{DEMO_TAG}Welcome to {r_name}'s dashboard! Tracking {items} ingredients across {ds} menu items. {alert_msg} How can I help?"
 
-📦 **Inventory**: Track stock levels, view forecasts, manage reorders
-🍽️ **Menu**: Manage dishes, recipes, and pricing
-🚚 **Suppliers**: Compare vendors, track deliveries, optimize orders
-💳 **POS**: Process orders, manage tables, handle payments
-🛵 **Delivery**: Monitor DoorDash, Uber Eats, and other platforms
-📊 **Analytics**: View sales trends, costs, and profitability
-💎 **Crypto**: Accept Solana Pay for cryptocurrency payments
-
-Just ask me anything specific!"""
-
-        # GREETING or general questions
-        if any(word in prompt_lower for word in ['hello', 'hi', 'hey', 'good morning', 'good afternoon']):
-            total_items = summary.get('total_ingredients', 0)
-            total_dishes = summary.get('total_dishes', 0)
-            alert_count = summary.get('active_alerts', 0)
-            return f"Hello! Welcome to your WDYM86 dashboard. Quick overview: You're tracking {total_items} ingredients across {total_dishes} menu items. {'⚠️ ' + str(alert_count) + ' alerts need attention.' if alert_count > 0 else '✅ All systems running smoothly.'} How can I help you today?"
-
-        # DEFAULT response with context summary
-        if summary:
-            return f"I'm your AI assistant for Mykonos Mediterranean Restaurant. Currently tracking {summary.get('total_ingredients', 0)} ingredients, {summary.get('total_dishes', 0)} dishes, with {summary.get('total_suppliers', 0)} suppliers. Ask me about inventory, orders, suppliers, forecasts, or any other aspect of your restaurant operations!"
-
-        return "I'm here to help with your restaurant operations. You can ask me about inventory levels, menu items, supplier recommendations, order management, delivery integrations, payment processing, or AI forecasts. What would you like to know?"
+        # Fallback — always grounded in context
+        items = summary.get('total_ingredients', 0)
+        ds = summary.get('total_dishes', 0)
+        sups = summary.get('total_suppliers', 0)
+        return (
+            f"{DEMO_TAG}I'm your AI assistant for **{r_name}**. "
+            f"Currently tracking {items} ingredients, {ds} dishes, and {sups} supplier(s). "
+            f"Ask me about inventory, menu, suppliers, forecasts, disruptions, orders, or analytics — "
+            f"all answers are specific to {r_name}'s actual data."
+        )
 
     def clear_session(self, session_id: str):
-        pass
+        if session_id in self.chat_sessions:
+            del self.chat_sessions[session_id]
 
     def get_session_history(self, session_id: str) -> List[Dict[str, str]]:
-        return []
+        return self.chat_sessions.get(session_id, [])

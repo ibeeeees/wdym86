@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package, Wallet, Monitor, Settings, Key, Users, Shield, ChevronDown, Search } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package, Wallet, Monitor, Settings, Key, Users, Shield, ChevronDown, Search, BarChart3, Grid3X3, ClipboardList } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -129,6 +129,9 @@ export default function Layout({ children }: LayoutProps) {
             { path: '/solana-pay', icon: Wallet, label: 'Crypto Pay' },
             { path: '/chat', icon: MessageSquare, label: 'AI Advisor' },
             { path: '/team', icon: Users, label: 'Team' },
+            { path: '/floor-plan', icon: Grid3X3, label: 'Floor Plan' },
+            { path: '/timeline', icon: BarChart3, label: 'Analytics' },
+            { path: '/inventory-tracking', icon: ClipboardList, label: 'Inventory' },
           ],
         },
       ]
@@ -143,12 +146,15 @@ export default function Layout({ children }: LayoutProps) {
         icon: Package,
         label: 'Manage',
         items: [
-          { path: '/dashboard', icon: LayoutDashboard, label: 'Inventory' },
+          { path: '/dashboard', icon: LayoutDashboard, label: 'Forecasting' },
           { path: '/delivery', icon: Package, label: 'Delivery' },
           { path: '/dishes', icon: UtensilsCrossed, label: 'Dishes' },
           { path: '/suppliers', icon: Truck, label: 'Suppliers' },
           { path: '/solana-pay', icon: Wallet, label: 'Crypto Pay' },
           { path: '/chat', icon: MessageSquare, label: 'AI Advisor' },
+          { path: '/floor-plan', icon: Grid3X3, label: 'Floor Plan' },
+          { path: '/timeline', icon: BarChart3, label: 'Analytics' },
+          { path: '/inventory-tracking', icon: ClipboardList, label: 'Inventory' },
         ],
       },
       {
@@ -159,6 +165,7 @@ export default function Layout({ children }: LayoutProps) {
           { path: '/restaurant/settings', icon: Settings, label: 'Settings' },
           { path: '/restaurant/keys', icon: Key, label: 'Keys' },
           { path: '/restaurant/users', icon: Users, label: 'Users' },
+          { path: '/team', icon: Users, label: 'Team' },
         ],
       },
     ]
@@ -180,18 +187,26 @@ export default function Layout({ children }: LayoutProps) {
         { path: '/solana-pay', icon: Wallet, label: 'Crypto Pay' },
         { path: '/chat', icon: MessageSquare, label: 'AI Advisor' },
         { path: '/team', icon: Users, label: 'Team' },
+        { path: '/floor-plan', icon: Grid3X3, label: 'Floor Plan' },
+        { path: '/timeline', icon: BarChart3, label: 'Analytics' },
+        { path: '/inventory-tracking', icon: ClipboardList, label: 'Inventory' },
       ]
     }
 
     return [
       { path: '/', icon: LayoutDashboard, label: 'Overview' },
-      { path: '/dashboard', icon: LayoutDashboard, label: 'Inventory' },
+      { path: '/dashboard', icon: LayoutDashboard, label: 'Forecasting' },
       { path: '/pos', icon: ShoppingCart, label: 'POS' },
       { path: '/delivery', icon: Package, label: 'Delivery' },
       { path: '/dishes', icon: UtensilsCrossed, label: 'Dishes' },
       { path: '/suppliers', icon: Truck, label: 'Suppliers' },
       { path: '/solana-pay', icon: Wallet, label: 'Crypto Pay' },
       { path: '/chat', icon: MessageSquare, label: 'AI Advisor' },
+      { path: '/floor-plan', icon: Grid3X3, label: 'Floor Plan' },
+      { path: '/timeline', icon: BarChart3, label: 'Analytics' },
+      { path: '/inventory-tracking', icon: ClipboardList, label: 'Inventory' },
+      { path: '/team', icon: Users, label: 'Team' },
+      { path: '/restaurant/settings', icon: Settings, label: 'Settings' },
     ]
   }
 

@@ -14,7 +14,7 @@ Gemini does NOT:
 """
 
 from .client import GeminiClient
-from .prompts import INVENTORY_ADVISOR_SYSTEM, DECISION_SUMMARY_TEMPLATE
+from .prompts import INVENTORY_ADVISOR_SYSTEM, DECISION_SUMMARY_TEMPLATE, build_system_prompt
 from .explainer import DecisionExplainer
 
 __all__ = [
@@ -22,4 +22,5 @@ __all__ = [
     'DecisionExplainer',
     'INVENTORY_ADVISOR_SYSTEM',
     'DECISION_SUMMARY_TEMPLATE',
+    'build_system_prompt',
 ]

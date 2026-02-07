@@ -25,18 +25,57 @@ from ..models.forecast import (
     WhatIfRequest
 )
 from ..gemini import DecisionExplainer, GeminiClient
+from ..gemini.prompts import build_system_prompt
 from ..config import settings
 from .auth import get_current_user
 
 router = APIRouter()
 
-# Initialize explainer (use mock if no API key)
-def get_explainer() -> DecisionExplainer:
+# Initialize explainer — always business-specific
+def get_explainer(restaurant_name: str = "Your Restaurant", cuisine_type: str = "full-service") -> DecisionExplainer:
     use_mock = not settings.gemini_api_key
-    return DecisionExplainer(use_mock=use_mock)
+    return DecisionExplainer(
+        use_mock=use_mock,
+        restaurant_name=restaurant_name,
+        cuisine_type=cuisine_type,
+    )
 
 
-async def get_restaurant_context(db: AsyncSession, restaurant_id: str = "demo-restaurant-id") -> Dict[str, Any]:
+async def _resolve_restaurant_id(user: UserDB, db: AsyncSession) -> str:
+    """
+    Resolve the restaurant_id for the current user.
+    Never hardcoded — always from the user's actual association.
+    """
+    # Check if user owns a restaurant
+    result = await db.execute(
+        select(RestaurantDB).where(RestaurantDB.owner_id == user.id).limit(1)
+    )
+    restaurant = result.scalar_one_or_none()
+    if restaurant:
+        return restaurant.id
+
+    # Check if user is staff at a restaurant (via StaffMember)
+    from ..database import StaffMember
+    result = await db.execute(
+        select(StaffMember).where(
+            StaffMember.email == user.email,
+            StaffMember.is_active == True,
+        ).limit(1)
+    )
+    staff = result.scalar_one_or_none()
+    if staff:
+        return staff.restaurant_id
+
+    # Fallback: get first restaurant (demo mode)
+    result = await db.execute(select(RestaurantDB).limit(1))
+    restaurant = result.scalar_one_or_none()
+    if restaurant:
+        return restaurant.id
+
+    raise HTTPException(404, "No restaurant found for this user.")
+
+
+async def get_restaurant_context(db: AsyncSession, restaurant_id: str) -> Dict[str, Any]:
     """Build comprehensive context from all restaurant data"""
     context = {
         "restaurant": {},
@@ -151,7 +190,12 @@ async def explain_decision(
     This is a key differentiator for the MLH Best Use of Gemini API track.
     Gemini explains the reasoning behind agent decisions in natural language.
     """
-    explainer = get_explainer()
+    # Resolve restaurant for business-specific prompt
+    restaurant_id = await _resolve_restaurant_id(current_user, db)
+    r_ctx = await get_restaurant_context(db, restaurant_id)
+    r_name = r_ctx.get('restaurant', {}).get('name', 'Your Restaurant')
+    r_cuisine = r_ctx.get('restaurant', {}).get('cuisine_type', 'full-service')
+    explainer = get_explainer(restaurant_name=r_name, cuisine_type=r_cuisine)
 
     # If decision_id provided, load context from database
     if request.decision_id:
@@ -194,11 +238,14 @@ async def chat_with_advisor(
     about ANY aspect of restaurant operations: inventory, orders, suppliers,
     dishes, delivery, payments, and more.
     """
-    explainer = get_explainer()
-
-    # Build comprehensive context from all restaurant data
-    restaurant_id = "demo-restaurant-id"  # In production, get from user
+    # Resolve restaurant from authenticated user — never hardcoded
+    restaurant_id = await _resolve_restaurant_id(current_user, db)
     full_context = await get_restaurant_context(db, restaurant_id)
+
+    # Build business-specific explainer
+    r_name = full_context.get('restaurant', {}).get('name', 'Your Restaurant')
+    r_cuisine = full_context.get('restaurant', {}).get('cuisine_type', 'full-service')
+    explainer = get_explainer(restaurant_name=r_name, cuisine_type=r_cuisine)
 
     # Add ingredient-specific context if provided
     if request.ingredient_id:
@@ -233,7 +280,7 @@ async def get_full_context(
     """
     Get full restaurant context for debugging and frontend display
     """
-    restaurant_id = "demo-restaurant-id"
+    restaurant_id = await _resolve_restaurant_id(current_user, db)
     context = await get_restaurant_context(db, restaurant_id)
     return context
 
@@ -252,7 +299,12 @@ async def analyze_scenario(
     - "What if we have a busy weekend event?"
     - "What if the weather forecast shows a storm?"
     """
-    explainer = get_explainer()
+    # Business-specific explainer
+    restaurant_id = await _resolve_restaurant_id(current_user, db)
+    r_ctx = await get_restaurant_context(db, restaurant_id)
+    r_name = r_ctx.get('restaurant', {}).get('name', 'Your Restaurant')
+    r_cuisine = r_ctx.get('restaurant', {}).get('cuisine_type', 'full-service')
+    explainer = get_explainer(restaurant_name=r_name, cuisine_type=r_cuisine)
 
     # Get current context for ingredient
     result = await db.execute(
@@ -302,7 +354,11 @@ async def get_daily_summary(
     Provides a morning briefing for the restaurant manager
     summarizing inventory status and key action items.
     """
-    explainer = get_explainer()
+    # Business-specific explainer
+    r_ctx = await get_restaurant_context(db, restaurant_id)
+    r_name = r_ctx.get('restaurant', {}).get('name', 'Your Restaurant')
+    r_cuisine = r_ctx.get('restaurant', {}).get('cuisine_type', 'full-service')
+    explainer = get_explainer(restaurant_name=r_name, cuisine_type=r_cuisine)
 
     # Get all ingredients and their latest decisions
     from ..database import Ingredient as IngredientDB

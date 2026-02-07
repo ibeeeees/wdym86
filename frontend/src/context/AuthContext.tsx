@@ -18,6 +18,7 @@ interface AuthContextType {
   cuisineType: string
   restaurantName: string
   restaurantKey: string
+  restaurantId: string
   managerId: string
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
@@ -96,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const template = getCuisineTemplate(cuisineType)
   const restaurantName = user?.restaurant || template.restaurantName
   const restaurantKey = user?.restaurantKey || template.demoUsers.restaurant_admin.restaurantKey || ''
+  const restaurantId = restaurantKey || 'demo-restaurant-id'
   const managerId = user?.managerId || ''
 
   return (
@@ -106,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cuisineType,
       restaurantName,
       restaurantKey,
+      restaurantId,
       managerId,
       isAuthenticated: !!token,
       login,

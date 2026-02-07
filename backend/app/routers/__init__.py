@@ -16,6 +16,12 @@ from .delivery import router as delivery_router
 from .aws_status import router as aws_router
 from .subscriptions import router as subscriptions_router
 from .solana_pay import router as solana_pay_router
+from .floor_plan import router as floor_plan_router
+from .disruptions import router as disruptions_router
+from .inventory_items import router as inventory_items_router
+from .staff import router as staff_router
+from .timeline import router as timeline_router
+from .pos_integration import router as pos_integration_router
 
 __all__ = [
     'auth_router',
@@ -34,4 +40,10 @@ __all__ = [
     'aws_router',
     'subscriptions_router',
     'solana_pay_router',
+    'floor_plan_router',
+    'disruptions_router',
+    'inventory_items_router',
+    'staff_router',
+    'timeline_router',
+    'pos_integration_router',
 ]

@@ -14,6 +14,7 @@ from datetime import datetime
 from .client import GeminiClient, MockGeminiClient
 from .prompts import (
     INVENTORY_ADVISOR_SYSTEM,
+    build_system_prompt,
     DECISION_SUMMARY_TEMPLATE,
     CHAT_RESPONSE_TEMPLATE,
     WHAT_IF_ANALYSIS_TEMPLATE,
@@ -31,12 +32,16 @@ class DecisionExplainer:
 
     Takes structured output from the agent pipeline and
     uses Gemini to create clear, actionable explanations.
+
+    System prompt is ALWAYS business-specific — built from restaurant data.
     """
 
     def __init__(
         self,
         client: Optional[GeminiClient] = None,
-        use_mock: bool = False
+        use_mock: bool = False,
+        restaurant_name: str = "Your Restaurant",
+        cuisine_type: str = "full-service",
     ):
         """
         Initialize the explainer
@@ -44,11 +49,16 @@ class DecisionExplainer:
         Args:
             client: Gemini client instance
             use_mock: If True, use mock client for testing
+            restaurant_name: Name of the specific restaurant
+            cuisine_type: Type of cuisine for contextual prompts
         """
         if use_mock:
             self.client = MockGeminiClient()
         else:
             self.client = client or GeminiClient()
+
+        # Build business-specific system prompt — NEVER generic
+        self.system_prompt = build_system_prompt(restaurant_name, cuisine_type)
 
     async def explain_decision(
         self,
@@ -88,7 +98,7 @@ class DecisionExplainer:
 
         return await self.client.generate(
             prompt=prompt,
-            system_prompt=INVENTORY_ADVISOR_SYSTEM
+            system_prompt=self.system_prompt
         )
 
     def explain_decision_sync(
@@ -120,7 +130,7 @@ class DecisionExplainer:
 
         return self.client.generate_sync(
             prompt=prompt,
-            system_prompt=INVENTORY_ADVISOR_SYSTEM
+            system_prompt=self.system_prompt
         )
 
     async def answer_question(
@@ -151,7 +161,7 @@ class DecisionExplainer:
             message=prompt,
             session_id=session_id,
             context=context,
-            system_prompt=INVENTORY_ADVISOR_SYSTEM
+            system_prompt=self.system_prompt
         )
 
     def answer_question_sync(
@@ -172,7 +182,7 @@ class DecisionExplainer:
             message=prompt,
             session_id=session_id,
             context=context,
-            system_prompt=INVENTORY_ADVISOR_SYSTEM
+            system_prompt=self.system_prompt
         )
 
     async def analyze_what_if(
@@ -198,7 +208,7 @@ class DecisionExplainer:
         return await self.client.generate(
             prompt=prompt,
             context=current_context,
-            system_prompt=INVENTORY_ADVISOR_SYSTEM
+            system_prompt=self.system_prompt
         )
 
     def analyze_what_if_sync(
@@ -215,7 +225,7 @@ class DecisionExplainer:
         return self.client.generate_sync(
             prompt=prompt,
             context=current_context,
-            system_prompt=INVENTORY_ADVISOR_SYSTEM
+            system_prompt=self.system_prompt
         )
 
     async def generate_daily_summary(
@@ -271,7 +281,7 @@ class DecisionExplainer:
 
         return await self.client.generate(
             prompt=prompt,
-            system_prompt=INVENTORY_ADVISOR_SYSTEM
+            system_prompt=self.system_prompt
         )
 
     async def explain_risk(
@@ -311,7 +321,7 @@ class DecisionExplainer:
 
         return await self.client.generate(
             prompt=prompt,
-            system_prompt=INVENTORY_ADVISOR_SYSTEM
+            system_prompt=self.system_prompt
         )
 
     def clear_chat_session(self, session_id: str):

@@ -27,7 +27,13 @@ from .routers import (
     delivery_router,
     aws_router,
     subscriptions_router,
-    solana_pay_router
+    solana_pay_router,
+    floor_plan_router,
+    disruptions_router,
+    inventory_items_router,
+    staff_router,
+    timeline_router,
+    pos_integration_router,
 )
 
 
@@ -89,6 +95,12 @@ app.include_router(delivery_router, tags=["Delivery Services"])
 app.include_router(aws_router, tags=["AWS"])
 app.include_router(subscriptions_router, tags=["Subscriptions"])
 app.include_router(solana_pay_router, tags=["Solana Pay"])
+app.include_router(floor_plan_router, tags=["Floor Plans"])
+app.include_router(disruptions_router, tags=["Automated Disruptions"])
+app.include_router(inventory_items_router, tags=["Full Inventory"])
+app.include_router(staff_router, tags=["Staff & Roles"])
+app.include_router(timeline_router, tags=["Timeline Analytics"])
+app.include_router(pos_integration_router, tags=["POS Integrations"])
 
 
 @app.get("/")

@@ -276,4 +276,338 @@ export const checkApiHealth = async (): Promise<boolean> => {
   }
 }
 
+
+// ==========================================
+// Floor Plans & Tables
+// ==========================================
+
+export const getFloorPlans = async (restaurantId: string) => {
+  const response = await api.get(`/floor-plans/${restaurantId}`)
+  return response.data
+}
+
+export const createFloorPlan = async (restaurantId: string, data: {
+  name: string
+  preset?: string
+  width?: number
+  height?: number
+  zones?: string
+}) => {
+  const response = await api.post(`/floor-plans/${restaurantId}`, data)
+  return response.data
+}
+
+export const updateFloorPlan = async (planId: string, data: Record<string, unknown>) => {
+  const response = await api.put(`/floor-plans/plans/${planId}`, data)
+  return response.data
+}
+
+export const addTable = async (planId: string, data: {
+  table_number: string
+  x: number
+  y: number
+  width?: number
+  height?: number
+  shape?: string
+  capacity?: number
+  section?: string
+}) => {
+  const response = await api.post(`/floor-plans/${planId}/tables`, data)
+  return response.data
+}
+
+export const updateTable = async (tableId: string, data: Record<string, unknown>) => {
+  const response = await api.put(`/floor-plans/tables/${tableId}`, data)
+  return response.data
+}
+
+export const batchUpdateTables = async (planId: string, updates: Array<{ table_id: string; x: number; y: number }>) => {
+  const response = await api.post('/floor-plans/tables/batch-update', {
+    floor_plan_id: planId,
+    updates,
+  })
+  return response.data
+}
+
+export const deleteTable = async (tableId: string) => {
+  const response = await api.delete(`/floor-plans/tables/${tableId}`)
+  return response.data
+}
+
+export const getFloorPlanPresets = async () => {
+  const response = await api.get('/floor-plans/presets')
+  return response.data
+}
+
+
+// ==========================================
+// Automated Disruptions
+// ==========================================
+
+export const getTodaysDisruptions = async (restaurantId: string) => {
+  const response = await api.get(`/disruptions/${restaurantId}/today`)
+  return response.data
+}
+
+export const getDisruptionsRange = async (restaurantId: string, startDate: string, endDate: string) => {
+  const response = await api.get(`/disruptions/${restaurantId}/range`, {
+    params: { start_date: startDate, end_date: endDate }
+  })
+  return response.data
+}
+
+export const getIngredientRisk = async (restaurantId: string) => {
+  const response = await api.get(`/disruptions/${restaurantId}/ingredient-risk`)
+  return response.data
+}
+
+export const getMenuImpact = async (restaurantId: string) => {
+  const response = await api.get(`/disruptions/${restaurantId}/menu-impact`)
+  return response.data
+}
+
+export const getDisruptionHistory = async (restaurantId: string, days: number = 7) => {
+  const response = await api.get(`/disruptions/${restaurantId}/history`, {
+    params: { days }
+  })
+  return response.data
+}
+
+
+// ==========================================
+// Full Inventory (Non-Food)
+// ==========================================
+
+export const getInventoryItems = async (restaurantId: string, category?: string, lowStockOnly?: boolean) => {
+  const params: Record<string, unknown> = {}
+  if (category) params.category = category
+  if (lowStockOnly) params.low_stock_only = true
+  const response = await api.get(`/inventory-items/${restaurantId}`, { params })
+  return response.data
+}
+
+export const createInventoryItem = async (restaurantId: string, data: {
+  name: string
+  category: string
+  subcategory: string
+  unit?: string
+  current_quantity?: number
+  min_quantity?: number
+  unit_cost?: number
+  storage_location?: string
+}) => {
+  const response = await api.post(`/inventory-items/${restaurantId}`, data)
+  return response.data
+}
+
+export const seedDefaultInventory = async (restaurantId: string, categories?: string[]) => {
+  const response = await api.post(`/inventory-items/${restaurantId}/seed-defaults`, null, {
+    params: categories ? { categories } : undefined
+  })
+  return response.data
+}
+
+export const updateInventoryItem = async (restaurantId: string, itemId: string, data: Record<string, unknown>) => {
+  const response = await api.put(`/inventory-items/${restaurantId}/items/${itemId}`, data)
+  return response.data
+}
+
+export const adjustInventory = async (restaurantId: string, data: {
+  item_id: string
+  adjustment: number
+  reason: string
+}) => {
+  const response = await api.post(`/inventory-items/${restaurantId}/adjust`, data)
+  return response.data
+}
+
+export const deleteInventoryItem = async (restaurantId: string, itemId: string) => {
+  const response = await api.delete(`/inventory-items/${restaurantId}/items/${itemId}`)
+  return response.data
+}
+
+export const getInventoryAlerts = async (restaurantId: string) => {
+  const response = await api.get(`/inventory-items/${restaurantId}/alerts`)
+  return response.data
+}
+
+export const getInventoryValueSummary = async (restaurantId: string) => {
+  const response = await api.get(`/inventory-items/${restaurantId}/value-summary`)
+  return response.data
+}
+
+export const getInventoryCategories = async () => {
+  const response = await api.get('/inventory-items/categories/list')
+  return response.data
+}
+
+
+// ==========================================
+// Staff & Roles
+// ==========================================
+
+export const getStaff = async (restaurantId: string, role?: string) => {
+  const params: Record<string, unknown> = {}
+  if (role) params.role = role
+  const response = await api.get(`/staff/${restaurantId}`, { params })
+  return response.data
+}
+
+export const createStaffMember = async (restaurantId: string, data: {
+  name: string
+  role: string
+  email?: string
+  pin_code?: string
+  phone?: string
+}) => {
+  const response = await api.post(`/staff/${restaurantId}`, data)
+  return response.data
+}
+
+export const updateStaffMember = async (restaurantId: string, staffId: string, data: Record<string, unknown>) => {
+  const response = await api.put(`/staff/${restaurantId}/members/${staffId}`, data)
+  return response.data
+}
+
+export const removeStaffMember = async (restaurantId: string, staffId: string) => {
+  const response = await api.delete(`/staff/${restaurantId}/members/${staffId}`)
+  return response.data
+}
+
+export const verifyStaffPin = async (restaurantId: string, pin: string) => {
+  const response = await api.post(`/staff/${restaurantId}/verify-pin`, null, {
+    params: { pin }
+  })
+  return response.data
+}
+
+export const createBusinessPin = async (restaurantId: string, data: {
+  role: string
+  max_uses?: number
+  expires_hours?: number
+}) => {
+  const response = await api.post(`/staff/${restaurantId}/business-pin`, data)
+  return response.data
+}
+
+export const joinWithBusinessPin = async (data: {
+  pin: string
+  name: string
+  email?: string
+  phone?: string
+}) => {
+  const response = await api.post('/staff/join', data)
+  return response.data
+}
+
+export const getBusinessPins = async (restaurantId: string) => {
+  const response = await api.get(`/staff/${restaurantId}/business-pins`)
+  return response.data
+}
+
+export const seedDemoStaff = async (restaurantId: string) => {
+  const response = await api.post(`/staff/${restaurantId}/seed-demo`)
+  return response.data
+}
+
+export const getRolePermissions = async () => {
+  const response = await api.get('/staff/roles/permissions')
+  return response.data
+}
+
+
+// ==========================================
+// Timeline Analytics
+// ==========================================
+
+export const getDailySnapshots = async (restaurantId: string, startDate: string, endDate: string) => {
+  const response = await api.get(`/timeline/${restaurantId}/daily`, {
+    params: { start_date: startDate, end_date: endDate }
+  })
+  return response.data
+}
+
+export const computeDailySnapshot = async (restaurantId: string, targetDate: string) => {
+  const response = await api.post(`/timeline/${restaurantId}/compute-snapshot`, null, {
+    params: { target_date: targetDate }
+  })
+  return response.data
+}
+
+export const getWeeklySummary = async (restaurantId: string, weeks: number = 4) => {
+  const response = await api.get(`/timeline/${restaurantId}/weekly`, {
+    params: { weeks }
+  })
+  return response.data
+}
+
+export const getMonthlyTrends = async (restaurantId: string, months: number = 6) => {
+  const response = await api.get(`/timeline/${restaurantId}/monthly`, {
+    params: { months }
+  })
+  return response.data
+}
+
+export const getSeasonalAnalysis = async (restaurantId: string) => {
+  const response = await api.get(`/timeline/${restaurantId}/seasonal`)
+  return response.data
+}
+
+export const getDayOfWeekAnalysis = async (restaurantId: string, weeks: number = 12) => {
+  const response = await api.get(`/timeline/${restaurantId}/day-of-week`, {
+    params: { weeks }
+  })
+  return response.data
+}
+
+export const getKpiSummary = async (restaurantId: string, periodDays: number = 30) => {
+  const response = await api.get(`/timeline/${restaurantId}/kpi`, {
+    params: { period_days: periodDays }
+  })
+  return response.data
+}
+
+
+// ==========================================
+// POS Integrations
+// ==========================================
+
+export const getSupportedPlatforms = async () => {
+  const response = await api.get('/pos-integrations/platforms')
+  return response.data
+}
+
+export const getPosIntegrations = async (restaurantId: string) => {
+  const response = await api.get(`/pos-integrations/${restaurantId}`)
+  return response.data
+}
+
+export const createPosIntegration = async (restaurantId: string, data: {
+  platform: string
+  api_key?: string
+  merchant_id?: string
+  location_id?: string
+}) => {
+  const response = await api.post(`/pos-integrations/${restaurantId}`, data)
+  return response.data
+}
+
+export const verifyPosIntegration = async (restaurantId: string, integrationId: string) => {
+  const response = await api.post(`/pos-integrations/${restaurantId}/integrations/${integrationId}/verify`)
+  return response.data
+}
+
+export const triggerPosSync = async (restaurantId: string, integrationId: string, syncType: string = 'all') => {
+  const response = await api.post(`/pos-integrations/${restaurantId}/integrations/${integrationId}/sync`, null, {
+    params: { sync_type: syncType }
+  })
+  return response.data
+}
+
+export const removePosIntegration = async (restaurantId: string, integrationId: string) => {
+  const response = await api.delete(`/pos-integrations/${restaurantId}/integrations/${integrationId}`)
+  return response.data
+}
+
+
 export default api

@@ -321,6 +321,223 @@ class PaymentTransaction(Base):
 
 
 # ==========================================
+# Floor Plan & Table Layout Models
+# ==========================================
+
+class FloorPlan(Base):
+    """Restaurant floor plan / layout"""
+    __tablename__ = "floor_plans"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    name = Column(String, nullable=False, default="Main Floor")
+    width = Column(Integer, default=800)  # virtual canvas px
+    height = Column(Integer, default=600)
+    zones = Column(JSON, default=list)  # [{ id, name, type, x, y, w, h, color }]
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+    restaurant = relationship("Restaurant", backref="floor_plans")
+
+
+class FloorTable(Base):
+    """Table placed on a floor plan with position, shape, capacity"""
+    __tablename__ = "floor_tables"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    floor_plan_id = Column(String, ForeignKey("floor_plans.id"), nullable=False)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    table_number = Column(Integer, nullable=False)
+    label = Column(String)  # e.g. "T1", "Bar-3"
+    capacity = Column(Integer, default=4)
+    shape = Column(String, default="square")  # square, round, rectangle, bar_stool
+    section = Column(String, default="dining")  # dining, bar, patio, private
+    zone_id = Column(String)  # FK to zone within floor plan JSON
+    x = Column(Float, default=0)  # position on canvas
+    y = Column(Float, default=0)
+    width = Column(Float, default=80)
+    height = Column(Float, default=80)
+    rotation = Column(Float, default=0)
+    is_accessible = Column(Boolean, default=False)
+    server_id = Column(String)  # assigned server (user id or name)
+    status = Column(String, default="available")  # available, occupied, reserved, cleaning
+    current_order_id = Column(String, ForeignKey("orders.order_id"))
+
+    floor_plan = relationship("FloorPlan", backref="tables")
+    restaurant = relationship("Restaurant", backref="floor_tables")
+
+
+# ==========================================
+# Extended Supplier Model
+# ==========================================
+
+class SupplierExtended(Base):
+    """Extended supplier data — real distributor information"""
+    __tablename__ = "suppliers_extended"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    supplier_id = Column(String, ForeignKey("suppliers.id"), nullable=False)
+    supplier_type = Column(String, nullable=False)  # food_distributor, alcohol_distributor, produce, meat_seafood, packaging, janitorial
+    region_coverage = Column(JSON, default=list)  # ["Southeast US", "National"]
+    delivery_schedule = Column(JSON, default=dict)  # { "days": ["Mon","Wed","Fri"], "cutoff_time": "14:00" }
+    volatility_risk_score = Column(Float, default=0.1)  # 0-1, higher = more volatile
+    substitute_supplier_ids = Column(JSON, default=list)  # list of supplier_ids as substitutes
+    contact_phone = Column(String)
+    contact_email = Column(String)
+    account_number = Column(String)
+    website = Column(String)
+    notes = Column(Text)
+    created_at = Column(DateTime, server_default=func.now())
+
+    supplier = relationship("Supplier", backref="extended_info")
+
+
+# ==========================================
+# Full Inventory Tracking (Beyond Food)
+# ==========================================
+
+class InventoryItem(Base):
+    """Non-food inventory: equipment, serviceware, cleaning, staff supplies"""
+    __tablename__ = "inventory_items"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    name = Column(String, nullable=False)
+    category = Column(String, nullable=False)  # kitchen_equipment, serviceware, cleaning, beverages, staff_supplies
+    subcategory = Column(String)  # e.g. "ovens", "cups", "trash_bags", "uniforms"
+    unit = Column(String, nullable=False)  # units, cases, boxes, bottles, sets
+    current_quantity = Column(Float, default=0)
+    min_quantity = Column(Float, default=0)  # reorder threshold
+    max_quantity = Column(Float)
+    unit_cost = Column(Float, default=0)
+    supplier_id = Column(String, ForeignKey("suppliers.id"))
+    storage_location = Column(String)  # "kitchen", "bar", "storage_room", "bathroom"
+    last_restocked = Column(DateTime)
+    notes = Column(Text)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+    restaurant = relationship("Restaurant", backref="inventory_items")
+    supplier = relationship("Supplier", backref="inventory_items")
+
+
+# ==========================================
+# Disruption Log (Automated, Non-User)
+# ==========================================
+
+class DisruptionLog(Base):
+    """Automated disruption events — never user-triggered"""
+    __tablename__ = "disruption_logs"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    disruption_type = Column(String, nullable=False)  # weather, traffic, supply_chain, local_event, news
+    source = Column(String)  # "weather_api", "news_api", "auto_simulation"
+    title = Column(String, nullable=False)
+    description = Column(Text)
+    severity = Column(String, default="low")  # low, moderate, high, critical
+    impact_data = Column(JSON, default=dict)  # { weather_risk, traffic_risk, delivery_delay, cost_impact, affected_ingredients }
+    location_context = Column(JSON, default=dict)  # { lat, lng, city, state, radius_miles }
+    started_at = Column(DateTime, server_default=func.now())
+    resolved_at = Column(DateTime)
+    is_active = Column(Boolean, default=True)
+    auto_generated = Column(Boolean, default=True)  # MUST be True — users never create
+
+    restaurant = relationship("Restaurant", backref="disruption_logs")
+
+
+# ==========================================
+# Timeline Analytics / Sales History
+# ==========================================
+
+class DailySalesSnapshot(Base):
+    """Daily aggregated sales for timeline analytics"""
+    __tablename__ = "daily_sales_snapshots"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    date = Column(DateTime, nullable=False)
+    total_revenue = Column(Float, default=0)
+    total_orders = Column(Integer, default=0)
+    dine_in_orders = Column(Integer, default=0)
+    takeout_orders = Column(Integer, default=0)
+    delivery_orders = Column(Integer, default=0)
+    total_tips = Column(Float, default=0)
+    refunds = Column(Float, default=0)
+    voids = Column(Integer, default=0)
+    labor_hours = Column(Float, default=0)
+    top_dish_id = Column(String)
+    top_dish_name = Column(String)
+    waste_cost = Column(Float, default=0)
+    stockout_count = Column(Integer, default=0)
+    ai_tip_of_day = Column(Text)
+    created_at = Column(DateTime, server_default=func.now())
+
+    restaurant = relationship("Restaurant", backref="daily_snapshots")
+
+
+# ==========================================
+# Staff / Roles / Business PIN
+# ==========================================
+
+class StaffMember(Base):
+    """Restaurant staff — managers, workers, servers"""
+    __tablename__ = "staff_members"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.id"))  # optional link to full user
+    name = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="worker")  # admin, manager, worker, server
+    email = Column(String)
+    phone = Column(String)
+    pin_code = Column(String)  # 4-6 digit for quick POS login
+    is_active = Column(Boolean, default=True)
+    permissions = Column(JSON, default=dict)  # { can_void: true, can_refund: false, ... }
+    hire_date = Column(DateTime)
+    created_at = Column(DateTime, server_default=func.now())
+
+    restaurant = relationship("Restaurant", backref="staff_members")
+    user = relationship("User", backref="staff_profiles")
+
+
+class BusinessPIN(Base):
+    """Business join PIN for managers/workers"""
+    __tablename__ = "business_pins"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False, unique=True)
+    pin_hash = Column(String, nullable=False)
+    expires_at = Column(DateTime)
+    created_by = Column(String, ForeignKey("users.id"))
+    created_at = Column(DateTime, server_default=func.now())
+
+    restaurant = relationship("Restaurant", backref="business_pin", uselist=False)
+
+
+# ==========================================
+# POS Integration Tracking
+# ==========================================
+
+class POSIntegration(Base):
+    """External POS platform integrations (Toast, Aloha, etc.)"""
+    __tablename__ = "pos_integrations"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    platform = Column(String, nullable=False)  # toast, aloha, square, clover
+    api_key_encrypted = Column(String)
+    location_id = Column(String)
+    is_active = Column(Boolean, default=False)
+    last_sync_at = Column(DateTime)
+    sync_config = Column(JSON, default=dict)  # { sync_sales: true, sync_labor: true, ... }
+    created_at = Column(DateTime, server_default=func.now())
+
+    restaurant = relationship("Restaurant", backref="pos_integrations")
+
+
+# ==========================================
 # Database Lifecycle
 # ==========================================
 

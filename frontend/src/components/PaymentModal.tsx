@@ -25,12 +25,10 @@ interface PaymentModalProps {
 // Card Payment Component (uses Stripe Elements)
 function CardPaymentForm({ 
   amount, 
-  orderId, 
   onSuccess, 
   onError 
 }: { 
   amount: number
-  orderId: string
   onSuccess: (transactionId: string) => void
   onError: (error: string) => void
 }) {
@@ -237,7 +235,7 @@ export default function PaymentModal({
   onClose,
   order,
   onPaymentComplete,
-  restaurantId,
+  restaurantId: _restaurantId,
   orderId
 }: PaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card')
@@ -431,7 +429,6 @@ export default function PaymentModal({
                 <Elements stripe={stripePromise} options={{ clientSecret }}>
                   <CardPaymentForm
                     amount={order.total}
-                    orderId={orderId || `ORDER-${Date.now()}`}
                     onSuccess={handleCardPaymentSuccess}
                     onError={handleError}
                   />

@@ -10,12 +10,7 @@ import { getCuisineTemplate } from '../data/cuisineTemplates'
 import { 
   getEmployees, 
   getPayRuns, 
-  getTipsSummary, 
   getExpenses, 
-  createExpense, 
-  exportPaychecksToS3, 
-  exportExpensesToS3,
-  getSalesSummary 
 } from '../services/payroll'
 import { checkApiHealth } from '../services/api'
 
@@ -265,8 +260,6 @@ export default function Payroll() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [payRuns, setPayRuns] = useState<PayRunRecord[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
-  const [loading, setLoading] = useState(true)
-  const [apiConnected, setApiConnected] = useState<boolean | null>(null)
   const [activeTab, setActiveTab] = useState<typeof tabs[number]['id']>('roster')
   const [searchQuery, setSearchQuery] = useState('')
   const [departmentFilter, setDepartmentFilter] = useState('all')
@@ -285,10 +278,8 @@ export default function Payroll() {
   }, [restaurantId])
 
   const loadAllData = async () => {
-    setLoading(true)
     try {
       const connected = await checkApiHealth()
-      setApiConnected(connected)
 
       if (connected && restaurantId) {
         await Promise.all([
@@ -303,8 +294,6 @@ export default function Payroll() {
     } catch (error) {
       console.error('Failed to load payroll data:', error)
       loadDemoData()
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -374,7 +363,6 @@ export default function Payroll() {
   }
 
   const loadDemoData = () => {
-    setApiConnected(false)
     setEmployees(buildDemoEmployees(template, restaurantName))
     setPayRuns(demoPayRuns)
     setExpenses(demoExpenses)

@@ -45,6 +45,8 @@ from .routers import (
     stripe_webhooks_router,
     pos_payments_router,
     tax_router,
+    checks_router,
+    bohpos_router,
 )
 
 logger = logging.getLogger("wdym86.security")
@@ -313,6 +315,8 @@ app.include_router(payroll_router, tags=["Payroll"])
 app.include_router(stripe_webhooks_router, tags=["Webhooks"])
 app.include_router(pos_payments_router, tags=["POS Payments"])
 app.include_router(tax_router, tags=["Tax Calculation"])
+app.include_router(checks_router, tags=["Check Management"])
+app.include_router(bohpos_router, tags=["BOHPOS"])
 
 
 @app.get("/")

@@ -8,20 +8,25 @@
  * 4. Check-based ordering system
  */
 
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import {
-  Users, Receipt, Truck, ChevronRight
+  Users, Receipt, Truck, Plus, ChevronRight, Sparkles,
+  UtensilsCrossed, Coffee, IceCream
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
-import { checkApiHealth } from '../services/api'
-import { createCheck, getCheck, getCheckItems, finalizeCheck, Check, CheckItem } from '../services/checks'
+import CheckList from '../components/CheckList'
+import CheckModal from '../components/CheckModal'
+import PaymentModal from '../components/PaymentModal'
+import PaymentConfirmation from '../components/PaymentConfirmation'
+import ReceiptDisplay from '../components/ReceiptDisplay'
+import { createCheck, getCheckItems, finalizeCheck, Check, CheckItem } from '../services/checks'
+import { loadStripe } from '@stripe/stripe-js'
 
-// Lazy load heavy components
-const CheckList = lazy(() => import('../components/CheckList'))
-const CheckModal = lazy(() => import('../components/CheckModal'))
-const PaymentModal = lazy(() => import('../components/PaymentModal'))
-const PaymentConfirmation = lazy(() => import('../components/PaymentConfirmation'))
-const ReceiptDisplay = lazy(() => import('../components/ReceiptDisplay'))
+// Initialize Stripe
+const stripePromise = loadStripe(
+  import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_your_key'
+)
 
 interface MenuItem {
   id: string
@@ -34,6 +39,8 @@ interface MenuItem {
 type OrderType = 'dine_in' | 'takeout' | 'delivery'
 
 export default function POS() {
+  const { user } = useAuth()
+  
   // State Management
   const [selectedOrderType, setSelectedOrderType] = useState<OrderType | null>(null)
   const [selectedCheckId, setSelectedCheckId] = useState<string | null>(null)
@@ -48,13 +55,6 @@ export default function POS() {
   const [receiptData, setReceiptData] = useState<any>(null)
   const [newCheckName, setNewCheckName] = useState('')
   const [creating, setCreating] = useState(false)
-  const [paymentOrder, setPaymentOrder] = useState<{
-    subtotal: number
-    tax: number
-    tip: number
-    total: number
-    items: any[]
-  } | null>(null)
 
   // Get restaurant info
   const restaurantId = localStorage.getItem('restaurant_id') || 'demo_restaurant'
@@ -64,7 +64,7 @@ export default function POS() {
   useEffect(() => {
     const template = getCuisineTemplate(cuisineType)
     setMenuItems(template.menuItems || [])
-  }, []) // Only load once on mount, not on every render
+  }, [cuisineType])
 
   // ==========================================
   // Handlers
@@ -72,20 +72,10 @@ export default function POS() {
 
   const handleOrderTypeSelect = (type: OrderType) => {
     console.log('📋 Order type selected:', type)
-    // Fail fast if backend is down, so we don't sit on a spinner forever.
-    checkApiHealth().then((ok) => {
-      if (!ok) {
-        alert(
-          'Backend is not reachable. Start the backend on port 8001 and refresh the page.'
-        )
-        return
-      }
-      setSelectedOrderType(type)
-      // Reset other states
-      setSelectedCheckId(null)
-      setShowCheckModal(false)
-    })
+    setSelectedOrderType(type)
     // Reset other states
+    setSelectedCheckId(null)
+    setShowCheckModal(false)
   }
 
   const handleNewCheck = () => {
@@ -113,7 +103,6 @@ export default function POS() {
       
       // Open the new check immediately
       setSelectedCheckId(checkData.check_id)
-      setCurrentCheck(checkData)
       setShowCheckModal(true)
       setShowNewCheckDialog(false)
       setNewCheckName('')
@@ -143,9 +132,8 @@ export default function POS() {
     
     try {
       // Load check data and items
-      const [c, items] = await Promise.all([getCheck(checkId), getCheckItems(checkId)])
+      const items = await getCheckItems(checkId)
       setSelectedCheckId(checkId)
-      setCurrentCheck(c)
       setCurrentCheckItems(items)
       
       // Show payment confirmation first
@@ -161,15 +149,6 @@ export default function POS() {
     setShowPaymentConfirmation(false)
     
     if (paymentMethod === 'credit_card') {
-      if (currentCheck) {
-        setPaymentOrder({
-          subtotal: currentCheck.subtotal,
-          tax: currentCheck.tax,
-          tip: 0,
-          total: currentCheck.total,
-          items: currentCheckItems,
-        })
-      }
       // Show Stripe payment modal
       setShowPaymentModal(true)
     } else {
@@ -331,31 +310,28 @@ export default function POS() {
         </div>
 
         {/* Check List */}
-        <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div></div>}>
-          <CheckList
-            restaurantId={restaurantId}
-            orderType={selectedOrderType}
-            onCheckClick={handleCheckClick}
-            onNewCheck={handleNewCheck}
-          />
-        </Suspense>
+        <CheckList
+          restaurantId={restaurantId}
+          orderType={selectedOrderType}
+          onCheckClick={handleCheckClick}
+          onNewCheck={handleNewCheck}
+        />
       </div>
 
       {/* Check Modal */}
       {showCheckModal && selectedCheckId && (
-        <Suspense fallback={<div>Loading...</div>}>
-          <CheckModal
-            checkId={selectedCheckId}
-            isOpen={showCheckModal}
-            onClose={() => {
-              setShowCheckModal(false)
-              setSelectedCheckId(null)
-            }}
-            onCheckUpdated={handleCheckUpdated}
-            onEnterPayment={handleEnterPayment}
-            menuItems={menuItems}
-          />
-        </Suspense>
+        <CheckModal
+          checkId={selectedCheckId}
+          isOpen={showCheckModal}
+          onClose={() => {
+            setShowCheckModal(false)
+            setSelectedCheckId(null)
+          }}
+          onCheckUpdated={handleCheckUpdated}
+          onEnterPayment={handleEnterPayment}
+          restaurantId={restaurantId}
+          menuItems={menuItems}
+        />
       )}
 
       {/* New Check Dialog */}
@@ -402,43 +378,36 @@ export default function POS() {
 
       {/* Payment Confirmation */}
       {showPaymentConfirmation && currentCheck && (
-        <Suspense fallback={<div>Loading...</div>}>
-          <PaymentConfirmation
-            isOpen={showPaymentConfirmation}
-            onClose={() => setShowPaymentConfirmation(false)}
-            onConfirm={handlePaymentConfirm}
-            check={currentCheck}
-            items={currentCheckItems}
-          />
-        </Suspense>
+        <PaymentConfirmation
+          isOpen={showPaymentConfirmation}
+          onClose={() => setShowPaymentConfirmation(false)}
+          onConfirm={handlePaymentConfirm}
+          check={currentCheck}
+          items={currentCheckItems}
+        />
       )}
 
       {/* Payment Modal (Stripe) */}
-      {showPaymentModal && selectedCheckId && paymentOrder && (
-        <Suspense fallback={<div>Loading...</div>}>
-          <PaymentModal
-            isOpen={showPaymentModal}
-            onClose={() => setShowPaymentModal(false)}
-            order={paymentOrder}
-            onPaymentComplete={(transactionId: string) => handlePaymentSuccess(transactionId)}
-            restaurantId={restaurantId}
-            orderId={selectedCheckId}
-          />
-        </Suspense>
+      {showPaymentModal && selectedCheckId && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          checkId={selectedCheckId}
+          restaurantId={restaurantId}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
       )}
 
       {/* Receipt Display */}
       {showReceipt && receiptData && (
-        <Suspense fallback={<div>Loading...</div>}>
-          <ReceiptDisplay
-            isOpen={showReceipt}
-            onClose={() => {
-              setShowReceipt(false)
-              setReceiptData(null)
-            }}
-            receipt={receiptData}
-          />
-        </Suspense>
+        <ReceiptDisplay
+          isOpen={showReceipt}
+          onClose={() => {
+            setShowReceipt(false)
+            setReceiptData(null)
+          }}
+          receipt={receiptData}
+        />
       )}
     </div>
   )

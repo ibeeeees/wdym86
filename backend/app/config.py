@@ -5,7 +5,7 @@ Loads settings from environment variables.
 Supports AWS RDS for production database.
 """
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from typing import Optional
 from pathlib import Path
@@ -13,6 +13,15 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     """Application settings"""
+
+    model_config = SettingsConfigDict(
+        env_file=[
+            ".env",
+            str(Path(__file__).resolve().parent.parent / ".env"),
+        ],
+        case_sensitive=False,
+        extra="ignore",
+    )
 
     # App
     app_name: str = "WDYM86 - AI Inventory Intelligence"
@@ -92,14 +101,6 @@ class Settings(BaseSettings):
     # TaxJar API for Sales Tax Calculation
     taxjar_api_key: Optional[str] = None
     taxjar_enabled: bool = False
-
-    class Config:
-        env_file = [
-            ".env",                                                          # CWD (when running from backend/)
-            str(Path(__file__).resolve().parent.parent / ".env"),             # backend/.env relative to app/
-        ]
-        case_sensitive = False
-        extra = "ignore"
 
     def get_database_url(self) -> str:
         """Get database URL, using AWS RDS if enabled"""

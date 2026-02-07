@@ -4,7 +4,7 @@ AWS Configuration
 Settings for AWS services and session management.
 """
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 from functools import lru_cache
 import boto3
@@ -13,6 +13,12 @@ from botocore.config import Config
 
 class AWSSettings(BaseSettings):
     """AWS configuration settings"""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
     # AWS Credentials (use IAM roles in production)
     aws_access_key_id: Optional[str] = None
@@ -51,10 +57,6 @@ class AWSSettings(BaseSettings):
     # DynamoDB (alternative to RDS)
     dynamodb_enabled: bool = False
     dynamodb_table_prefix: str = "wdym86"
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
 
 
 @lru_cache()

@@ -31,47 +31,53 @@ interface Order {
   orderType: 'dine_in' | 'takeout' | 'delivery'
 }
 
-// Demo menu items with emojis for visual appeal
+// Mykonos Mediterranean Menu - Demo items
 const demoMenuItems: MenuItem[] = [
-  // Appetizers
-  { id: '1', name: 'Caesar Salad', price: 12.99, category: 'Appetizers', emoji: '🥗' },
-  { id: '2', name: 'Soup of the Day', price: 8.99, category: 'Appetizers', emoji: '🍜' },
-  { id: '3', name: 'Bruschetta', price: 10.99, category: 'Appetizers', emoji: '🍞', popular: true },
-  { id: '4', name: 'Wings (8pc)', price: 14.99, category: 'Appetizers', emoji: '🍗', popular: true },
-  { id: '19', name: 'Mozzarella Sticks', price: 9.99, category: 'Appetizers', emoji: '🧀' },
-  { id: '20', name: 'Spring Rolls', price: 8.99, category: 'Appetizers', emoji: '🥟' },
+  // Mezze (Appetizers)
+  { id: '1', name: 'Classic Hummus', price: 12.00, category: 'Mezze', emoji: '🫘', popular: true },
+  { id: '2', name: 'Spanakopita', price: 14.00, category: 'Mezze', emoji: '🥧' },
+  { id: '3', name: 'Saganaki', price: 16.00, category: 'Mezze', emoji: '🧀', popular: true },
+  { id: '4', name: 'Grilled Octopus', price: 24.00, category: 'Mezze', emoji: '🐙', popular: true },
+  { id: '5', name: 'Dolmades', price: 13.00, category: 'Mezze', emoji: '🌿' },
+  { id: '6', name: 'Tzatziki & Pita', price: 10.00, category: 'Mezze', emoji: '🥒' },
+  // Salads
+  { id: '7', name: 'Greek Salad', price: 14.00, category: 'Salads', emoji: '🥗', popular: true },
+  { id: '8', name: 'Quinoa Bowl', price: 16.00, category: 'Salads', emoji: '🥙' },
+  { id: '9', name: 'Fattoush', price: 13.00, category: 'Salads', emoji: '🥬' },
+  // Seafood
+  { id: '10', name: 'Grilled Branzino', price: 34.00, category: 'Seafood', emoji: '🐟', popular: true },
+  { id: '11', name: 'Shrimp Saganaki', price: 29.00, category: 'Seafood', emoji: '🦐', popular: true },
+  { id: '12', name: 'Grilled Salmon', price: 32.00, category: 'Seafood', emoji: '🍣' },
+  { id: '13', name: 'Seafood Platter', price: 48.00, category: 'Seafood', emoji: '🦞' },
   // Mains
-  { id: '5', name: 'Grilled Salmon', price: 28.99, category: 'Mains', emoji: '🐟', popular: true },
-  { id: '6', name: 'Ribeye Steak', price: 34.99, category: 'Mains', emoji: '🥩', popular: true },
-  { id: '7', name: 'Chicken Parmesan', price: 22.99, category: 'Mains', emoji: '🍗' },
-  { id: '8', name: 'Pasta Primavera', price: 18.99, category: 'Mains', emoji: '🍝' },
-  { id: '9', name: 'Fish & Chips', price: 19.99, category: 'Mains', emoji: '🐠' },
-  { id: '10', name: 'Burger & Fries', price: 16.99, category: 'Mains', emoji: '🍔', popular: true },
-  { id: '21', name: 'Tacos (3pc)', price: 14.99, category: 'Mains', emoji: '🌮' },
-  { id: '22', name: 'Margherita Pizza', price: 17.99, category: 'Mains', emoji: '🍕', popular: true },
+  { id: '14', name: 'Lamb Souvlaki', price: 28.00, category: 'Mains', emoji: '🍖', popular: true },
+  { id: '15', name: 'Moussaka', price: 26.00, category: 'Mains', emoji: '🍆', popular: true },
+  { id: '16', name: 'Chicken Souvlaki', price: 22.00, category: 'Mains', emoji: '🍗' },
+  { id: '17', name: 'Beef Kofta', price: 24.00, category: 'Mains', emoji: '🥩' },
+  { id: '18', name: 'Stuffed Peppers', price: 21.00, category: 'Mains', emoji: '🫑' },
+  { id: '19', name: 'Imam Bayildi', price: 19.00, category: 'Mains', emoji: '🍆' },
   // Drinks
-  { id: '11', name: 'Soft Drink', price: 3.49, category: 'Drinks', emoji: '🥤' },
-  { id: '12', name: 'Iced Tea', price: 3.49, category: 'Drinks', emoji: '🧊' },
-  { id: '13', name: 'Coffee', price: 3.99, category: 'Drinks', emoji: '☕', popular: true },
-  { id: '14', name: 'Beer', price: 6.99, category: 'Drinks', emoji: '🍺' },
-  { id: '15', name: 'Wine Glass', price: 9.99, category: 'Drinks', emoji: '🍷' },
-  { id: '23', name: 'Cocktail', price: 11.99, category: 'Drinks', emoji: '🍹' },
-  { id: '24', name: 'Fresh Juice', price: 5.99, category: 'Drinks', emoji: '🧃' },
+  { id: '20', name: 'Mykonos Sunset', price: 14.00, category: 'Drinks', emoji: '🌅', popular: true },
+  { id: '21', name: 'Greek Wine', price: 12.00, category: 'Drinks', emoji: '🍷' },
+  { id: '22', name: 'Ouzo', price: 9.00, category: 'Drinks', emoji: '🥃' },
+  { id: '23', name: 'Greek Coffee', price: 5.00, category: 'Drinks', emoji: '☕' },
+  { id: '24', name: 'Fresh Lemonade', price: 6.00, category: 'Drinks', emoji: '🍋' },
   // Desserts
-  { id: '16', name: 'Cheesecake', price: 8.99, category: 'Desserts', emoji: '🍰', popular: true },
-  { id: '17', name: 'Chocolate Lava Cake', price: 9.99, category: 'Desserts', emoji: '🍫', popular: true },
-  { id: '18', name: 'Ice Cream', price: 5.99, category: 'Desserts', emoji: '🍨' },
-  { id: '25', name: 'Apple Pie', price: 7.99, category: 'Desserts', emoji: '🥧' },
-  { id: '26', name: 'Tiramisu', price: 8.99, category: 'Desserts', emoji: '🧁' },
+  { id: '25', name: 'Baklava', price: 10.00, category: 'Desserts', emoji: '🍯', popular: true },
+  { id: '26', name: 'Yogurt & Honey', price: 8.00, category: 'Desserts', emoji: '🍨' },
+  { id: '27', name: 'Loukoumades', price: 9.00, category: 'Desserts', emoji: '🧁', popular: true },
+  { id: '28', name: 'Galaktoboureko', price: 11.00, category: 'Desserts', emoji: '🥮' },
 ]
 
-// Category styling
+// Category styling - Mediterranean theme
 const categoryStyles: Record<string, { bg: string; icon: any; gradient: string }> = {
   'All': { bg: 'bg-neutral-100 dark:bg-neutral-800', icon: Sparkles, gradient: 'from-neutral-500 to-neutral-600' },
-  'Appetizers': { bg: 'bg-orange-50 dark:bg-orange-900/20', icon: UtensilsCrossed, gradient: 'from-orange-400 to-red-500' },
-  'Mains': { bg: 'bg-red-50 dark:bg-red-900/20', icon: UtensilsCrossed, gradient: 'from-red-500 to-pink-500' },
-  'Drinks': { bg: 'bg-blue-50 dark:bg-blue-900/20', icon: Coffee, gradient: 'from-blue-400 to-cyan-500' },
-  'Desserts': { bg: 'bg-pink-50 dark:bg-pink-900/20', icon: IceCream, gradient: 'from-pink-400 to-red-600' },
+  'Mezze': { bg: 'bg-amber-50 dark:bg-amber-900/20', icon: UtensilsCrossed, gradient: 'from-amber-400 to-orange-500' },
+  'Salads': { bg: 'bg-green-50 dark:bg-green-900/20', icon: UtensilsCrossed, gradient: 'from-green-400 to-emerald-500' },
+  'Seafood': { bg: 'bg-cyan-50 dark:bg-cyan-900/20', icon: UtensilsCrossed, gradient: 'from-cyan-400 to-blue-500' },
+  'Mains': { bg: 'bg-red-50 dark:bg-red-900/20', icon: UtensilsCrossed, gradient: 'from-red-500 to-rose-600' },
+  'Drinks': { bg: 'bg-purple-50 dark:bg-purple-900/20', icon: Coffee, gradient: 'from-purple-400 to-pink-500' },
+  'Desserts': { bg: 'bg-yellow-50 dark:bg-yellow-900/20', icon: IceCream, gradient: 'from-yellow-400 to-orange-500' },
 }
 
 const paymentMethods = [

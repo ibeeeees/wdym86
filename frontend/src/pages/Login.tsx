@@ -125,12 +125,13 @@ export default function Login({ onLogin }: LoginProps) {
         <div className="relative z-10">
           <div className="flex items-center space-x-3 mb-2">
             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-black/20">
-              <span className="text-red-600 font-mono text-xl font-bold">W</span>
+              <span className="text-red-600 font-mono text-xl font-bold">M</span>
             </div>
             <div>
-              <span className="text-white text-2xl font-bold">wdym86</span>
+              <span className="text-white text-2xl font-bold">Mykonos</span>
               <div className="flex items-center space-x-2 mt-0.5">
-                <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs text-white/80 backdrop-blur-sm">Hackathon 2026</span>
+                <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs text-white/80 backdrop-blur-sm">AI Inventory</span>
+                <span className="px-2 py-0.5 bg-amber-400/30 rounded-full text-xs text-amber-200 backdrop-blur-sm">Hackathon 2026</span>
               </div>
             </div>
           </div>
@@ -140,9 +141,9 @@ export default function Login({ onLogin }: LoginProps) {
           <div>
             <h2 className="text-4xl font-bold text-white leading-tight">
               Stop guessing.<br />
-              <span className="bg-gradient-to-r from-amber-200 to-pink-200 bg-clip-text text-transparent">Start predicting.</span>
+              <span className="bg-gradient-to-r from-amber-200 via-orange-200 to-pink-200 bg-clip-text text-transparent">Start predicting.</span>
             </h2>
-            <p className="text-white/70 mt-4 text-lg">AI-powered inventory intelligence that saves restaurants thousands in waste and stockouts.</p>
+            <p className="text-white/70 mt-4 text-lg">AI-powered inventory intelligence for Mediterranean restaurants. Reduce waste, prevent stockouts, optimize orders.</p>
           </div>
 
           {/* Stats */}
@@ -186,11 +187,14 @@ export default function Login({ onLogin }: LoginProps) {
         <div className="w-full max-w-sm">
           {/* Mobile Logo */}
           <div className="text-center mb-8 lg:hidden">
-            <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/30">
-              <span className="text-white font-mono text-2xl font-bold">W</span>
+            <div className="relative w-16 h-16 mx-auto mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/30">
+                <span className="text-white font-mono text-2xl font-bold">M</span>
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-pulse" />
             </div>
-            <h1 className="text-2xl font-bold text-black dark:text-white">wdym86</h1>
-            <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">AI Inventory Intelligence</p>
+            <h1 className="text-2xl font-bold text-black dark:text-white">Mykonos</h1>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">AI-Powered Inventory Intelligence</p>
           </div>
 
           {/* Demo Button - Prominent */}

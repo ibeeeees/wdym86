@@ -47,36 +47,44 @@ const demoForecast: ForecastPoint[] = [
 
 const demoIngredient = {
   id: '1',
-  name: 'Chicken Breast',
+  name: 'Lamb Leg',
   category: 'meat',
-  current_inventory: 45,
+  current_inventory: 38,
   unit: 'lbs',
 }
 
 const demoDecision: AgentDecision = {
   risk: {
     level: 'URGENT',
-    probability: 0.38,
+    probability: 0.42,
     days_of_cover: 2,
-    factors: ['Low inventory vs expected demand', 'Weekend surge expected', 'Moderate weather risk']
+    factors: ['Low inventory vs weekend demand', 'Valentine\'s Day event approaching', 'Mediterranean lamb season peak']
   },
   reorder: {
     should_reorder: true,
-    date: '2024-02-08',
-    quantity: 120,
+    date: '2026-02-08',
+    quantity: 85,
     urgency: 'high',
-    confidence: 0.85
+    confidence: 0.88
   },
   strategy: {
     type: 'early_order',
-    description: 'Place orders earlier to buffer against delays',
-    adjusted_lead_time: 4
+    description: 'Contact Hellenic Farms for priority delivery before weekend rush',
+    adjusted_lead_time: 3
   },
-  explanation: `Chicken Breast shows elevated risk due to current inventory being below expected demand over the next few days. With the weekend approaching, demand typically increases by 20-30%.
+  explanation: `Lamb Leg shows elevated risk at Mykonos Mediterranean. Current inventory of 38 lbs provides only 2 days of cover with the weekend approaching.
 
-Recommendation: Order 120 lbs by February 8th to maintain adequate stock levels. This quantity includes safety stock to account for demand variability.
+**Key Insights:**
+- Lamb Souvlaki and Beef Kofta are top sellers, consuming ~25 lbs daily
+- Valentine's Day weekend expected to increase demand by 40%
+- Hellenic Farms has 97% reliability - recommend priority order
 
-Key factors: Current inventory of 45 lbs provides only 2 days of cover. Expected weekend surge and moderate weather risk are contributing factors.`
+**Recommendation:** Order 85 lbs from Hellenic Farms by February 8th. This quantity includes safety stock for the expected Valentine's surge.
+
+**Risk Factors:**
+1. Weekend dining surge (typically +35% covers)
+2. Special event menu featuring lamb dishes
+3. Current stock critically low for premium protein`
 }
 
 const riskStyles: Record<string, string> = {
@@ -349,10 +357,13 @@ The Strategy Agent would recommend adjusting lead time assumptions to account fo
     )
   }
 
-  // Get gradient color based on category
-  const categoryGradient = ingredient.category === 'meat' ? 'from-red-400 to-rose-500'
+  // Get gradient color based on category - Mediterranean theme
+  const categoryGradient = ingredient.category === 'meat' ? 'from-red-500 to-rose-600'
+    : ingredient.category === 'seafood' ? 'from-cyan-400 to-blue-500'
     : ingredient.category === 'produce' ? 'from-green-400 to-emerald-500'
-    : ingredient.category === 'dairy' ? 'from-blue-400 to-cyan-500'
+    : ingredient.category === 'dairy' ? 'from-blue-300 to-cyan-400'
+    : ingredient.category === 'herbs' ? 'from-emerald-400 to-green-500'
+    : ingredient.category === 'spirits' ? 'from-purple-400 to-pink-500'
     : 'from-amber-400 to-orange-500'
 
   return (

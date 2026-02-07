@@ -82,14 +82,19 @@ export default function Downloads() {
     <div className="space-y-8">
       {/* Hero */}
       <div className="text-center py-8">
-        <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-700 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-red-500/30">
-          <Download className="w-10 h-10 text-white" />
+        <div className="relative w-20 h-20 mx-auto mb-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-3xl flex items-center justify-center shadow-2xl shadow-red-500/30">
+            <Download className="w-10 h-10 text-white" />
+          </div>
+          <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse">
+            <span className="text-white text-xs font-bold">M</span>
+          </div>
         </div>
         <h1 className="text-3xl font-bold text-black dark:text-white mb-3">
-          Download WDYM86
+          Download Mykonos
         </h1>
         <p className="text-neutral-500 dark:text-neutral-400 max-w-xl mx-auto">
-          Get the full power of AI-driven inventory intelligence on your desktop or mobile device.
+          Get the full power of AI-driven inventory intelligence for your Mediterranean restaurant.
           Works offline with automatic cloud sync.
         </p>
       </div>
@@ -233,8 +238,8 @@ export default function Downloads() {
               {[
                 'Download the .dmg file',
                 'Open the downloaded file',
-                'Drag WDYM86 to Applications folder',
-                'Open WDYM86 from Applications',
+                'Drag Mykonos to Applications folder',
+                'Open Mykonos from Applications',
                 'Sign in with your account'
               ].map((step, i) => (
                 <li key={i} className="flex items-start space-x-3">
@@ -253,7 +258,7 @@ export default function Downloads() {
                 'Download the .exe installer',
                 'Run the installer as Administrator',
                 'Follow the installation wizard',
-                'Launch WDYM86 from Start Menu',
+                'Launch Mykonos from Start Menu',
                 'Sign in with your account'
               ].map((step, i) => (
                 <li key={i} className="flex items-start space-x-3">
@@ -272,8 +277,8 @@ export default function Downloads() {
       <div className="text-center py-4">
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Need help? Contact us at{' '}
-          <a href="mailto:support@wdym86.com" className="text-red-500 hover:underline">
-            support@wdym86.com
+          <a href="mailto:support@mykonos.ai" className="text-red-500 hover:underline">
+            support@mykonos.ai
           </a>
         </p>
       </div>

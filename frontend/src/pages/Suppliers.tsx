@@ -23,48 +23,57 @@ interface Supplier {
 const demoSuppliers: Supplier[] = [
   {
     id: '1',
-    name: 'FreshFarms Direct',
+    name: 'Aegean Imports',
     lead_time_days: 2,
     min_order_quantity: 50,
-    reliability_score: 0.95,
-    shipping_cost: 25,
-    ingredients: ['Chicken Breast', 'Ground Beef', 'Salmon Fillet']
+    reliability_score: 0.98,
+    shipping_cost: 45,
+    ingredients: ['Kalamata Olives', 'Feta Cheese', 'Greek Yogurt', 'Olive Oil']
   },
   {
     id: '2',
-    name: 'QuickSupply Co',
+    name: 'Athens Fresh Market',
     lead_time_days: 1,
     min_order_quantity: 25,
-    reliability_score: 0.88,
-    shipping_cost: 35,
-    ingredients: ['Romaine Lettuce', 'Tomatoes', 'Avocados']
+    reliability_score: 0.95,
+    shipping_cost: 25,
+    ingredients: ['Fresh Spinach', 'Tomatoes', 'Cucumbers', 'Red Onions', 'Eggplant']
   },
   {
     id: '3',
-    name: 'Premium Proteins',
-    lead_time_days: 3,
-    min_order_quantity: 100,
-    reliability_score: 0.92,
-    shipping_cost: 15,
-    ingredients: ['Chicken Breast', 'Ground Beef', 'Salmon Fillet']
+    name: 'Mediterranean Seafood Co',
+    lead_time_days: 1,
+    min_order_quantity: 30,
+    reliability_score: 0.94,
+    shipping_cost: 55,
+    ingredients: ['Branzino', 'Octopus', 'Shrimp', 'Salmon']
   },
   {
     id: '4',
-    name: 'Local Dairy Farm',
-    lead_time_days: 1,
-    min_order_quantity: 20,
+    name: 'Hellenic Farms',
+    lead_time_days: 2,
+    min_order_quantity: 40,
     reliability_score: 0.97,
-    shipping_cost: 20,
-    ingredients: ['Cheese Blend']
+    shipping_cost: 35,
+    ingredients: ['Lamb Leg', 'Chicken Thighs', 'Ground Lamb']
   },
   {
     id: '5',
-    name: 'Bulk Goods Warehouse',
-    lead_time_days: 4,
-    min_order_quantity: 200,
-    reliability_score: 0.90,
+    name: 'Santorini Spirits',
+    lead_time_days: 3,
+    min_order_quantity: 24,
+    reliability_score: 0.92,
     shipping_cost: 0,
-    ingredients: ['Flour', 'Rice', 'Olive Oil']
+    ingredients: ['Ouzo', 'Metaxa', 'Assyrtiko Wine', 'Retsina']
+  },
+  {
+    id: '6',
+    name: 'Mykonos Pantry',
+    lead_time_days: 2,
+    min_order_quantity: 50,
+    reliability_score: 0.96,
+    shipping_cost: 20,
+    ingredients: ['Phyllo Dough', 'Tahini', 'Arborio Rice', 'Greek Honey']
   }
 ]
 
@@ -168,7 +177,7 @@ export default function Suppliers() {
               )}
             </div>
             <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-              Manage suppliers for AI procurement optimization
+              Mediterranean supplier network for Mykonos
             </p>
           </div>
         </div>

@@ -267,7 +267,7 @@ export default function Pricing() {
       <div className="text-center py-8">
         <p className="text-neutral-500 dark:text-neutral-400">
           Need a custom solution?{' '}
-          <a href="mailto:sales@wdym86.com" className="text-red-500 hover:underline font-medium">
+          <a href="mailto:sales@mykonos.ai" className="text-red-500 hover:underline font-medium">
             Contact our sales team
           </a>
         </p>

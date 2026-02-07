@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package, Wallet, Monitor, Download } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package, Wallet, Monitor, Download, Sparkles, ChevronDown } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
 interface LayoutProps {
@@ -14,6 +14,14 @@ export default function Layout({ children, onLogout }: LayoutProps) {
   const { theme, resolvedTheme, toggleTheme } = useTheme()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  // Handle scroll for navbar effect
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -75,29 +83,39 @@ export default function Layout({ children, onLogout }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-900 dark:to-neutral-900 transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-red-50/20 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-900 transition-colors">
       {/* Header */}
-      <header className="border-b border-neutral-200 dark:border-neutral-800 sticky top-0 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-lg z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex justify-between items-center h-16">
+      <header className={`sticky top-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl shadow-lg shadow-black/5 dark:shadow-black/20 border-b border-neutral-200/50 dark:border-neutral-800/50'
+          : 'bg-transparent border-b border-transparent'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 lg:h-18">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 group">
-              <div className="w-9 h-9 bg-gradient-to-br from-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/30 group-hover:scale-105 transition-transform">
-                <span className="text-white font-mono text-sm font-bold">W</span>
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/30 group-hover:shadow-red-500/50 group-hover:scale-105 transition-all duration-300">
+                  <span className="text-white font-mono text-lg font-bold">M</span>
+                </div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-pulse" />
               </div>
-              <span className="font-bold text-black dark:text-white hidden sm:inline">wdym86</span>
+              <div className="hidden sm:block">
+                <span className="font-bold text-lg text-black dark:text-white">Mykonos</span>
+                <span className="block text-[10px] text-neutral-500 dark:text-neutral-400 font-medium -mt-1">AI Inventory</span>
+              </div>
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-1 bg-neutral-100/50 dark:bg-neutral-800/50 rounded-xl p-1">
+            <nav className="hidden lg:flex items-center space-x-1 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-2xl p-1.5 border border-neutral-200/50 dark:border-neutral-700/50 shadow-lg shadow-black/5">
               {navItems.map(({ path, icon: Icon, label }) => (
                 <Link
                   key={path}
                   to={path}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                     location.pathname === path
-                      ? 'bg-white dark:bg-neutral-700 text-black dark:text-white shadow-sm'
-                      : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
+                      ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md shadow-red-500/30'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -106,25 +124,44 @@ export default function Layout({ children, onLogout }: LayoutProps) {
               ))}
             </nav>
 
+            {/* Tablet Navigation (md screens) */}
+            <nav className="hidden md:flex lg:hidden items-center space-x-1 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl p-1 border border-neutral-200/50 dark:border-neutral-700/50">
+              {navItems.slice(0, 5).map(({ path, icon: Icon, label }) => (
+                <Link
+                  key={path}
+                  to={path}
+                  className={`flex items-center justify-center p-2.5 rounded-lg transition-all ${
+                    location.pathname === path
+                      ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md'
+                      : 'text-neutral-500 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                  }`}
+                  title={label}
+                >
+                  <Icon className="w-5 h-5" />
+                </Link>
+              ))}
+            </nav>
+
             {/* Right Side Actions */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <Link
                 to="/downloads"
-                className="hidden sm:flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-medium rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-500/20"
+                className="hidden sm:flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-red-500 via-red-600 to-red-700 text-white text-sm font-semibold rounded-xl hover:from-red-600 hover:via-red-700 hover:to-red-800 transition-all duration-300 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-105"
               >
                 <Download className="w-4 h-4" />
                 <span>Get App</span>
+                <Sparkles className="w-3 h-3 opacity-70" />
               </Link>
               <button
                 onClick={toggleTheme}
-                className="p-2.5 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all hover:scale-105"
+                className="p-2.5 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white bg-white/60 dark:bg-neutral-800/60 hover:bg-white dark:hover:bg-neutral-700 border border-neutral-200/50 dark:border-neutral-700/50 transition-all duration-200 hover:scale-105 shadow-sm"
                 title={`Theme: ${theme} (click to cycle)`}
               >
                 {getThemeIcon()}
               </button>
               <button
                 onClick={onLogout}
-                className="hidden sm:flex items-center space-x-1.5 px-4 py-2 text-sm text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all font-medium"
+                className="hidden sm:flex items-center space-x-2 px-4 py-2.5 text-sm text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-all font-semibold border border-red-200/50 dark:border-red-800/50"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Exit</span>
@@ -132,7 +169,7 @@ export default function Layout({ children, onLogout }: LayoutProps) {
               {/* Mobile menu button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2.5 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="lg:hidden p-2.5 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white bg-white/60 dark:bg-neutral-800/60 hover:bg-white dark:hover:bg-neutral-700 border border-neutral-200/50 dark:border-neutral-700/50 transition-all"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
@@ -140,41 +177,72 @@ export default function Layout({ children, onLogout }: LayoutProps) {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg">
-            <nav className="px-4 py-3 space-y-1">
+        {/* Mobile Navigation - Full Screen Overlay */}
+        <div className={`lg:hidden fixed inset-0 top-16 z-40 transition-all duration-300 ${
+          mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}>
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          {/* Menu Panel */}
+          <div className={`relative bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 shadow-2xl transition-transform duration-300 ${
+            mobileMenuOpen ? 'translate-y-0' : '-translate-y-4'
+          }`}>
+            <nav className="px-4 py-4 space-y-2 max-h-[calc(100vh-8rem)] overflow-y-auto">
               {navItems.map(({ path, icon: Icon, label }) => (
                 <Link
                   key={path}
                   to={path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                  className={`flex items-center space-x-4 px-5 py-4 rounded-2xl text-base font-medium transition-all ${
                     location.pathname === path
-                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-500/30'
-                      : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                      ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:scale-[0.98]'
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    location.pathname === path
+                      ? 'bg-white/20'
+                      : 'bg-neutral-100 dark:bg-neutral-800'
+                  }`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
                   <span>{label}</span>
                 </Link>
               ))}
-              <div className="pt-2 mt-2 border-t border-neutral-200 dark:border-neutral-700">
+
+              {/* Mobile-only actions */}
+              <div className="pt-4 mt-4 border-t border-neutral-200 dark:border-neutral-700 space-y-2">
+                <Link
+                  to="/downloads"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center space-x-4 px-5 py-4 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Download className="w-5 h-5" />
+                  </div>
+                  <span className="font-medium">Download App</span>
+                </Link>
                 <button
                   onClick={() => { onLogout(); setMobileMenuOpen(false); }}
-                  className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="w-full flex items-center space-x-4 px-5 py-4 rounded-2xl text-base font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <LogOut className="w-5 h-5" />
+                  </div>
                   <span>Sign Out</span>
                 </button>
               </div>
             </nav>
           </div>
-        )}
+        </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
         {children}
       </main>
 

@@ -260,7 +260,7 @@ export default function Onboarding() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-4">
                     {tiers.map((tier) => {
                       const Icon = tier.icon
                       const price = billingCycle === 'monthly' ? tier.priceMonthly : Math.round(tier.priceYearly / 12)
@@ -295,8 +295,14 @@ export default function Onboarding() {
                           </div>
 
                           <div className="mb-3">
-                            <span className="text-3xl font-bold text-black dark:text-white">${price}</span>
-                            <span className="text-neutral-500 dark:text-neutral-400 text-sm">/mo</span>
+                            {tier.id === 'enterprise' ? (
+                              <span className="text-3xl font-bold text-black dark:text-white">Custom</span>
+                            ) : (
+                              <>
+                                <span className="text-3xl font-bold text-black dark:text-white">${price}</span>
+                                <span className="text-neutral-500 dark:text-neutral-400 text-sm">/mo</span>
+                              </>
+                            )}
                           </div>
 
                           <ul className="space-y-1.5">

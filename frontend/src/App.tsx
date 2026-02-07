@@ -47,6 +47,37 @@ function AppRoutes() {
     )
   }
 
+  // Demo mode: all features accessible regardless of role
+  const isDemo = localStorage.getItem('token')?.startsWith('demo-token-')
+  if (isDemo) {
+    return (
+      <Layout>
+        <Routes>
+          <Route path="/" element={<AdminDashboard />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/ingredient/:id" element={<IngredientDetail />} />
+          <Route path="/dishes" element={<Dishes />} />
+          <Route path="/suppliers" element={<Suppliers />} />
+          <Route path="/pos" element={<POS />} />
+          <Route path="/delivery" element={<Delivery />} />
+          <Route path="/solana-pay" element={<SolanaPay />} />
+          <Route path="/chat" element={<GeminiChat />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/downloads" element={<Downloads />} />
+          <Route path="/restaurant/settings" element={<RestaurantSettings />} />
+          <Route path="/restaurant/keys" element={<KeyManagement />} />
+          <Route path="/restaurant/users" element={<UserManagement />} />
+          <Route path="/team" element={<TeamManagement />} />
+          <Route path="/floor-plan" element={<FloorPlanEditor />} />
+          <Route path="/timeline" element={<TimelineAnalytics />} />
+          <Route path="/inventory-tracking" element={<InventoryTracking />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+    )
+  }
+
   // POS user: only POS page
   if (role === 'pos_user') {
     return (

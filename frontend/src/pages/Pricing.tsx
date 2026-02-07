@@ -120,7 +120,7 @@ export default function Pricing() {
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pt-4">
         {tiers.map((tier) => {
           const Icon = tier.icon
           const price = billingCycle === 'monthly' ? tier.priceMonthly : Math.round(tier.priceYearly / 12)
@@ -156,29 +156,37 @@ export default function Pricing() {
 
                 {/* Price */}
                 <div className="mb-6">
-                  <div className="flex items-baseline">
-                    <span className="text-4xl font-bold text-black dark:text-white">
-                      ${price}
-                    </span>
-                    <span className="text-neutral-500 dark:text-neutral-400 ml-1">/mo</span>
-                  </div>
-                  {billingCycle === 'yearly' && tier.priceYearly > 0 && (
-                    <p className="text-sm text-green-500 mt-1">
-                      ${tier.priceYearly}/year (save ${tier.priceMonthly * 12 - tier.priceYearly})
-                    </p>
+                  {tier.id === 'enterprise' ? (
+                    <div className="flex items-baseline">
+                      <span className="text-4xl font-bold text-black dark:text-white">Custom</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline">
+                        <span className="text-4xl font-bold text-black dark:text-white">
+                          ${price}
+                        </span>
+                        <span className="text-neutral-500 dark:text-neutral-400 ml-1">/mo</span>
+                      </div>
+                      {billingCycle === 'yearly' && tier.priceYearly > 0 && (
+                        <p className="text-sm text-green-500 mt-1">
+                          ${tier.priceYearly}/year (save ${tier.priceMonthly * 12 - tier.priceYearly})
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
                 {/* CTA Button */}
                 <button
-                  onClick={() => handleSelectTier(tier.id)}
+                  onClick={() => tier.id === 'enterprise' ? window.location.href = 'mailto:sales@wdym86.ai' : handleSelectTier(tier.id)}
                   className={`w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center space-x-2 ${
                     tier.popular
                       ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/30'
                       : 'bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200'
                   }`}
                 >
-                  <span>{tier.priceMonthly === 0 ? 'Start Free' : 'Get Started'}</span>
+                  <span>{tier.id === 'enterprise' ? 'Contact Sales' : tier.priceMonthly === 0 ? 'Start Free' : 'Get Started'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 

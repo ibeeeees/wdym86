@@ -95,6 +95,11 @@ export default function Login() {
     setShowRolePicker(true)
   }
 
+  const handleCuisineShortcut = (cuisineKey: string) => {
+    setSelectedCuisine(cuisineKey)
+    setShowRolePicker(true)
+  }
+
   const handleRoleNext = () => {
     if (!selectedRole) return
     setShowRolePicker(false)
@@ -116,11 +121,6 @@ export default function Login() {
     { icon: Truck, title: 'Disruption Aware', desc: 'Weather, traffic, supplier risks', color: 'from-green-400 to-emerald-500' },
   ]
 
-  const stats = [
-    { value: '99.2%', label: 'Forecast Accuracy' },
-    { value: '3x', label: 'Faster Decisions' },
-    { value: '$50K', label: 'Avg. Savings' },
-  ]
 
   return (
     <div className={`min-h-screen flex transition-colors ${darkMode ? 'dark bg-neutral-900' : 'bg-white'}`}>
@@ -176,14 +176,22 @@ export default function Login() {
             <p className="text-white/70 mt-4 text-lg">AI-powered inventory intelligence for restaurants. Reduce waste, prevent stockouts, optimize orders.</p>
           </div>
 
-          {/* Stats */}
-          <div className="flex space-x-8">
-            {stats.map((stat, i) => (
-              <div key={i} className="text-center">
-                <p className="text-3xl font-bold text-white">{stat.value}</p>
-                <p className="text-white/60 text-sm">{stat.label}</p>
-              </div>
-            ))}
+          {/* Restaurant Demos */}
+          <div>
+            <h3 className="text-white/90 font-semibold text-sm uppercase tracking-wider mb-3">See it in action</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {CUISINE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => handleCuisineShortcut(opt.key)}
+                  className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:bg-white/20 transition-all hover:scale-[1.03] text-left group"
+                >
+                  <span className="text-lg font-bold block mb-0.5">{opt.flag}</span>
+                  <p className="text-white text-xs font-semibold truncate">{opt.restaurantName}</p>
+                  <p className="text-white/50 text-[10px]">{opt.label}</p>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Feature Cards */}

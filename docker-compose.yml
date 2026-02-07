@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source for hot reload
+      - ./backend/app:/app/app
+      # Persist SQLite database
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/wdym86.db
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - DEBUG=true
+    networks:
+      - wdym86-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount source for hot reload
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      # Exclude node_modules from mount
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - wdym86-network
+    restart: unless-stopped
+
+networks:
+  wdym86-network:
+    driver: bridge

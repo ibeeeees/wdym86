@@ -11,6 +11,7 @@ import POS from './pages/POS'
 import Delivery from './pages/Delivery'
 import Pricing from './pages/Pricing'
 import SolanaPay from './pages/SolanaPay'
+import Downloads from './pages/Downloads'
 import Login from './pages/Login'
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
           <Route path="/delivery" element={<Delivery />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/solana-pay" element={<SolanaPay />} />
+          <Route path="/downloads" element={<Downloads />} />
           <Route path="/chat" element={<GeminiChat />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

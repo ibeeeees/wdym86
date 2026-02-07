@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package, Wallet, Monitor } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package, Wallet, Monitor, Download } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
 interface LayoutProps {
@@ -108,6 +108,13 @@ export default function Layout({ children, onLogout }: LayoutProps) {
 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-2">
+              <Link
+                to="/downloads"
+                className="hidden sm:flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-medium rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-500/20"
+              >
+                <Download className="w-4 h-4" />
+                <span>Get App</span>
+              </Link>
               <button
                 onClick={toggleTheme}
                 className="p-2.5 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all hover:scale-105"

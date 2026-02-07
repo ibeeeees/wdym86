@@ -1,7 +1,7 @@
 """
 Database Configuration
 
-SQLAlchemy async setup with SQLite (easily swappable to PostgreSQL).
+SQLAlchemy async setup with SQLite (dev) or AWS RDS PostgreSQL (production).
 """
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -13,12 +13,26 @@ import uuid
 
 from .config import settings
 
-# Create async engine
-engine = create_async_engine(
-    settings.database_url,
-    echo=settings.debug,
-    future=True
-)
+# Get database URL (supports AWS RDS)
+database_url = settings.get_database_url()
+
+# Create async engine with appropriate settings
+engine_kwargs = {
+    "echo": settings.debug,
+    "future": True
+}
+
+# Add PostgreSQL-specific settings for RDS
+if settings.rds_enabled:
+    engine_kwargs.update({
+        "pool_size": 5,
+        "max_overflow": 10,
+        "pool_timeout": 30,
+        "pool_recycle": 1800,  # Recycle connections after 30 minutes
+        "pool_pre_ping": True  # Test connections before use
+    })
+
+engine = create_async_engine(database_url, **engine_kwargs)
 
 # Session factory
 async_session_maker = async_sessionmaker(

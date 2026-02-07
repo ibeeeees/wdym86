@@ -24,7 +24,8 @@ from .routers import (
     events_router,
     pos_router,
     payments_router,
-    delivery_router
+    delivery_router,
+    aws_router
 )
 
 
@@ -83,6 +84,7 @@ app.include_router(events_router, prefix="/events", tags=["Events & Disruptions"
 app.include_router(pos_router, prefix="/pos", tags=["Point of Sale"])
 app.include_router(payments_router, prefix="/payments", tags=["Payments"])
 app.include_router(delivery_router, tags=["Delivery Services"])
+app.include_router(aws_router, tags=["AWS"])
 
 
 @app.get("/")

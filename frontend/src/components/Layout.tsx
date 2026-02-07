@@ -264,8 +264,17 @@ export default function Layout({ children }: LayoutProps) {
       )}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="flex justify-between items-center h-full">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-3 group outline-none">
+            {/* Logo - POS users stay on POS page */}
+            <Link
+              to={role === 'pos_user' ? '/pos' : '/'}
+              onClick={(e) => {
+                if (role === 'pos_user') {
+                  e.preventDefault()
+                  navigate('/pos')
+                }
+              }}
+              className="flex items-center space-x-3 group outline-none"
+            >
               <div className="relative">
                 <img src="/logo.jpg" alt="wdym86" className="w-10 h-10 rounded-xl shadow-lg shadow-primary-500/20 group-hover:shadow-primary-500/40 group-hover:scale-105 transition-all duration-300 object-cover" />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full animate-pulse-glow box-shadow-glow" />

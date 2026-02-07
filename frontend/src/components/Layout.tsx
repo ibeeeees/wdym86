@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, LogOut, UtensilsCrossed, Truck, Sun, Moon, Menu, X, ShoppingCart, Package, Wallet, Monitor } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
 interface LayoutProps {
@@ -11,7 +11,7 @@ interface LayoutProps {
 export default function Layout({ children, onLogout }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { theme, toggleTheme } = useTheme()
+  const { theme, resolvedTheme, toggleTheme } = useTheme()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
 
@@ -39,6 +39,7 @@ export default function Layout({ children, onLogout }: LayoutProps) {
             case 'o': navigate('/delivery'); break
             case 'i': navigate('/dishes'); break
             case 's': navigate('/suppliers'); break
+            case 'w': navigate('/solana-pay'); break
             case 'c': navigate('/chat'); break
           }
           document.removeEventListener('keydown', handleNextKey)
@@ -63,8 +64,15 @@ export default function Layout({ children, onLogout }: LayoutProps) {
     { path: '/delivery', icon: Package, label: 'Delivery' },
     { path: '/dishes', icon: UtensilsCrossed, label: 'Dishes' },
     { path: '/suppliers', icon: Truck, label: 'Suppliers' },
+    { path: '/solana-pay', icon: Wallet, label: 'Crypto Pay' },
     { path: '/chat', icon: MessageSquare, label: 'AI Advisor' },
   ]
+
+  const getThemeIcon = () => {
+    if (theme === 'system') return <Monitor className="w-4 h-4" />
+    if (resolvedTheme === 'light') return <Moon className="w-4 h-4" />
+    return <Sun className="w-4 h-4" />
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-900 dark:to-neutral-900 transition-colors">
@@ -103,8 +111,9 @@ export default function Layout({ children, onLogout }: LayoutProps) {
               <button
                 onClick={toggleTheme}
                 className="p-2.5 rounded-xl text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all hover:scale-105"
+                title={`Theme: ${theme} (click to cycle)`}
               >
-                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                {getThemeIcon()}
               </button>
               <button
                 onClick={onLogout}
@@ -192,6 +201,7 @@ export default function Layout({ children, onLogout }: LayoutProps) {
                 { keys: 'g o', desc: 'Go to Delivery' },
                 { keys: 'g i', desc: 'Go to Dishes' },
                 { keys: 'g s', desc: 'Go to Suppliers' },
+                { keys: 'g w', desc: 'Go to Crypto Pay' },
                 { keys: 'g c', desc: 'Go to Chat' },
               ].map(({ keys, desc }) => (
                 <div key={keys} className="flex items-center justify-between py-1.5">

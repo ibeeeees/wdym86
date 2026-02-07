@@ -26,7 +26,8 @@ from .routers import (
     payments_router,
     delivery_router,
     aws_router,
-    subscriptions_router
+    subscriptions_router,
+    solana_pay_router
 )
 
 
@@ -87,6 +88,7 @@ app.include_router(payments_router, prefix="/payments", tags=["Payments"])
 app.include_router(delivery_router, tags=["Delivery Services"])
 app.include_router(aws_router, tags=["AWS"])
 app.include_router(subscriptions_router, tags=["Subscriptions"])
+app.include_router(solana_pay_router, tags=["Solana Pay"])
 
 
 @app.get("/")

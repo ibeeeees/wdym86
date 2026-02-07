@@ -53,5 +53,5 @@ data/*.db
 # Logs
 *.log
 
-# Local data
-data/
+# Local data (top-level only)
+/data/

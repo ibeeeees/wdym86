@@ -15,6 +15,7 @@ from .payments import router as payments_router
 from .delivery import router as delivery_router
 from .aws_status import router as aws_router
 from .subscriptions import router as subscriptions_router
+from .solana_pay import router as solana_pay_router
 
 __all__ = [
     'auth_router',
@@ -32,4 +33,5 @@ __all__ = [
     'delivery_router',
     'aws_router',
     'subscriptions_router',
+    'solana_pay_router',
 ]

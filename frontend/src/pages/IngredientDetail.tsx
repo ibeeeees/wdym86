@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, RefreshCw } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart } from 'recharts'
+import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart } from 'recharts'
 
 const demoForecast = [
   { date: 'Mon', actual: 45, forecast: 48, lower: 38, upper: 58 },
@@ -58,7 +58,7 @@ const riskStyles: Record<string, string> = {
 }
 
 export default function IngredientDetail() {
-  const { id } = useParams()
+  useParams()
   const [loading, setLoading] = useState(false)
 
   const handleRunAnalysis = () => {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, RefreshCw, AlertCircle } from 'lucide-react'
+import { ArrowRight, RefreshCw } from 'lucide-react'
 
 const demoIngredients = [
   { id: '1', name: 'Chicken Breast', category: 'meat', current_inventory: 45, unit: 'lbs', risk_level: 'URGENT', days_of_cover: 2, stockout_prob: 0.38 },

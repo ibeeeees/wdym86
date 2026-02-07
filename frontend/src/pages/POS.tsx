@@ -71,7 +71,7 @@ const categoryStyles: Record<string, { bg: string; icon: any; gradient: string }
   'Appetizers': { bg: 'bg-orange-50 dark:bg-orange-900/20', icon: UtensilsCrossed, gradient: 'from-orange-400 to-red-500' },
   'Mains': { bg: 'bg-red-50 dark:bg-red-900/20', icon: UtensilsCrossed, gradient: 'from-red-500 to-pink-500' },
   'Drinks': { bg: 'bg-blue-50 dark:bg-blue-900/20', icon: Coffee, gradient: 'from-blue-400 to-cyan-500' },
-  'Desserts': { bg: 'bg-pink-50 dark:bg-pink-900/20', icon: IceCream, gradient: 'from-pink-400 to-purple-500' },
+  'Desserts': { bg: 'bg-pink-50 dark:bg-pink-900/20', icon: IceCream, gradient: 'from-pink-400 to-red-600' },
 }
 
 const paymentMethods = [
@@ -79,7 +79,7 @@ const paymentMethods = [
   { id: 'cash', name: 'Cash', icon: Banknote, color: 'bg-gradient-to-br from-green-500 to-emerald-600', emoji: '💵' },
   { id: 'apple_pay', name: 'Apple Pay', icon: Smartphone, color: 'bg-gradient-to-br from-gray-800 to-black', emoji: '' },
   { id: 'google_pay', name: 'Google Pay', icon: Smartphone, color: 'bg-gradient-to-br from-blue-500 to-green-500', emoji: '🔵' },
-  { id: 'paypal', name: 'PayPal', icon: CreditCard, color: 'bg-gradient-to-br from-blue-600 to-indigo-700', emoji: '🅿️' },
+  { id: 'paypal', name: 'PayPal', icon: CreditCard, color: 'bg-gradient-to-br from-blue-600 to-red-800', emoji: '🅿️' },
   { id: 'venmo', name: 'Venmo', icon: Smartphone, color: 'bg-gradient-to-br from-cyan-400 to-blue-500', emoji: '💙' },
   { id: 'cash_app', name: 'Cash App', icon: DollarSign, color: 'bg-gradient-to-br from-emerald-400 to-green-600', emoji: '💚' },
   { id: 'klarna', name: 'Klarna', icon: Clock, color: 'bg-gradient-to-br from-pink-400 to-pink-600', emoji: '🛒' },
@@ -231,7 +231,7 @@ export default function POS() {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/25">
+            <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/25">
               <ShoppingCart className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -298,7 +298,7 @@ export default function POS() {
               <button
                 key={item.id}
                 onClick={() => addToOrder(item)}
-                className="group relative p-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl hover:border-violet-400 dark:hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-200 text-left hover:scale-[1.02]"
+                className="group relative p-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl hover:border-red-400 dark:hover:border-red-500 hover:shadow-lg hover:shadow-red-500/10 transition-all duration-200 text-left hover:scale-[1.02]"
               >
                 {item.popular && (
                   <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold rounded-full shadow-lg">
@@ -319,7 +319,7 @@ export default function POS() {
       {/* Right Side - Order */}
       <div className="w-96 flex flex-col bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-xl overflow-hidden">
         {/* Order Header */}
-        <div className="p-4 bg-gradient-to-r from-violet-500 to-indigo-600 text-white">
+        <div className="p-4 bg-gradient-to-r from-red-500 to-red-700 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
@@ -327,7 +327,7 @@ export default function POS() {
               </div>
               <div>
                 <h2 className="font-bold">Current Order</h2>
-                <p className="text-xs text-violet-200">
+                <p className="text-xs text-red-200">
                   {order.items.reduce((sum, item) => sum + item.quantity, 0)} items
                 </p>
               </div>
@@ -344,13 +344,13 @@ export default function POS() {
 
           {order.orderType === 'dine_in' && (
             <div className="mt-3 flex items-center space-x-2">
-              <Users className="w-4 h-4 text-violet-200" />
+              <Users className="w-4 h-4 text-red-200" />
               <input
                 type="text"
                 placeholder="Table #"
                 value={tableNumber}
                 onChange={(e) => setTableNumber(e.target.value)}
-                className="flex-1 px-3 py-2 text-sm bg-white/20 backdrop-blur-sm border-0 rounded-lg text-white placeholder-violet-200 focus:ring-2 focus:ring-white/50"
+                className="flex-1 px-3 py-2 text-sm bg-white/20 backdrop-blur-sm border-0 rounded-lg text-white placeholder-red-200 focus:ring-2 focus:ring-white/50"
               />
             </div>
           )}
@@ -368,7 +368,7 @@ export default function POS() {
             </div>
           ) : (
             order.items.map(item => (
-              <div key={item.id} className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-700/50 p-3 rounded-xl border border-neutral-100 dark:border-neutral-600 hover:border-violet-200 dark:hover:border-violet-800 transition-colors">
+              <div key={item.id} className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-700/50 p-3 rounded-xl border border-neutral-100 dark:border-neutral-600 hover:border-red-200 dark:hover:border-red-800 transition-colors">
                 <div className="flex items-center space-x-3">
                   <span className="text-xl">{(demoMenuItems.find(m => m.id === item.id)?.emoji) || '🍽️'}</span>
                   <div>
@@ -386,7 +386,7 @@ export default function POS() {
                   <span className="w-8 text-center font-bold text-black dark:text-white">{item.quantity}</span>
                   <button
                     onClick={() => updateQuantity(item.id, 1)}
-                    className="w-7 h-7 bg-violet-100 dark:bg-violet-900/50 text-violet-600 dark:text-violet-400 rounded-lg hover:bg-violet-200 dark:hover:bg-violet-800 flex items-center justify-center transition-colors"
+                    className="w-7 h-7 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 flex items-center justify-center transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                   </button>
@@ -420,7 +420,7 @@ export default function POS() {
           )}
           <div className="flex justify-between text-xl font-bold pt-3 border-t border-neutral-200 dark:border-neutral-700">
             <span className="text-black dark:text-white">Total</span>
-            <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent font-mono">${order.total.toFixed(2)}</span>
+            <span className="bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent font-mono">${order.total.toFixed(2)}</span>
           </div>
         </div>
 
@@ -429,7 +429,7 @@ export default function POS() {
           <button
             onClick={() => setShowPayment(true)}
             disabled={order.items.length === 0}
-            className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-violet-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center space-x-3 transition-all"
+            className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-bold text-lg shadow-lg shadow-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center space-x-3 transition-all"
           >
             <CreditCard className="w-6 h-6" />
             <span>Pay ${order.total.toFixed(2)}</span>
@@ -457,14 +457,14 @@ export default function POS() {
             ) : (
               <>
                 {/* Header */}
-                <div className="p-5 bg-gradient-to-r from-violet-500 to-indigo-600 text-white flex items-center justify-between">
+                <div className="p-5 bg-gradient-to-r from-red-500 to-red-700 text-white flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
                       <CreditCard className="w-5 h-5" />
                     </div>
                     <div>
                       <h2 className="text-lg font-bold">Complete Payment</h2>
-                      <p className="text-violet-200 text-sm">Select your preferred method</p>
+                      <p className="text-red-200 text-sm">Select your preferred method</p>
                     </div>
                   </div>
                   <button
@@ -485,7 +485,7 @@ export default function POS() {
                         onClick={() => { setTipPercentage(tip.percentage); setCustomTip(''); }}
                         className={`py-3 rounded-xl text-sm font-bold transition-all ${
                           tipPercentage === tip.percentage
-                            ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/30 scale-105'
+                            ? 'bg-gradient-to-br from-red-500 to-red-700 text-white shadow-lg shadow-red-500/30 scale-105'
                             : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 hover:scale-105'
                         }`}
                       >
@@ -497,7 +497,7 @@ export default function POS() {
                       placeholder="$"
                       value={customTip}
                       onChange={(e) => { setCustomTip(e.target.value); setTipPercentage(null); }}
-                      className="py-3 px-2 rounded-xl text-sm font-bold bg-neutral-100 dark:bg-neutral-700 text-black dark:text-white text-center focus:ring-2 focus:ring-violet-500"
+                      className="py-3 px-2 rounded-xl text-sm font-bold bg-neutral-100 dark:bg-neutral-700 text-black dark:text-white text-center focus:ring-2 focus:ring-red-500"
                     />
                   </div>
                 </div>
@@ -512,8 +512,8 @@ export default function POS() {
                         onClick={() => setSelectedPayment(method.id)}
                         className={`p-4 rounded-xl border-2 transition-all flex items-center space-x-3 ${
                           selectedPayment === method.id
-                            ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 scale-[1.02] shadow-lg'
-                            : 'border-neutral-200 dark:border-neutral-700 hover:border-violet-300 dark:hover:border-violet-700 hover:scale-[1.02]'
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/30 scale-[1.02] shadow-lg'
+                            : 'border-neutral-200 dark:border-neutral-700 hover:border-violet-300 dark:hover:border-red-700 hover:scale-[1.02]'
                         }`}
                       >
                         <div className={`w-11 h-11 ${method.color} rounded-xl flex items-center justify-center shadow-lg`}>
@@ -558,14 +558,14 @@ export default function POS() {
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-neutral-600 dark:text-neutral-400 font-medium">Total Amount</span>
-                    <span className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent font-mono">
+                    <span className="text-3xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent font-mono">
                       ${order.total.toFixed(2)}
                     </span>
                   </div>
                   <button
                     onClick={handlePayment}
                     disabled={!selectedPayment || processing || (selectedPayment === 'cash' && parseFloat(cashReceived || '0') < order.total)}
-                    className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-violet-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center space-x-3 transition-all"
+                    className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-bold text-lg shadow-lg shadow-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center space-x-3 transition-all"
                   >
                     {processing ? (
                       <>

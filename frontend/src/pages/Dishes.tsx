@@ -337,7 +337,7 @@ export default function Dishes() {
         <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Total Dishes</p>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-red-600 rounded-xl flex items-center justify-center">
               <UtensilsCrossed className="w-5 h-5 text-white" />
             </div>
           </div>
@@ -478,16 +478,16 @@ export default function Dishes() {
       </div>
 
       {/* Model Info */}
-      <div className="border border-violet-200 dark:border-violet-900 rounded-2xl p-6 bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 dark:from-violet-900/20 dark:via-indigo-900/20 dark:to-purple-900/20">
+      <div className="border border-red-200 dark:border-red-900 rounded-2xl p-6 bg-gradient-to-r from-red-50 via-indigo-50 to-purple-50 dark:from-red-900/20 dark:via-indigo-900/20 dark:to-purple-900/20">
         <div className="flex items-start space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30 flex-shrink-0">
+          <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/30 flex-shrink-0">
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <div>
             <h2 className="font-semibold text-black dark:text-white mb-2">How This Feeds the AI Model</h2>
             <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
               Recipe quantities are multiplied by predicted dish sales to forecast ingredient demand.
-              For example, if we predict <span className="font-semibold text-violet-600 dark:text-violet-400">50 Salmon Bowls</span> will be sold tomorrow, the model calculates:
+              For example, if we predict <span className="font-semibold text-red-600 dark:text-red-400">50 Salmon Bowls</span> will be sold tomorrow, the model calculates:
               <span className="font-mono text-black dark:text-white mx-1">50 × 0.4 lbs = 20 lbs</span> of Salmon needed.
             </p>
           </div>

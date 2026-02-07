@@ -340,7 +340,7 @@ The Strategy Agent would recommend adjusting lead time assumptions to account fo
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-violet-400 to-purple-500 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-violet-500/30 animate-pulse">
+          <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-red-500/30 animate-pulse">
             <Package className="w-8 h-8 text-white" />
           </div>
           <p className="text-sm text-neutral-500 mt-4 font-medium">Loading ingredient data...</p>
@@ -378,7 +378,7 @@ The Strategy Agent would recommend adjusting lead time assumptions to account fo
         <button
           onClick={handleRunPipeline}
           disabled={analyzing}
-          className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-violet-500/30 transition-all hover:scale-105 disabled:opacity-50 disabled:scale-100"
+          className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-red-500/30 transition-all hover:scale-105 disabled:opacity-50 disabled:scale-100"
         >
           <RefreshCw className={`w-4 h-4 ${analyzing ? 'animate-spin' : ''}`} />
           <span>{analyzing ? 'Running Pipeline...' : 'Run Pipeline'}</span>

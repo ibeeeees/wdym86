@@ -58,7 +58,7 @@ const platformConfig: Record<string, { gradient: string; bg: string; icon: strin
     icon: '📦'
   },
   seamless: {
-    gradient: 'from-blue-500 to-indigo-600',
+    gradient: 'from-blue-500 to-red-700',
     bg: 'bg-blue-50 dark:bg-blue-900/20',
     icon: '🍽️'
   },
@@ -67,7 +67,7 @@ const platformConfig: Record<string, { gradient: string; bg: string; icon: strin
 const statusConfig: Record<string, { color: string; bg: string; icon: any }> = {
   pending: { color: 'text-amber-600', bg: 'bg-amber-100 dark:bg-amber-900/30', icon: Clock },
   confirmed: { color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/30', icon: CheckCircle },
-  preparing: { color: 'text-purple-600', bg: 'bg-purple-100 dark:bg-purple-900/30', icon: ChefHat },
+  preparing: { color: 'text-red-700', bg: 'bg-purple-100 dark:bg-purple-900/30', icon: ChefHat },
   ready_for_pickup: { color: 'text-cyan-600', bg: 'bg-cyan-100 dark:bg-cyan-900/30', icon: Package },
   out_for_delivery: { color: 'text-green-600', bg: 'bg-green-100 dark:bg-green-900/30', icon: Truck },
   delivered: { color: 'text-emerald-600', bg: 'bg-emerald-100 dark:bg-emerald-900/30', icon: CheckCircle },
@@ -237,7 +237,7 @@ export default function Delivery() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
+          <div className="w-12 h-12 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/30">
             <Truck className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -248,7 +248,7 @@ export default function Delivery() {
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white rounded-xl font-medium text-sm transition-all hover:scale-105 shadow-lg shadow-violet-500/30 disabled:opacity-50"
+          className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white rounded-xl font-medium text-sm transition-all hover:scale-105 shadow-lg shadow-red-500/30 disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           <span>{refreshing ? 'Refreshing...' : 'Refresh Orders'}</span>
@@ -466,7 +466,7 @@ export default function Delivery() {
                     onClick={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, 'preparing'); }}
                     className="w-full mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700"
                   >
-                    <span className="flex items-center justify-center space-x-2 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl text-sm font-semibold hover:from-purple-600 hover:to-pink-700 transition-all">
+                    <span className="flex items-center justify-center space-x-2 py-2.5 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl text-sm font-semibold hover:from-red-700 hover:to-pink-700 transition-all">
                       <ChefHat className="w-4 h-4" />
                       <span>Start Preparing</span>
                     </span>

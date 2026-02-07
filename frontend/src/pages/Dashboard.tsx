@@ -353,13 +353,13 @@ export default function Dashboard() {
 
       {/* Daily AI Summary */}
       {dailySummary && (
-        <div className="border border-violet-200 dark:border-violet-900 rounded-lg overflow-hidden bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-900/20 dark:to-indigo-900/20">
+        <div className="border border-red-200 dark:border-red-900 rounded-lg overflow-hidden bg-gradient-to-r from-red-50 to-indigo-50 dark:from-red-900/20 dark:to-indigo-900/20">
           <button
             onClick={() => setSummaryExpanded(!summaryExpanded)}
             className="w-full flex items-center justify-between p-4 hover:bg-white/50 dark:hover:bg-black/20 transition-colors"
           >
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-lg flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <div className="text-left">
@@ -412,7 +412,7 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-all hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Total Items</p>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-red-600 rounded-xl flex items-center justify-center">
               <Package className="w-5 h-5 text-white" />
             </div>
           </div>
@@ -454,7 +454,7 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-all hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Est. Value</p>
-            <div className="w-10 h-10 bg-gradient-to-br from-violet-400 to-purple-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 rounded-xl flex items-center justify-center">
               <span className="text-white font-bold">$</span>
             </div>
           </div>
@@ -470,7 +470,7 @@ export default function Dashboard() {
             <h3 className="text-sm font-semibold text-black dark:text-white">Weekly Demand Forecast</h3>
             <div className="flex items-center space-x-4 text-xs">
               <div className="flex items-center space-x-1.5">
-                <div className="w-3 h-1 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full" />
+                <div className="w-3 h-1 bg-gradient-to-r from-red-500 to-red-600 rounded-full" />
                 <span className="text-neutral-500 dark:text-neutral-400">Forecast</span>
               </div>
               <div className="flex items-center space-x-1.5">
@@ -585,10 +585,10 @@ export default function Dashboard() {
       )}
 
       {/* Live Delivery Orders */}
-      <div className="bg-gradient-to-r from-violet-50 via-purple-50 to-fuchsia-50 dark:from-violet-900/20 dark:via-purple-900/20 dark:to-fuchsia-900/20 rounded-2xl p-5 border border-violet-200 dark:border-violet-900">
+      <div className="bg-gradient-to-r from-red-50 via-purple-50 to-fuchsia-50 dark:from-red-900/20 dark:via-purple-900/20 dark:to-fuchsia-900/20 rounded-2xl p-5 border border-red-200 dark:border-red-900">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
+            <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/30">
               <TruckIcon className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -598,7 +598,7 @@ export default function Dashboard() {
           </div>
           <Link
             to="/delivery"
-            className="flex items-center space-x-1.5 px-4 py-2 bg-white dark:bg-neutral-800 border border-violet-200 dark:border-violet-800 rounded-xl text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-all hover:scale-105"
+            className="flex items-center space-x-1.5 px-4 py-2 bg-white dark:bg-neutral-800 border border-red-200 dark:border-red-800 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all hover:scale-105"
           >
             <span>View All</span>
             <ArrowRight className="w-4 h-4" />
@@ -620,7 +620,7 @@ export default function Dashboard() {
                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                   order.status === 'Pending' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' :
                   order.status === 'Confirmed' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600' :
-                  order.status === 'Preparing' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600' :
+                  order.status === 'Preparing' ? 'bg-purple-100 dark:bg-purple-900/30 text-red-700' :
                   'bg-green-100 dark:bg-green-900/30 text-green-600'
                 }`}>
                   {order.status === 'Out for Delivery' ? 'On the way' : order.status}
@@ -706,7 +706,7 @@ export default function Dashboard() {
         </div>
         {loading ? (
           <div className="p-12 text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-violet-400 to-indigo-500 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-violet-500/30 animate-pulse">
+            <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-red-500/30 animate-pulse">
               <Package className="w-8 h-8 text-white" />
             </div>
             <p className="text-sm text-neutral-500 mt-4 font-medium">Loading inventory...</p>
@@ -799,9 +799,9 @@ export default function Dashboard() {
       </div>
 
       {/* AI Pipeline */}
-      <div className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 dark:from-violet-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 border border-violet-200 dark:border-violet-900">
+      <div className="bg-gradient-to-r from-red-50 via-indigo-50 to-purple-50 dark:from-red-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 border border-red-200 dark:border-red-900">
         <div className="flex items-center space-x-2 mb-6">
-          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center">
             <Brain className="w-4 h-4 text-white" />
           </div>
           <h2 className="text-sm font-semibold text-black dark:text-white">AI Pipeline</h2>
@@ -841,14 +841,14 @@ export default function Dashboard() {
       {showWelcome && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-neutral-800 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-6 text-white">
+            <div className="bg-gradient-to-r from-red-600 to-red-700 p-6 text-white">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">Welcome to wdym86</h2>
                 <button onClick={() => setShowWelcome(false)} className="p-1 hover:bg-white/20 rounded">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-violet-100 mt-1 text-sm">AI-Powered Restaurant Inventory Intelligence</p>
+              <p className="text-red-100 mt-1 text-sm">AI-Powered Restaurant Inventory Intelligence</p>
             </div>
 
             <div className="p-6 space-y-4">
@@ -861,7 +861,7 @@ export default function Dashboard() {
                   { icon: BarChart3, title: 'Forecasting', desc: 'NumPy TCN model predicts demand with uncertainty bounds', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' },
                   { icon: AlertTriangle, title: 'Risk Agent', desc: 'Detects stockout risk and calculates days of cover', color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' },
                   { icon: ShoppingCart, title: 'Reorder Agent', desc: 'Recommends optimal order timing and quantities', color: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' },
-                  { icon: TruckIcon, title: 'Strategy Agent', desc: 'Adapts to disruptions and suggests supplier actions', color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' },
+                  { icon: TruckIcon, title: 'Strategy Agent', desc: 'Adapts to disruptions and suggests supplier actions', color: 'bg-purple-100 dark:bg-purple-900/30 text-red-700 dark:text-purple-400' },
                   { icon: Brain, title: 'Gemini Explain', desc: 'Provides natural language explanations for decisions', color: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400' },
                 ].map(({ icon: Icon, title, desc, color }) => (
                   <div key={title} className="flex items-start space-x-3">

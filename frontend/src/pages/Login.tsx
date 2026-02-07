@@ -104,7 +104,7 @@ export default function Login({ onLogin }: LoginProps) {
 
       {/* Left Side - Features */}
       <div
-        className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-violet-600 via-indigo-700 to-purple-800 p-12 flex-col justify-between relative overflow-hidden"
+        className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-red-600 via-red-700 to-black p-12 flex-col justify-between relative overflow-hidden"
         style={{
           backgroundPosition: `${50 + mousePos.x * 10}% ${50 + mousePos.y * 10}%`,
         }}
@@ -125,7 +125,7 @@ export default function Login({ onLogin }: LoginProps) {
         <div className="relative z-10">
           <div className="flex items-center space-x-3 mb-2">
             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-black/20">
-              <span className="text-violet-600 font-mono text-xl font-bold">W</span>
+              <span className="text-red-600 font-mono text-xl font-bold">W</span>
             </div>
             <div>
               <span className="text-white text-2xl font-bold">wdym86</span>
@@ -186,7 +186,7 @@ export default function Login({ onLogin }: LoginProps) {
         <div className="w-full max-w-sm">
           {/* Mobile Logo */}
           <div className="text-center mb-8 lg:hidden">
-            <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-violet-500/30">
+            <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/30">
               <span className="text-white font-mono text-2xl font-bold">W</span>
             </div>
             <h1 className="text-2xl font-bold text-black dark:text-white">wdym86</h1>
@@ -198,7 +198,7 @@ export default function Login({ onLogin }: LoginProps) {
             <button
               onClick={handleDemoLogin}
               disabled={demoLoading}
-              className="w-full py-4 rounded-2xl font-semibold text-base bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white transition-all shadow-xl shadow-violet-500/30 flex items-center justify-center space-x-3 hover:scale-[1.02] disabled:opacity-70 disabled:scale-100"
+              className="w-full py-4 rounded-2xl font-semibold text-base bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white transition-all shadow-xl shadow-red-500/30 flex items-center justify-center space-x-3 hover:scale-[1.02] disabled:opacity-70 disabled:scale-100"
             >
               {demoLoading ? (
                 <>
@@ -236,7 +236,7 @@ export default function Login({ onLogin }: LoginProps) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
+                  className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
                   placeholder="Full name"
                 />
               </div>
@@ -247,7 +247,7 @@ export default function Login({ onLogin }: LoginProps) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
+                className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
                 placeholder="Email address"
                 required
               />
@@ -258,7 +258,7 @@ export default function Login({ onLogin }: LoginProps) {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
+                className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
                 placeholder="Password"
                 required
               />
@@ -294,7 +294,7 @@ export default function Login({ onLogin }: LoginProps) {
             {isRegister ? 'Have an account?' : 'No account?'}{' '}
             <button
               onClick={() => setIsRegister(!isRegister)}
-              className="text-violet-600 dark:text-violet-400 font-semibold hover:underline"
+              className="text-red-600 dark:text-red-400 font-semibold hover:underline"
             >
               {isRegister ? 'Sign In' : 'Create one'}
             </button>

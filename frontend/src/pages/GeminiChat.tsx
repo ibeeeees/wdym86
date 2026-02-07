@@ -368,7 +368,7 @@ export default function GeminiChat() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-violet-500 via-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
+          <div className="w-12 h-12 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/30">
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -378,7 +378,7 @@ export default function GeminiChat() {
                 <span className={`flex items-center space-x-1 text-xs px-2.5 py-1 rounded-full font-medium ${
                   apiConnected
                     ? 'bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-700 dark:text-green-400'
-                    : 'bg-gradient-to-r from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 text-violet-700 dark:text-violet-400'
+                    : 'bg-gradient-to-r from-red-100 to-purple-100 dark:from-red-900/30 dark:to-purple-900/30 text-red-700 dark:text-red-400'
                 }`}>
                   {apiConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                   <span>{apiConnected ? 'Gemini Live' : 'Demo Mode'}</span>
@@ -445,7 +445,7 @@ export default function GeminiChat() {
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
               message.role === 'user'
                 ? 'bg-gradient-to-br from-blue-500 to-cyan-500'
-                : 'bg-gradient-to-br from-violet-500 to-purple-600'
+                : 'bg-gradient-to-br from-red-500 to-red-700'
             }`}>
               {message.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-white" />}
             </div>
@@ -468,14 +468,14 @@ export default function GeminiChat() {
 
         {loading && (
           <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center">
               <Bot className="w-4 h-4 text-white" />
             </div>
             <div className="bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 rounded-2xl px-4 py-3 shadow-sm">
               <div className="flex space-x-1.5">
-                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="w-2 h-2 bg-red-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-red-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-red-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -517,13 +517,13 @@ export default function GeminiChat() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask me anything about your inventory..."
-            className="w-full px-5 py-4 pr-14 border border-neutral-200 dark:border-neutral-700 rounded-2xl text-sm focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
+            className="w-full px-5 py-4 pr-14 border border-neutral-200 dark:border-neutral-700 rounded-2xl text-sm focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
             disabled={loading}
           />
           <button
             onClick={() => handleSend()}
             disabled={!input.trim() || loading}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white p-2.5 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:scale-105 shadow-lg shadow-violet-500/30"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white p-2.5 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:scale-105 shadow-lg shadow-red-500/30"
           >
             <Send className="w-4 h-4" />
           </button>

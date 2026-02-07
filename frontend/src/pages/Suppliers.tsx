@@ -242,7 +242,7 @@ export default function Suppliers() {
         <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Total Suppliers</p>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-red-600 rounded-xl flex items-center justify-center">
               <Truck className="w-5 h-5 text-white" />
             </div>
           </div>

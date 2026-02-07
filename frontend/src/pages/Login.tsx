@@ -176,7 +176,7 @@ export default function Login() {
           <div>
             <h2 className="text-4xl font-bold text-white leading-tight">
               Stop guessing.<br />
-              <span className="bg-gradient-to-r from-amber-200 via-orange-200 to-pink-200 bg-clip-text text-transparent">Start predicting.</span>
+              <span className="bg-gradient-to-r from-amber-200 via-orange-200 to-pink-200 bg-clip-text text-transparent">Start knowing.</span>
             </h2>
             <p className="text-white/70 mt-4 text-lg">AI-powered inventory intelligence for restaurants. Reduce waste, prevent stockouts, optimize orders.</p>
           </div>

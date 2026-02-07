@@ -157,13 +157,13 @@ export default function Suppliers() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center space-x-3">
           <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
             <Truck className="w-6 h-6 text-white" />
           </div>
           <div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-wrap">
               <h1 className="text-xl font-bold text-black dark:text-white">Supplier Network</h1>
               {apiConnected !== null && (
                 <span className={`flex items-center space-x-1 text-xs px-2.5 py-1 rounded-full font-medium ${

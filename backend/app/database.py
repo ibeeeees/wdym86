@@ -606,6 +606,29 @@ class ExpenseRecord(Base):
 
 
 # ==========================================
+# Audit Log
+# ==========================================
+
+class AuditLog(Base):
+    """Audit log for tracking all important actions"""
+    __tablename__ = "audit_logs"
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.id"))
+    action = Column(String, nullable=False)  # create, update, delete, login, payment, etc.
+    resource_type = Column(String)  # order, ingredient, user, subscription, etc.
+    resource_id = Column(String)  # ID of the resource affected
+    details = Column(JSON, default=dict)  # Additional context
+    ip_address = Column(String)
+    user_agent = Column(String)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    restaurant = relationship("Restaurant", backref="audit_logs")
+    user = relationship("User", backref="audit_logs")
+
+
+# ==========================================
 # Database Lifecycle
 # ==========================================
 

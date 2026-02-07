@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { Check, X, Sparkles, Zap, Crown, Building2, ArrowRight } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import api from '../services/api'
+import { useNavigate } from 'react-router-dom'
 
 interface TierFeature {
   name: string
@@ -74,9 +77,44 @@ const tiers = [
 
 export default function Pricing() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
-  const handleSelectTier = (tierId: string) => {
-    // In production, this would redirect to checkout with Stripe
-    alert(`Selected ${tierId} plan with ${billingCycle} billing. Redirecting to checkout...`)
+  const [loading, setLoading] = useState<string | null>(null)
+  const { restaurantId, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+  
+  const handleSelectTier = async (tierId: string) => {
+    if (!isAuthenticated) {
+      alert('Please log in to subscribe to a plan')
+      navigate('/login')
+      return
+    }
+
+    if (tierId === 'free') {
+      alert('You are already on the free plan!')
+      return
+    }
+
+    setLoading(tierId)
+    
+    try {
+      // Call backend to create Stripe Checkout session
+      const response = await api.post(`/subscriptions/subscribe?restaurant_id=${restaurantId}`, {
+        tier: tierId,
+        billing_cycle: billingCycle
+      })
+
+      // Redirect to Stripe Checkout
+      if (response.data.checkout_url) {
+        window.location.href = response.data.checkout_url
+      } else {
+        // Fallback for demo mode
+        alert(`Subscribed to ${tierId} plan with ${billingCycle} billing! (Demo mode - no actual charge)`)
+        setLoading(null)
+      }
+    } catch (error: any) {
+      console.error('Subscription error:', error)
+      alert(error.response?.data?.detail || 'Failed to start subscription process')
+      setLoading(null)
+    }
   }
 
   return (
@@ -180,14 +218,28 @@ export default function Pricing() {
                 {/* CTA Button */}
                 <button
                   onClick={() => tier.id === 'enterprise' ? window.location.href = 'mailto:sales@wdym86.ai' : handleSelectTier(tier.id)}
-                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center space-x-2 ${
+                  disabled={loading === tier.id}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     tier.popular
                       ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/30'
                       : 'bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200'
                   }`}
                 >
-                  <span>{tier.id === 'enterprise' ? 'Contact Sales' : tier.priceMonthly === 0 ? 'Start Free' : 'Get Started'}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>
+                    {loading === tier.id 
+                      ? 'Processing...' 
+                      : tier.id === 'enterprise' 
+                        ? 'Contact Sales' 
+                        : tier.priceMonthly === 0 
+                          ? 'Start Free' 
+                          : 'Get Started'
+                    }
+                  </span>
+                  {loading === tier.id ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4" />
+                  )}
                 </button>
 
                 {/* Key Features */}

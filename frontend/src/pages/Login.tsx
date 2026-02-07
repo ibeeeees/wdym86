@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, Zap, ChefHat, TrendingUp, Users, ShoppingCart, X, ChevronLeft } from 'lucide-react'
+import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, Zap, ChefHat, TrendingUp, Users, ShoppingCart, X, ChevronLeft, LogIn } from 'lucide-react'
 import { register } from '../services/api'
 import { useAuth, UserRole } from '../context/AuthContext'
 import { CUISINE_OPTIONS } from '../data/cuisineTemplates'
@@ -50,6 +50,7 @@ export default function Login() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
   const [selectedCuisine, setSelectedCuisine] = useState<string>('mediterranean')
   const [demoLoading, setDemoLoading] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme')
     return saved === 'dark'
@@ -373,96 +374,31 @@ export default function Login() {
             )}
           </div>
 
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-200 dark:border-neutral-700" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-neutral-50 dark:bg-neutral-800 px-4 text-neutral-400 font-medium">or sign in</span>
-            </div>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isRegister && (
-              <div>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
-                  placeholder="Full name"
-                />
-              </div>
-            )}
-
-            <div>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
-                placeholder="Email address"
-                required
-              />
-            </div>
-
-            <div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
-                placeholder="Password"
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-                <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-
+          {/* Log In & Staff Login */}
+          <div className="space-y-3">
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-black dark:bg-white text-white dark:text-black py-3.5 rounded-xl font-semibold text-sm hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-all disabled:opacity-50 flex items-center justify-center space-x-2 hover:scale-[1.02]"
+              onClick={() => setShowLoginModal(true)}
+              className="w-full py-3.5 rounded-xl font-semibold text-sm bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-all flex items-center justify-center space-x-2 hover:scale-[1.02]"
             >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin" />
-                  <span>Signing in...</span>
-                </>
-              ) : (
-                <>
-                  <span>{isRegister ? 'Create Account' : 'Sign In'}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              <LogIn className="w-4 h-4" />
+              <span>Log In</span>
             </button>
-          </form>
-
-          {/* Toggle */}
-          <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
-            {isRegister ? 'Have an account?' : 'No account?'}{' '}
-            <button
-              onClick={() => setIsRegister(!isRegister)}
-              className="text-red-600 dark:text-red-400 font-semibold hover:underline"
-            >
-              {isRegister ? 'Sign In' : 'Create one'}
-            </button>
-          </p>
-
-          {/* Staff Login Link */}
-          <div className="text-center mt-4">
-            <Link
-              to="/staff/login"
-              className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors inline-flex items-center space-x-1"
-            >
-              <span>Restaurant staff? Sign in here</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            <div className="flex items-center justify-center space-x-4 text-sm">
+              <button
+                onClick={() => { setShowLoginModal(true); setIsRegister(true) }}
+                className="text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 font-medium transition-colors"
+              >
+                Create Account
+              </button>
+              <span className="text-neutral-300 dark:text-neutral-600">|</span>
+              <Link
+                to="/staff/login"
+                className="text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors inline-flex items-center space-x-1"
+              >
+                <span>Staff Login</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
 
           {/* Mobile Features */}
@@ -480,6 +416,89 @@ export default function Login() {
           </div>
         </div>
       </div>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => { setShowLoginModal(false); setError('') }}
+          />
+          <div className="relative w-full max-w-sm bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-700 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-black dark:text-white">
+                {isRegister ? 'Create Account' : 'Sign In'}
+              </h2>
+              <button
+                onClick={() => { setShowLoginModal(false); setError('') }}
+                className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {isRegister && (
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
+                  placeholder="Full name"
+                />
+              )}
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
+                placeholder="Email address"
+                required
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
+                placeholder="Password"
+                required
+              />
+              {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                  <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 flex items-center justify-center space-x-2 hover:scale-[1.02]"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>{isRegister ? 'Creating...' : 'Signing in...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{isRegister ? 'Create Account' : 'Sign In'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-5">
+              {isRegister ? 'Have an account?' : 'No account?'}{' '}
+              <button
+                onClick={() => setIsRegister(!isRegister)}
+                className="text-red-600 dark:text-red-400 font-semibold hover:underline"
+              >
+                {isRegister ? 'Sign In' : 'Create one'}
+              </button>
+            </p>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes float {

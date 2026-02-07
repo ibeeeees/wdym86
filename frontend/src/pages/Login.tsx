@@ -1,22 +1,22 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, Zap, ChefHat, TrendingUp, Users, ShoppingCart, X, ChevronLeft, LogIn } from 'lucide-react'
+import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, ChefHat, Users, ShoppingCart, X, ChevronLeft, LogIn, Flame, DollarSign, UtensilsCrossed, Soup } from 'lucide-react'
 import { register } from '../services/api'
 import { useAuth, UserRole } from '../context/AuthContext'
 import { CUISINE_OPTIONS } from '../data/cuisineTemplates'
 
 // Animated floating elements for background
-const FloatingIcon = ({ icon: Icon, delay, x, y }: { icon: any; delay: number; x: number; y: number }) => (
+const FloatingIcon = ({ icon: Icon, delay, x, y, size = 8 }: { icon: any; delay: number; x: number; y: number; size?: number }) => (
   <div
-    className="absolute opacity-10 animate-float"
+    className="absolute opacity-[0.07] animate-float"
     style={{
       left: `${x}%`,
       top: `${y}%`,
       animationDelay: `${delay}s`,
-      animationDuration: `${3 + Math.random() * 2}s`
+      animationDuration: `${6 + Math.random() * 4}s`
     }}
   >
-    <Icon className="w-8 h-8 text-white" />
+    <Icon className={`w-${size} h-${size} text-white`} />
   </div>
 )
 
@@ -146,30 +146,27 @@ export default function Login() {
           backgroundPosition: `${50 + mousePos.x * 10}% ${50 + mousePos.y * 10}%`,
         }}
       >
-        {/* Animated Background Elements */}
+        {/* Animated Background Elements - Restaurant themed */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <FloatingIcon icon={ChefHat} delay={0} x={10} y={20} />
-          <FloatingIcon icon={TrendingUp} delay={0.5} x={80} y={15} />
-          <FloatingIcon icon={Brain} delay={1} x={20} y={70} />
-          <FloatingIcon icon={BarChart3} delay={1.5} x={75} y={60} />
-          <FloatingIcon icon={Zap} delay={2} x={40} y={40} />
-          <FloatingIcon icon={Shield} delay={2.5} x={60} y={80} />
+          <FloatingIcon icon={ChefHat} delay={0} x={8} y={10} />
+          <FloatingIcon icon={ChefHat} delay={2.2} x={55} y={5} />
+          <FloatingIcon icon={ChefHat} delay={4} x={85} y={45} />
+          <FloatingIcon icon={UtensilsCrossed} delay={0.5} x={75} y={12} />
+          <FloatingIcon icon={UtensilsCrossed} delay={2.8} x={25} y={55} />
+          <FloatingIcon icon={UtensilsCrossed} delay={4.5} x={65} y={85} />
+          <FloatingIcon icon={Soup} delay={1} x={15} y={40} />
+          <FloatingIcon icon={Soup} delay={3.2} x={80} y={70} />
+          <FloatingIcon icon={Soup} delay={5} x={40} y={25} />
+          <FloatingIcon icon={Flame} delay={1.5} x={45} y={60} />
+          <FloatingIcon icon={Flame} delay={3.5} x={10} y={80} />
+          <FloatingIcon icon={Flame} delay={0.8} x={70} y={35} />
+          <FloatingIcon icon={DollarSign} delay={2} x={30} y={15} />
+          <FloatingIcon icon={DollarSign} delay={3.8} x={90} y={55} />
+          <FloatingIcon icon={DollarSign} delay={1.2} x={50} y={90} />
+          <FloatingIcon icon={DollarSign} delay={4.2} x={20} y={70} />
           {/* Gradient orbs */}
           <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
-        </div>
-
-        <div className="relative z-10">
-          <div className="flex items-center space-x-4 mb-2">
-            <img src="/logo.jpg" alt="wdym86" className="w-44 h-44 object-contain" />
-            <div>
-              <span className="text-white text-3xl font-bold">wdym86</span>
-              <div className="flex items-center space-x-2 mt-1">
-                <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs text-white/80 backdrop-blur-sm">AI Inventory</span>
-                <span className="px-2 py-0.5 bg-amber-400/30 rounded-full text-xs text-amber-200 backdrop-blur-sm">Hackathon 2026</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="space-y-8 relative z-10">
@@ -499,11 +496,14 @@ export default function Login() {
 
       <style>{`
         @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(5deg); }
+          0% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+          25% { transform: translateY(-12px) translateX(6px) rotate(3deg); }
+          50% { transform: translateY(-20px) translateX(0px) rotate(0deg); }
+          75% { transform: translateY(-12px) translateX(-6px) rotate(-3deg); }
+          100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
         }
         .animate-float {
-          animation: float 3s ease-in-out infinite;
+          animation: float 6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
         }
       `}</style>
     </div>

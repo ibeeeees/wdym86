@@ -374,8 +374,16 @@ export default function Login() {
             )}
           </div>
 
-          {/* Log In & Staff Login */}
+          {/* Sign Up & Log In */}
           <div className="space-y-3">
+            <button
+              onClick={() => { setShowLoginModal(true); setIsRegister(true) }}
+              className="w-full py-3.5 rounded-xl font-semibold text-sm border-2 border-red-600 dark:border-red-500 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all flex items-center justify-center space-x-2 hover:scale-[1.02]"
+            >
+              <Users className="w-4 h-4" />
+              <span>Sign Up</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
             <button
               onClick={() => setShowLoginModal(true)}
               className="w-full py-3.5 rounded-xl font-semibold text-sm bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-all flex items-center justify-center space-x-2 hover:scale-[1.02]"
@@ -383,14 +391,7 @@ export default function Login() {
               <LogIn className="w-4 h-4" />
               <span>Log In</span>
             </button>
-            <div className="flex items-center justify-center space-x-4 text-sm">
-              <button
-                onClick={() => { setShowLoginModal(true); setIsRegister(true) }}
-                className="text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 font-medium transition-colors"
-              >
-                Create Account
-              </button>
-              <span className="text-neutral-300 dark:text-neutral-600">|</span>
+            <div className="flex items-center justify-center text-sm">
               <Link
                 to="/staff/login"
                 className="text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors inline-flex items-center space-x-1"

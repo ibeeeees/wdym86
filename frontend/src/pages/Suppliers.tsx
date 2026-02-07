@@ -69,6 +69,7 @@ export default function Suppliers() {
 
   // Active section
   const [activeSection, setActiveSection] = useState<'suppliers' | 'compare' | 'order' | 'history' | 'distributors'>('suppliers')
+  const [connectedDistributors, setConnectedDistributors] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const loadData = async () => {
@@ -473,7 +474,20 @@ export default function Suppliers() {
                   </div>
                   <div className="flex items-center space-x-3">
                     <span className="font-mono font-bold text-black dark:text-white">{suggestion.cost}</span>
-                    <button className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold rounded-lg flex items-center space-x-1">
+                    <button
+                      onClick={() => {
+                        const supplier = suppliers.find(s => s.name === suggestion.supplier)
+                        if (supplier) {
+                          setPoSupplier(supplier.id)
+                          const pricing = supplier.pricing?.find(p => p.ingredient === suggestion.ingredient)
+                          if (pricing) {
+                            addPoItem(pricing.ingredient, pricing.price, pricing.unit)
+                          }
+                          setActiveSection('order')
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold rounded-lg flex items-center space-x-1 hover:scale-105 transition-all"
+                    >
                       <ArrowRight className="w-3 h-3" /><span>Order</span>
                     </button>
                   </div>
@@ -652,9 +666,29 @@ export default function Suppliers() {
                     <span className="text-neutral-500">Min Order</span>
                     <span className="font-semibold text-black dark:text-white">{dist.minOrder}</span>
                   </div>
-                  <button className="w-full mt-2 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-xl text-sm font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors flex items-center justify-center space-x-2">
-                    <ArrowRight className="w-4 h-4" />
-                    <span>Connect</span>
+                  <button
+                    onClick={() => {
+                      setConnectedDistributors(prev => {
+                        const next = new Set(prev)
+                        if (next.has(dist.name)) {
+                          next.delete(dist.name)
+                        } else {
+                          next.add(dist.name)
+                        }
+                        return next
+                      })
+                    }}
+                    className={`w-full mt-2 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center space-x-2 transition-all ${
+                      connectedDistributors.has(dist.name)
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30'
+                        : 'border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                    }`}
+                  >
+                    {connectedDistributors.has(dist.name) ? (
+                      <><Check className="w-4 h-4" /><span>Connected</span></>
+                    ) : (
+                      <><ArrowRight className="w-4 h-4" /><span>Connect</span></>
+                    )}
                   </button>
                 </div>
               </div>

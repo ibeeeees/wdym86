@@ -212,18 +212,26 @@ export default function GeminiChat() {
     setLoading(true)
 
     try {
-      // Try backend API first
-      const result = await chatWithAdvisor(text, sessionId)
+      let responseContent: string
+
+      if (apiConnected) {
+        // Use backend API when connected
+        const result = await chatWithAdvisor(text, sessionId)
+        responseContent = result.response || result.message || 'I understand your question. Let me analyze the current inventory data and agent decisions to provide you with a helpful response.'
+      } else {
+        // Skip backend entirely in demo mode — go straight to Gemini
+        responseContent = await callGeminiFrontend(text)
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: result.response || result.message || 'I understand your question. Let me analyze the current inventory data and agent decisions to provide you with a helpful response.',
+        content: responseContent,
       }
       setMessages(prev => [...prev, assistantMessage])
     } catch {
-      // Backend unavailable — call Gemini directly from frontend
+      // Fallback to Gemini frontend if backend call fails unexpectedly
       const response = await callGeminiFrontend(text)
-
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',

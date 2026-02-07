@@ -19,11 +19,13 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Handle auth errors
+// Handle auth errors - but not for demo mode
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const token = localStorage.getItem('token')
+    // Don't redirect if using demo token - let the app use fallback data
+    if (error.response?.status === 401 && token && token !== 'demo-token') {
       localStorage.removeItem('token')
       window.location.href = '/login'
     }

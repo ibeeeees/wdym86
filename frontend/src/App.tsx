@@ -26,7 +26,7 @@ import InventoryTracking from './pages/InventoryTracking'
 import Payroll from './pages/Payroll'
 
 function AppRoutes() {
-  const { isAuthenticated, role, onboardingCompleted } = useAuth()
+  const { isAuthenticated, role } = useAuth()
 
   if (!isAuthenticated) {
     return (
@@ -34,16 +34,6 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/staff/login" element={<StaffLogin />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    )
-  }
-
-  // Restaurant admin needs onboarding before accessing the app
-  if (!onboardingCompleted && role === 'restaurant_admin') {
-    return (
-      <Routes>
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="*" element={<Navigate to="/onboarding" replace />} />
       </Routes>
     )
   }
@@ -74,6 +64,7 @@ function AppRoutes() {
           <Route path="/timeline" element={<TimelineAnalytics />} />
           <Route path="/inventory-tracking" element={<InventoryTracking />} />
           <Route path="/payroll" element={<Payroll />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
@@ -113,6 +104,7 @@ function AppRoutes() {
           <Route path="/timeline" element={<TimelineAnalytics />} />
           <Route path="/inventory-tracking" element={<InventoryTracking />} />
           <Route path="/payroll" element={<Payroll />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
@@ -143,6 +135,7 @@ function AppRoutes() {
         <Route path="/timeline" element={<TimelineAnalytics />} />
         <Route path="/inventory-tracking" element={<InventoryTracking />} />
         <Route path="/payroll" element={<Payroll />} />
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

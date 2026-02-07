@@ -84,7 +84,13 @@ export default function Login() {
         await register(email, password, name)
       }
       await authLogin(email, password)
-      // AuthContext handles state + routing handles navigation
+      // After registration, go to onboarding. After login, go to role-based page.
+      if (isRegister) {
+        navigate('/onboarding')
+      } else {
+        const savedRole = localStorage.getItem('role') as UserRole | null
+        navigate(getRoleRedirect(savedRole || 'restaurant_admin'))
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'An error occurred')
     } finally {

@@ -171,6 +171,7 @@ export default function Login() {
 
         <div className="space-y-8 relative z-10">
           <div>
+            <img src="/logo.jpg" alt="wdym86" className="w-36 h-36 object-contain mb-6 drop-shadow-2xl" />
             <h2 className="text-4xl font-bold text-white leading-tight">
               Stop guessing.<br />
               <span className="bg-gradient-to-r from-amber-200 via-orange-200 to-pink-200 bg-clip-text text-transparent">Start knowing.</span>

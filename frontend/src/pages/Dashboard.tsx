@@ -278,7 +278,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center space-x-4">
-          <img src="/logo.jpg" alt="wdym86" className="w-16 h-16 rounded-2xl shadow-lg shadow-primary-500/20 animate-in zoom-in duration-300 object-contain" />
+          <img src="/logo.jpg" alt="wdym86" className="w-24 h-24 object-contain animate-in zoom-in duration-300" />
           <div>
             <div className="flex items-center space-x-3">
               <h1 className="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">Dashboard</h1>

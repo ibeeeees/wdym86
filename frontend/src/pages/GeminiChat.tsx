@@ -1,104 +1,261 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, RotateCcw, Wifi, WifiOff, AlertTriangle, TrendingDown } from 'lucide-react'
+import { Send, RotateCcw, Wifi, WifiOff, AlertTriangle, TrendingDown, Sparkles, Bot, User, MessageCircle, Lightbulb, Zap } from 'lucide-react'
 import { chatWithAdvisor, checkApiHealth, getIngredients } from '../services/api'
 
 interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
+  timestamp?: Date
 }
 
 const suggestedQuestions = [
-  "Why is Chicken Breast showing urgent risk?",
-  "What if the supplier is delayed by 2 days?",
-  "Should I order more Salmon before the weekend?",
-  "Explain the forecast model",
-  "How do dish recipes affect demand?",
+  { text: "Why is Chicken Breast showing urgent risk?", icon: AlertTriangle, color: 'from-red-400 to-orange-500' },
+  { text: "What if the supplier is delayed by 2 days?", icon: TrendingDown, color: 'from-blue-400 to-cyan-500' },
+  { text: "Should I order more Salmon before the weekend?", icon: Lightbulb, color: 'from-amber-400 to-yellow-500' },
+  { text: "Explain the forecast model", icon: Zap, color: 'from-purple-400 to-pink-500' },
+  { text: "How do dish recipes affect demand?", icon: MessageCircle, color: 'from-green-400 to-emerald-500' },
 ]
 
-// Fallback responses when API is unavailable
-const demoResponses: Record<string, string> = {
-  "Why is Chicken Breast showing urgent risk?": `Chicken Breast is showing urgent risk due to several factors:
+// Smart fallback response generator when API is unavailable
+const generateSmartResponse = (question: string): string => {
+  const q = question.toLowerCase()
 
-1. Low inventory relative to demand — Current stock of 45 lbs provides only 2 days of cover
-2. Weekend surge expected — Historical data shows 25-30% higher demand on Fri-Sat
-3. Weather risk — Moderate weather conditions may delay deliveries
+  // Risk and stockout questions
+  if (q.includes('risk') || q.includes('urgent') || q.includes('critical') || q.includes('stockout')) {
+    const ingredient = extractIngredient(question) || 'this ingredient'
+    return `Based on my analysis of ${ingredient}:
 
-The stockout probability of 38% exceeds our 20% threshold for urgent action.
+**Risk Assessment:**
+• The stockout probability has crossed our threshold based on current inventory levels
+• Lead time considerations suggest ordering within the next 24-48 hours
+• External factors (weather, traffic) may impact delivery timing
 
-Recommendation: Place an order for 120 lbs by February 8th to maintain adequate stock through the weekend.`,
+**Contributing Factors:**
+1. Current inventory is below the safety stock threshold
+2. Demand forecast shows elevated usage in the coming days
+3. Supplier lead time of 2-3 days means acting now is prudent
 
-  "What if the supplier is delayed by 2 days?": `If the supplier is delayed by 2 additional days:
+**Recommendation:** The Reorder Agent suggests placing an order today to maintain adequate stock levels through the weekend.
 
-Impact on Chicken Breast:
-• Current days of cover: 2 days
-• With delay: Effectively 0 days (stockout likely)
-• Stockout probability: Would increase from 38% to ~75%
+Would you like me to analyze specific quantities or timing?`
+  }
 
-Recommended Actions:
-1. Contact backup supplier (QuickSupply) with 2-day lead time
-2. Consider splitting the order between suppliers
-3. The Strategy Agent would recommend "multi-source" procurement
+  // Supplier and delay questions
+  if (q.includes('supplier') || q.includes('delay') || q.includes('late') || q.includes('delivery')) {
+    return `Analyzing supplier impact...
 
-Would you like me to run a detailed simulation?`,
+**Scenario Analysis:**
+If suppliers are delayed, here's what happens:
+• Days of cover decreases by the delay duration
+• Stockout probability increases significantly
+• The Strategy Agent activates backup protocols
 
-  "Should I order more Salmon before the weekend?": `Checking Salmon Fillet status...
+**Mitigation Strategies:**
+1. **Multi-source procurement** — Split orders between primary and backup suppliers
+2. **Safety stock increase** — Temporarily raise inventory targets
+3. **Expedited shipping** — Use faster delivery options for critical items
 
-Current Status:
-• Inventory: 15 lbs (CRITICAL risk)
-• Days of cover: Only 1 day
-• Stockout probability: 65%
+**Current Backup Options:**
+• QuickSupply: 2-day lead time (vs. 3-day standard)
+• FreshDirect: Next-day available for premium items
 
-Yes, you should order immediately.
+The Strategy Agent continuously monitors supplier reliability scores to anticipate issues.`
+  }
 
-Recommendation:
-• Order quantity: 40 lbs
-• Order today (before 2 PM for next-day delivery)
-• Consider expedited shipping
+  // Ordering questions
+  if (q.includes('order') || q.includes('reorder') || q.includes('buy') || q.includes('quantity')) {
+    const ingredient = extractIngredient(question) || 'the ingredient'
+    return `Let me check the optimal order for ${ingredient}...
 
-The weekend typically sees 40% higher Salmon orders due to special menu items.`,
+**Reorder Analysis:**
+• The Reorder Agent calculates quantities using the newsvendor model
+• We target a 95% service level (5% stockout tolerance)
+• Order quantity = Expected demand + Safety stock - Current inventory
 
-  "Explain the forecast model": `Our forecasting model is built entirely from scratch using NumPy (no PyTorch/TensorFlow).
+**Current Recommendation:**
+• Order Quantity: Calculated based on 7-day forecast horizon
+• Order Date: Within 24 hours for critical items
+• Supplier: Primary supplier unless reliability concerns exist
 
-Architecture: Temporal Convolutional Network (TCN)
+**Cost Considerations:**
+• Holding cost vs. stockout cost tradeoff
+• Minimum order quantities factored in
+• Bulk discounts applied when beneficial
+
+The system automatically generates reorder suggestions each morning.`
+  }
+
+  // Forecast model questions
+  if (q.includes('forecast') || q.includes('model') || q.includes('predict') || q.includes('tcn') || q.includes('ml') || q.includes('machine learning')) {
+    return `Our forecasting model is built **entirely from scratch** using NumPy (no PyTorch/TensorFlow).
+
+**Architecture: Temporal Convolutional Network (TCN)**
 • Processes 28 days of historical data
 • Uses dilated causal convolutions (rates: 1, 2, 4, 8)
-• Captures short-term patterns and weekly seasonality
+• Captures both short-term patterns and weekly seasonality
 
-Output: Negative Binomial Distribution
+**Output: Negative Binomial Distribution**
 Instead of a single number, we output:
 • μ (mu): Expected demand
 • k: Dispersion parameter
 • Variance = μ + μ²/k
 
-This properly models overdispersion in restaurant demand.
+This properly models the **overdispersion** common in restaurant demand.
 
-Input Features:
-• Historical usage
-• Day of week (one-hot)
-• Week of year (sin/cos)
-• Event flags, weather severity, traffic index
+**Input Features (14 dimensions):**
+• Historical usage (normalized)
+• Day of week one-hot encoding
+• Week of year (sin/cos for continuity)
+• Event/promotion flags
+• Weather severity index
+• Traffic congestion index
 
-Trained using manual gradient computation and custom Adam optimizer.`,
+**Training:** Manual gradient computation with custom Adam optimizer implementation.
 
-  "How do dish recipes affect demand?": `Great question! Dish recipes are a key input to our demand model.
+This ground-up approach demonstrates deep understanding of ML fundamentals.`
+  }
 
-How it works:
-1. You define dishes and their ingredient quantities (e.g., Salmon Bowl uses 0.4 lbs salmon)
+  // Dish and recipe questions
+  if (q.includes('dish') || q.includes('recipe') || q.includes('menu') || q.includes('ingredient')) {
+    return `Great question about how dishes affect inventory planning!
+
+**Recipe-Based Demand Forecasting:**
+1. Each dish has defined ingredient quantities (e.g., Salmon Bowl uses 0.4 lbs salmon)
 2. We forecast dish sales using historical POS data
 3. Ingredient demand = Σ(predicted dish sales × recipe quantity)
 
-Example:
+**Example Calculation:**
 • Predicted Salmon Bowl sales tomorrow: 50 orders
 • Recipe: 0.4 lbs salmon per bowl
 • Salmon demand: 50 × 0.4 = 20 lbs
 
-This "build-up" approach is more accurate than forecasting ingredients directly because:
-• Dish sales patterns are more stable
-• Promotions affect dishes, not ingredients
-• Menu changes are automatically reflected
+**Why This Approach Works Better:**
+• Dish sales patterns are more stable than raw ingredients
+• Promotions and events affect dishes, not ingredients directly
+• Menu changes are automatically reflected in forecasts
+• Seasonal menu items handled correctly
 
-You can manage recipes in the Dishes tab.`
+You can manage recipes in the **Dishes** tab to keep forecasts accurate.`
+  }
+
+  // Agent questions
+  if (q.includes('agent') || q.includes('ai') || q.includes('autonomous') || q.includes('decision')) {
+    return `Our system uses **three autonomous AI agents** that work together:
+
+**1. Inventory Risk Agent**
+• Monitors stockout probability for all ingredients
+• Considers lead times, weather, and traffic disruptions
+• Classifies risk as SAFE, MONITOR, URGENT, or CRITICAL
+
+**2. Reorder Optimization Agent**
+• Calculates optimal order quantities and timing
+• Balances holding costs vs. stockout costs
+• Respects supplier MOQs and budget constraints
+
+**3. Supplier Strategy Agent**
+• Evaluates supplier reliability continuously
+• Suggests backup suppliers when needed
+• Recommends multi-sourcing for critical items
+
+**How They Work Together:**
+Risk Agent → Identifies problems
+Reorder Agent → Proposes solutions
+Strategy Agent → Optimizes execution
+
+I (Gemini) explain their decisions in natural language.`
+  }
+
+  // Weather and external factors
+  if (q.includes('weather') || q.includes('traffic') || q.includes('disruption') || q.includes('external')) {
+    return `**External Factor Monitoring:**
+
+Our system continuously monitors disruptions that affect inventory:
+
+**Weather Impact:**
+• Severe weather can delay supplier deliveries
+• Weather also affects customer demand (storms → more delivery orders)
+• We factor weather forecasts into demand predictions
+
+**Traffic Conditions:**
+• Rush hour patterns affect delivery windows
+• Major events (sports, concerts) create congestion
+• Real-time traffic data adjusts lead time estimates
+
+**How It Affects Decisions:**
+• Risk Agent raises stockout probability during disruptions
+• Reorder Agent suggests ordering earlier as buffer
+• Strategy Agent may recommend expedited shipping
+
+**Data Sources:**
+• Weather: National Weather Service API
+• Traffic: Real-time congestion indices
+• Events: Local event calendars
+
+This "disruption-aware" forecasting is a key differentiator.`
+  }
+
+  // Weekend and timing questions
+  if (q.includes('weekend') || q.includes('saturday') || q.includes('sunday') || q.includes('friday') || q.includes('busy')) {
+    return `**Weekend Demand Analysis:**
+
+Weekends typically show **25-40% higher demand** for most ingredients.
+
+**Pattern Breakdown:**
+• Friday: +15-20% (date nights, end of week celebrations)
+• Saturday: +30-40% (peak day for most restaurants)
+• Sunday: +20-25% (brunch rush, family dinners)
+
+**What This Means for Inventory:**
+1. Orders should arrive by Thursday for weekend coverage
+2. Safety stock should be higher going into Friday
+3. Fresh items need extra attention due to shelf life
+
+**Current Recommendations:**
+The system automatically adjusts forecasts for day-of-week patterns. For this weekend, ensure high-demand items are well-stocked by Thursday EOD.
+
+Check the Dashboard for specific ingredient recommendations.`
+  }
+
+  // Default intelligent response
+  return `I can help with that question about "${question.slice(0, 50)}${question.length > 50 ? '...' : ''}".
+
+Based on the current inventory analysis:
+
+**System Status:**
+• The forecasting model is actively monitoring demand patterns across all ingredients
+• Risk agents are evaluating stockout probabilities in real-time
+• Reorder agents have calculated optimal quantities for items needing attention
+
+**Quick Actions I Can Help With:**
+1. Explain why specific ingredients show certain risk levels
+2. Analyze "what-if" scenarios (supplier delays, demand spikes)
+3. Break down how the ML model generates forecasts
+4. Recommend ordering strategies
+
+**Try asking about:**
+• A specific ingredient's risk status
+• How weather affects your inventory
+• The TCN forecasting model architecture
+• Optimal reorder timing and quantities
+
+What specific aspect would you like me to dive deeper into?`
+}
+
+// Helper to extract ingredient name from question
+const extractIngredient = (question: string): string | null => {
+  const ingredients = [
+    'chicken', 'chicken breast', 'salmon', 'salmon fillet', 'beef', 'ground beef',
+    'lettuce', 'romaine', 'tomatoes', 'cheese', 'flour', 'rice', 'olive oil',
+    'avocado', 'avocados', 'eggs', 'butter', 'cream', 'milk'
+  ]
+  const q = question.toLowerCase()
+  for (const ing of ingredients) {
+    if (q.includes(ing)) {
+      return ing.charAt(0).toUpperCase() + ing.slice(1)
+    }
+  }
+  return null
 }
 
 interface InventoryContext {
@@ -185,15 +342,8 @@ export default function GeminiChat() {
       }
       setMessages(prev => [...prev, assistantMessage])
     } catch {
-      // Fallback to demo responses
-      const response = demoResponses[text] ||
-        `I understand you're asking about "${text}". Based on the current agent analysis:
-
-• The forecasting model is continuously monitoring demand patterns
-• Risk agents are evaluating stockout probabilities for all ingredients
-• Reorder agents are calculating optimal order quantities
-
-Would you like me to explain any specific aspect of the inventory analysis?`
+      // Fallback to smart demo responses with keyword matching
+      const response = generateSmartResponse(text)
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -217,44 +367,51 @@ Would you like me to explain any specific aspect of the inventory analysis?`
     <div className="flex flex-col h-[calc(100vh-10rem)]">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-semibold text-black dark:text-white">AI Advisor</h1>
-            {apiConnected !== null && (
-              <span className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${
-                apiConnected
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                  : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-              }`}>
-                {apiConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                <span>{apiConnected ? 'Gemini' : 'Demo'}</span>
-              </span>
-            )}
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-violet-500 via-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
+            <Sparkles className="w-6 h-6 text-white" />
           </div>
-          <p className="text-neutral-500 dark:text-neutral-400 text-sm">Powered by Google Gemini</p>
+          <div>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-xl font-bold text-black dark:text-white">AI Advisor</h1>
+              {apiConnected !== null && (
+                <span className={`flex items-center space-x-1 text-xs px-2.5 py-1 rounded-full font-medium ${
+                  apiConnected
+                    ? 'bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-700 dark:text-green-400'
+                    : 'bg-gradient-to-r from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 text-violet-700 dark:text-violet-400'
+                }`}>
+                  {apiConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                  <span>{apiConnected ? 'Gemini Live' : 'Demo Mode'}</span>
+                </span>
+              )}
+            </div>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">Powered by Google Gemini 2.0</p>
+          </div>
         </div>
         <button
           onClick={() => setMessages([messages[0]])}
-          className="flex items-center space-x-2 px-3 py-1.5 text-sm text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+          className="flex items-center space-x-2 px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white border border-neutral-200 dark:border-neutral-700 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all hover:scale-105"
         >
           <RotateCcw className="w-4 h-4" />
-          <span>Clear</span>
+          <span>New Chat</span>
         </button>
       </div>
 
       {/* Context Panel */}
       {showContext && inventoryContext.length > 0 && (
-        <div className="mb-4 p-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
+        <div className="mb-4 p-4 bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 dark:from-amber-900/20 dark:via-orange-900/20 dark:to-red-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span className="text-xs font-medium text-amber-800 dark:text-amber-300">Current Inventory Alerts</span>
+              <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">Inventory Alerts</span>
             </div>
             <button
               onClick={() => setShowContext(false)}
-              className="text-xs text-amber-600 dark:text-amber-400 hover:underline"
+              className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium"
             >
-              Hide
+              Dismiss
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -262,15 +419,15 @@ Would you like me to explain any specific aspect of the inventory analysis?`
               <button
                 key={i}
                 onClick={() => handleSend(`Why is ${item.name} at ${item.risk_level} risk?`)}
-                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-105 ${
                   item.risk_level === 'CRITICAL'
-                    ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900'
-                    : 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900'
+                    ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30'
+                    : 'bg-gradient-to-r from-orange-400 to-amber-500 text-white shadow-lg shadow-orange-500/30'
                 }`}
               >
                 <TrendingDown className="w-3 h-3" />
                 <span>{item.name}</span>
-                <span className="opacity-70">({item.days_of_cover}d)</span>
+                <span className="opacity-80">({item.days_of_cover}d)</span>
               </button>
             ))}
           </div>
@@ -278,31 +435,47 @@ Would you like me to explain any specific aspect of the inventory analysis?`
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 space-y-4 bg-white dark:bg-neutral-800">
+      <div className="flex-1 overflow-y-auto rounded-2xl p-4 space-y-4 bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-800 dark:to-neutral-900 border border-neutral-200 dark:border-neutral-700">
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex items-start space-x-3 ${message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}
           >
-            <div className={`max-w-[75%] ${message.role === 'user' ? 'order-1' : ''}`}>
-              <div className={`rounded-lg px-4 py-3 ${
+            {/* Avatar */}
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+              message.role === 'user'
+                ? 'bg-gradient-to-br from-blue-500 to-cyan-500'
+                : 'bg-gradient-to-br from-violet-500 to-purple-600'
+            }`}>
+              {message.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-white" />}
+            </div>
+
+            {/* Message */}
+            <div className={`max-w-[75%] ${message.role === 'user' ? 'text-right' : ''}`}>
+              <div className={`rounded-2xl px-4 py-3 ${
                 message.role === 'user'
-                  ? 'bg-black dark:bg-white text-white dark:text-black'
-                  : 'bg-neutral-100 dark:bg-neutral-700 text-black dark:text-white'
+                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/20'
+                  : 'bg-white dark:bg-neutral-700 text-black dark:text-white border border-neutral-200 dark:border-neutral-600 shadow-sm'
               }`}>
-                <p className="text-sm whitespace-pre-line">{message.content}</p>
+                <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
               </div>
+              <p className={`text-[10px] text-neutral-400 mt-1 ${message.role === 'user' ? 'text-right mr-2' : 'ml-2'}`}>
+                {message.role === 'user' ? 'You' : 'Gemini'}
+              </p>
             </div>
           </div>
         ))}
 
         {loading && (
-          <div className="flex justify-start">
-            <div className="bg-neutral-100 dark:bg-neutral-700 rounded-lg px-4 py-3">
-              <div className="flex space-x-1">
-                <div className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <Bot className="w-4 h-4 text-white" />
+            </div>
+            <div className="bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 rounded-2xl px-4 py-3 shadow-sm">
+              <div className="flex space-x-1.5">
+                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -314,43 +487,52 @@ Would you like me to explain any specific aspect of the inventory analysis?`
       {/* Suggestions */}
       {messages.length <= 2 && (
         <div className="mt-4">
-          <p className="text-xs text-neutral-400 mb-2">Suggested questions</p>
-          <div className="flex flex-wrap gap-2">
-            {suggestedQuestions.map((question, i) => (
-              <button
-                key={i}
-                onClick={() => handleSend(question)}
-                className="text-xs bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-3 py-1.5 rounded-full transition-colors"
-              >
-                {question}
-              </button>
-            ))}
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3 font-medium">Quick questions</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            {suggestedQuestions.map((q, i) => {
+              const Icon = q.icon
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleSend(q.text)}
+                  className="group flex flex-col items-center p-3 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 rounded-xl transition-all hover:scale-[1.02] text-center"
+                >
+                  <div className={`w-8 h-8 bg-gradient-to-br ${q.color} rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
+                    <Icon className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-xs text-neutral-600 dark:text-neutral-300 line-clamp-2">{q.text}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
 
       {/* Input */}
-      <div className="mt-4 flex items-center space-x-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask about inventory decisions..."
-          className="flex-1 px-4 py-3 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:border-black dark:focus:border-white focus:ring-0 transition-colors bg-white dark:bg-neutral-800 text-black dark:text-white"
-          disabled={loading}
-        />
-        <button
-          onClick={() => handleSend()}
-          disabled={!input.trim() || loading}
-          className="bg-black dark:bg-white text-white dark:text-black p-3 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-30"
-        >
-          <Send className="w-4 h-4" />
-        </button>
+      <div className="mt-4 flex items-center space-x-3">
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask me anything about your inventory..."
+            className="w-full px-5 py-4 pr-14 border border-neutral-200 dark:border-neutral-700 rounded-2xl text-sm focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
+            disabled={loading}
+          />
+          <button
+            onClick={() => handleSend()}
+            disabled={!input.trim() || loading}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white p-2.5 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:scale-105 shadow-lg shadow-violet-500/30"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      <p className="text-xs text-neutral-400 mt-3 text-center">
-        Gemini provides explanations. Forecasts and decisions are made by the ML model and agents.
+      <p className="text-xs text-neutral-400 mt-3 text-center flex items-center justify-center space-x-1">
+        <Sparkles className="w-3 h-3" />
+        <span>Gemini provides explanations. Forecasts and decisions are made by the ML model and agents.</span>
       </p>
     </div>
   )

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, RefreshCw, AlertTriangle, Send, Lightbulb, Plus, Minus, Edit3, Cloud, Truck, Zap, AlertOctagon } from 'lucide-react'
+import { ArrowLeft, RefreshCw, AlertTriangle, Send, Lightbulb, Plus, Minus, Edit3, Cloud, Truck, Zap, AlertOctagon, Package } from 'lucide-react'
 import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart, PieChart, Pie, Cell } from 'recharts'
 import { getIngredient, runAgentPipeline, generateForecast, getForecasts, analyzeWhatIf, updateInventory } from '../services/api'
 
@@ -339,31 +339,49 @@ The Strategy Agent would recommend adjusting lead time assumptions to account fo
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-neutral-400" />
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-violet-400 to-purple-500 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-violet-500/30 animate-pulse">
+            <Package className="w-8 h-8 text-white" />
+          </div>
+          <p className="text-sm text-neutral-500 mt-4 font-medium">Loading ingredient data...</p>
+        </div>
       </div>
     )
   }
+
+  // Get gradient color based on category
+  const categoryGradient = ingredient.category === 'meat' ? 'from-red-400 to-rose-500'
+    : ingredient.category === 'produce' ? 'from-green-400 to-emerald-500'
+    : ingredient.category === 'dairy' ? 'from-blue-400 to-cyan-500'
+    : 'from-amber-400 to-orange-500'
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link to="/" className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors">
+          <Link to="/" className="p-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-all hover:scale-105">
             <ArrowLeft className="w-5 h-5 text-black dark:text-white" />
           </Link>
+          <div className={`w-12 h-12 bg-gradient-to-br ${categoryGradient} rounded-xl flex items-center justify-center shadow-lg`}>
+            <Package className="w-6 h-6 text-white" />
+          </div>
           <div>
-            <h1 className="text-2xl font-semibold text-black dark:text-white">{ingredient.name}</h1>
-            <p className="text-neutral-500 dark:text-neutral-400 text-sm capitalize">{ingredient.category} · {ingredient.unit}</p>
+            <h1 className="text-xl font-bold text-black dark:text-white">{ingredient.name}</h1>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm capitalize flex items-center space-x-2">
+              <span className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-700 rounded-full text-xs font-medium">{ingredient.category}</span>
+              <span>·</span>
+              <span>{ingredient.unit}</span>
+            </p>
           </div>
         </div>
         <button
           onClick={handleRunPipeline}
           disabled={analyzing}
-          className="flex items-center space-x-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50"
+          className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-violet-500/30 transition-all hover:scale-105 disabled:opacity-50 disabled:scale-100"
         >
           <RefreshCw className={`w-4 h-4 ${analyzing ? 'animate-spin' : ''}`} />
-          <span>{analyzing ? 'Running...' : 'Run Pipeline'}</span>
+          <span>{analyzing ? 'Running Pipeline...' : 'Run Pipeline'}</span>
         </button>
       </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, RefreshCw, TrendingUp, TrendingDown, Package, AlertTriangle, Wifi, WifiOff, Sparkles, ChevronDown, ChevronUp, Calendar, Download, ShoppingCart, Zap, X, Brain, BarChart3, Truck as TruckIcon } from 'lucide-react'
+import { ArrowRight, RefreshCw, TrendingUp, TrendingDown, Package, AlertTriangle, Wifi, WifiOff, Sparkles, ChevronDown, ChevronUp, Calendar, Download, ShoppingCart, Zap, X, Brain, BarChart3, Truck as TruckIcon, LayoutDashboard, Clock, CheckCircle } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts'
 import { getIngredients, runAgentPipeline, checkApiHealth, getDailySummary, getActiveEvents } from '../services/api'
 
@@ -53,13 +53,6 @@ const getHeatmapColor = (intensity: number): string => {
   if (intensity >= 0.7) return 'bg-yellow-500'
   if (intensity >= 0.5) return 'bg-green-400'
   return 'bg-green-200'
-}
-
-const riskStyles: Record<string, { dot: string; text: string }> = {
-  SAFE: { dot: 'bg-green-500', text: 'text-green-700 dark:text-green-400' },
-  MONITOR: { dot: 'bg-yellow-500', text: 'text-yellow-700 dark:text-yellow-400' },
-  URGENT: { dot: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-400' },
-  CRITICAL: { dot: 'bg-red-500', text: 'text-red-700 dark:text-red-400' },
 }
 
 // Get inventory gauge color based on days of cover
@@ -311,44 +304,51 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-start">
-        <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-semibold text-black dark:text-white">Inventory Dashboard</h1>
-            {apiConnected !== null && (
-              <span className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${
-                apiConnected
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                  : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-              }`}>
-                {apiConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                <span>{apiConnected ? 'Live' : 'Demo'}</span>
-              </span>
-            )}
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+            <LayoutDashboard className="w-6 h-6 text-white" />
           </div>
-          <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">
-            {criticalCount > 0 ? (
-              <span className="text-red-600 dark:text-red-400">{criticalCount} items need immediate attention</span>
-            ) : (
-              'All items at healthy levels'
-            )}
-          </p>
-          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+          <div>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-xl font-bold text-black dark:text-white">Inventory Dashboard</h1>
+              {apiConnected !== null && (
+                <span className={`flex items-center space-x-1 text-xs px-2.5 py-1 rounded-full font-medium ${
+                  apiConnected
+                    ? 'bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-700 dark:text-green-400'
+                    : 'bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 text-amber-700 dark:text-amber-400'
+                }`}>
+                  {apiConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                  <span>{apiConnected ? 'Live' : 'Demo Mode'}</span>
+                </span>
+              )}
+            </div>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-0.5">
+              {criticalCount > 0 ? (
+                <span className="text-red-600 dark:text-red-400 font-medium">{criticalCount} items need immediate attention</span>
+              ) : (
+                'All items at healthy levels'
+              )}
+            </p>
+            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+          </div>
         </div>
-        <button
-          onClick={handleRunAnalysis}
-          disabled={analyzing}
-          className="flex items-center space-x-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${analyzing ? 'animate-spin' : ''}`} />
-          <span>{analyzing ? 'Analyzing...' : 'Run Analysis'}</span>
-        </button>
-        <button
-          onClick={handleExportCSV}
-          className="flex items-center space-x-2 px-3 py-2 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-lg text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          <span className="hidden sm:inline">Export</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center space-x-2 px-4 py-2.5 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-xl text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all hover:scale-105"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+          <button
+            onClick={handleRunAnalysis}
+            disabled={analyzing}
+            className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 disabled:opacity-50 disabled:scale-100"
+          >
+            <RefreshCw className={`w-4 h-4 ${analyzing ? 'animate-spin' : ''}`} />
+            <span>{analyzing ? 'Analyzing...' : 'Run Analysis'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Daily AI Summary */}
@@ -409,45 +409,76 @@ export default function Dashboard() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Items</p>
-            <Package className="w-4 h-4 text-neutral-400" />
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-all hover:scale-[1.02]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Total Items</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center">
+              <Package className="w-5 h-5 text-white" />
+            </div>
           </div>
-          <p className="text-2xl font-semibold text-black dark:text-white mt-1">{ingredients.length}</p>
+          <p className="text-3xl font-bold text-black dark:text-white">{ingredients.length}</p>
         </div>
-        <div className="border border-red-200 dark:border-red-900 rounded-lg p-4 bg-red-50 dark:bg-red-900/20">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-red-600 dark:text-red-400">Critical</p>
-            <AlertTriangle className="w-4 h-4 text-red-500" />
+        <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-2xl p-5 border border-red-200 dark:border-red-900 hover:shadow-lg transition-all hover:scale-[1.02]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-red-600 dark:text-red-400 font-medium">Critical</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/30">
+              <AlertTriangle className="w-5 h-5 text-white" />
+            </div>
           </div>
-          <p className="text-2xl font-semibold text-red-600 dark:text-red-400 mt-1">
+          <p className="text-3xl font-bold text-red-600 dark:text-red-400">
             {ingredients.filter(i => i.risk_level === 'CRITICAL').length}
           </p>
         </div>
-        <div className="border border-orange-200 dark:border-orange-900 rounded-lg p-4 bg-orange-50 dark:bg-orange-900/20">
-          <p className="text-sm text-orange-600 dark:text-orange-400">Urgent</p>
-          <p className="text-2xl font-semibold text-orange-600 dark:text-orange-400 mt-1">
+        <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-2xl p-5 border border-orange-200 dark:border-orange-900 hover:shadow-lg transition-all hover:scale-[1.02]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-orange-600 dark:text-orange-400 font-medium">Urgent</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
             {ingredients.filter(i => i.risk_level === 'URGENT').length}
           </p>
         </div>
-        <div className="border border-green-200 dark:border-green-900 rounded-lg p-4 bg-green-50 dark:bg-green-900/20">
-          <p className="text-sm text-green-600 dark:text-green-400">Safe</p>
-          <p className="text-2xl font-semibold text-green-600 dark:text-green-400 mt-1">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-5 border border-green-200 dark:border-green-900 hover:shadow-lg transition-all hover:scale-[1.02]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-green-600 dark:text-green-400 font-medium">Safe</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/30">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-green-600 dark:text-green-400">
             {ingredients.filter(i => i.risk_level === 'SAFE').length}
           </p>
         </div>
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Est. Value</p>
-          <p className="text-2xl font-semibold text-black dark:text-white mt-1 font-mono">${totalValue.toLocaleString()}</p>
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-all hover:scale-[1.02]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Est. Value</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-violet-400 to-purple-500 rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold">$</span>
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-black dark:text-white font-mono">${totalValue.toLocaleString()}</p>
         </div>
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Demand Forecast */}
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
-          <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-4">Weekly Demand (All Items)</h3>
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-black dark:text-white">Weekly Demand Forecast</h3>
+            <div className="flex items-center space-x-4 text-xs">
+              <div className="flex items-center space-x-1.5">
+                <div className="w-3 h-1 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full" />
+                <span className="text-neutral-500 dark:text-neutral-400">Forecast</span>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <div className="w-3 h-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full" />
+                <span className="text-neutral-500 dark:text-neutral-400">Actual</span>
+              </div>
+            </div>
+          </div>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weeklyDemand}>
@@ -455,33 +486,34 @@ export default function Dashboard() {
                 <YAxis stroke="#737373" fontSize={12} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    backgroundColor: 'rgba(0,0,0,0.9)',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     fontSize: '12px',
-                    color: 'white'
+                    color: 'white',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
                   }}
                 />
-                <Line type="monotone" dataKey="forecast" stroke="#000" strokeWidth={2} dot={{ fill: '#000', r: 3 }} />
-                <Line type="monotone" dataKey="actual" stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" dot={{ fill: '#22c55e', r: 3 }} />
+                <Line type="monotone" dataKey="forecast" stroke="url(#forecastGradient)" strokeWidth={3} dot={{ fill: '#8b5cf6', r: 4, strokeWidth: 2, stroke: '#fff' }} />
+                <Line type="monotone" dataKey="actual" stroke="url(#actualGradient)" strokeWidth={3} strokeDasharray="5 5" dot={{ fill: '#22c55e', r: 4, strokeWidth: 2, stroke: '#fff' }} />
+                <defs>
+                  <linearGradient id="forecastGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#8b5cf6" />
+                    <stop offset="100%" stopColor="#6366f1" />
+                  </linearGradient>
+                  <linearGradient id="actualGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#22c55e" />
+                    <stop offset="100%" stopColor="#10b981" />
+                  </linearGradient>
+                </defs>
               </LineChart>
             </ResponsiveContainer>
-          </div>
-          <div className="flex justify-center space-x-6 mt-2 text-xs text-neutral-500">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-0.5 bg-black dark:bg-white" />
-              <span>Forecast</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-0.5 bg-green-500" />
-              <span>Actual</span>
-            </div>
           </div>
         </div>
 
         {/* Category Breakdown */}
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
-          <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-4">Inventory by Category</h3>
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
+          <h3 className="text-sm font-semibold text-black dark:text-white mb-4">Inventory by Category</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categoryData}>
@@ -489,14 +521,21 @@ export default function Dashboard() {
                 <YAxis stroke="#737373" fontSize={12} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    backgroundColor: 'rgba(0,0,0,0.9)',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     fontSize: '12px',
-                    color: 'white'
+                    color: 'white',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
                   }}
                 />
-                <Bar dataKey="value" fill="#000" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="value" fill="url(#barGradient)" radius={[8, 8, 0, 0]} />
+                <defs>
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#8b5cf6" />
+                    <stop offset="100%" stopColor="#6366f1" />
+                  </linearGradient>
+                </defs>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -544,6 +583,69 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Live Delivery Orders */}
+      <div className="bg-gradient-to-r from-violet-50 via-purple-50 to-fuchsia-50 dark:from-violet-900/20 dark:via-purple-900/20 dark:to-fuchsia-900/20 rounded-2xl p-5 border border-violet-200 dark:border-violet-900">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
+              <TruckIcon className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-black dark:text-white">Live Delivery Orders</h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">DoorDash, Uber Eats, Grubhub</p>
+            </div>
+          </div>
+          <Link
+            to="/delivery"
+            className="flex items-center space-x-1.5 px-4 py-2 bg-white dark:bg-neutral-800 border border-violet-200 dark:border-violet-800 rounded-xl text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-all hover:scale-105"
+          >
+            <span>View All</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { platform: 'DoorDash', icon: '🚗', status: 'Preparing', customer: 'John D.', total: 58.75, color: 'from-red-500 to-red-600' },
+            { platform: 'Uber Eats', icon: '🥡', status: 'Confirmed', customer: 'Sarah M.', total: 56.74, color: 'from-green-500 to-emerald-600' },
+            { platform: 'Grubhub', icon: '🍔', status: 'Out for Delivery', customer: 'Alex K.', total: 72.91, color: 'from-orange-500 to-red-500' },
+            { platform: 'DoorDash', icon: '🚗', status: 'Pending', customer: 'Emma W.', total: 56.73, color: 'from-red-500 to-red-600' },
+          ].map((order, i) => (
+            <div key={i} className="bg-white dark:bg-neutral-800 rounded-xl p-4 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all hover:scale-[1.02]">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg">{order.icon}</span>
+                  <span className="text-xs font-medium text-neutral-500">{order.platform}</span>
+                </div>
+                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                  order.status === 'Pending' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' :
+                  order.status === 'Confirmed' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600' :
+                  order.status === 'Preparing' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600' :
+                  'bg-green-100 dark:bg-green-900/30 text-green-600'
+                }`}>
+                  {order.status === 'Out for Delivery' ? 'On the way' : order.status}
+                </span>
+              </div>
+              <p className="font-medium text-black dark:text-white text-sm">{order.customer}</p>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-lg font-bold text-black dark:text-white">${order.total.toFixed(2)}</span>
+                {order.status === 'Pending' && (
+                  <button className="flex items-center space-x-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
+                    <CheckCircle className="w-3 h-3" />
+                    <span>Accept</span>
+                  </button>
+                )}
+                {order.status === 'Out for Delivery' && (
+                  <span className="flex items-center space-x-1 text-xs text-green-500">
+                    <Clock className="w-3 h-3" />
+                    <span>~10 min</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Demand Heatmap */}
       <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
@@ -597,112 +699,141 @@ export default function Dashboard() {
       </div>
 
       {/* Inventory Table */}
-      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden bg-white dark:bg-neutral-800 overflow-x-auto">
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl overflow-hidden border border-neutral-200 dark:border-neutral-700 shadow-sm">
+        <div className="p-5 border-b border-neutral-200 dark:border-neutral-700">
+          <h3 className="font-semibold text-black dark:text-white">Inventory Overview</h3>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{ingredients.length} items tracked</p>
+        </div>
         {loading ? (
-          <div className="p-8 text-center">
-            <RefreshCw className="w-6 h-6 animate-spin mx-auto text-neutral-400" />
-            <p className="text-sm text-neutral-500 mt-2">Loading inventory...</p>
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-violet-400 to-indigo-500 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-violet-500/30 animate-pulse">
+              <Package className="w-8 h-8 text-white" />
+            </div>
+            <p className="text-sm text-neutral-500 mt-4 font-medium">Loading inventory...</p>
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900">
-                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Item</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Inventory</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Risk</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Stockout %</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Trend</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700">
-              {ingredients.map((item) => (
-                <tr key={item.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
-                  <td className="px-4 py-4">
-                    <div>
-                      <p className="font-medium text-black dark:text-white">{item.name}</p>
-                      <p className="text-xs text-neutral-400 capitalize">{item.category}</p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <InventoryGauge
-                      inventory={item.current_inventory}
-                      daysOfCover={item.days_of_cover}
-                      unit={item.unit}
-                    />
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${riskStyles[item.risk_level]?.dot || 'bg-gray-400'}`} />
-                      <span className={`text-sm font-medium ${riskStyles[item.risk_level]?.text || 'text-gray-500'}`}>
-                        {item.risk_level}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <span className="font-mono text-sm text-black dark:text-white">
-                      {(item.stockout_prob * 100).toFixed(0)}%
-                    </span>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center space-x-2">
-                      <MiniSparkline trend={item.trend} />
-                      <div className="flex items-center space-x-1">
-                        {item.trend > 0 ? (
-                          <TrendingUp className="w-3 h-3 text-green-500" />
-                        ) : item.trend < 0 ? (
-                          <TrendingDown className="w-3 h-3 text-red-500" />
-                        ) : null}
-                        <span className={`text-xs font-mono ${item.trend > 0 ? 'text-green-600' : item.trend < 0 ? 'text-red-600' : 'text-neutral-400'}`}>
-                          {item.trend > 0 ? '+' : ''}{item.trend}%
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <Link
-                      to={`/ingredient/${item.id}`}
-                      className="inline-flex items-center text-sm text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors"
-                    >
-                      <span>Details</span>
-                      <ArrowRight className="w-4 h-4 ml-1" />
-                    </Link>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900">
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Item</th>
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Inventory</th>
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Risk</th>
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Stockout %</th>
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Trend</th>
+                  <th className="px-5 py-4"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700">
+                {ingredients.map((item) => (
+                  <tr key={item.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors group">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
+                          item.category === 'meat' ? 'bg-gradient-to-br from-red-100 to-rose-100 dark:from-red-900/30 dark:to-rose-900/30' :
+                          item.category === 'produce' ? 'bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30' :
+                          item.category === 'dairy' ? 'bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30' :
+                          'bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30'
+                        }`}>
+                          {item.category === 'meat' ? '🥩' : item.category === 'produce' ? '🥬' : item.category === 'dairy' ? '🧀' : '🌾'}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-black dark:text-white">{item.name}</p>
+                          <p className="text-xs text-neutral-400 capitalize">{item.category}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <InventoryGauge
+                        inventory={item.current_inventory}
+                        daysOfCover={item.days_of_cover}
+                        unit={item.unit}
+                      />
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
+                        item.risk_level === 'CRITICAL' ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30' :
+                        item.risk_level === 'URGENT' ? 'bg-gradient-to-r from-orange-400 to-amber-500 text-white shadow-lg shadow-orange-500/30' :
+                        item.risk_level === 'MONITOR' ? 'bg-gradient-to-r from-yellow-400 to-amber-400 text-white shadow-lg shadow-yellow-500/30' :
+                        'bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-lg shadow-green-500/30'
+                      }`}>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                        <span>{item.risk_level}</span>
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className="font-mono text-sm font-bold text-black dark:text-white">
+                        {(item.stockout_prob * 100).toFixed(0)}%
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center space-x-2">
+                        <MiniSparkline trend={item.trend} />
+                        <div className="flex items-center space-x-1">
+                          {item.trend > 0 ? (
+                            <TrendingUp className="w-4 h-4 text-green-500" />
+                          ) : item.trend < 0 ? (
+                            <TrendingDown className="w-4 h-4 text-red-500" />
+                          ) : null}
+                          <span className={`text-sm font-mono font-bold ${item.trend > 0 ? 'text-green-600' : item.trend < 0 ? 'text-red-600' : 'text-neutral-400'}`}>
+                            {item.trend > 0 ? '+' : ''}{item.trend}%
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <Link
+                        to={`/ingredient/${item.id}`}
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-xl transition-all group-hover:scale-105"
+                      >
+                        <span>Details</span>
+                        <ArrowRight className="w-4 h-4 ml-1.5" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       {/* AI Pipeline */}
-      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6 bg-white dark:bg-neutral-800">
-        <h2 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-4">AI Pipeline</h2>
+      <div className="bg-gradient-to-r from-violet-50 via-indigo-50 to-purple-50 dark:from-violet-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 border border-violet-200 dark:border-violet-900">
+        <div className="flex items-center space-x-2 mb-6">
+          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg flex items-center justify-center">
+            <Brain className="w-4 h-4 text-white" />
+          </div>
+          <h2 className="text-sm font-semibold text-black dark:text-white">AI Pipeline</h2>
+        </div>
         <div className="flex items-center justify-between text-sm">
           {[
-            { label: 'Forecast', desc: 'NumPy TCN', status: 'done' },
-            { label: 'Risk', desc: 'Agent', status: 'done' },
-            { label: 'Reorder', desc: 'Agent', status: 'done' },
-            { label: 'Strategy', desc: 'Agent', status: 'done' },
-            { label: 'Explain', desc: 'Gemini', status: 'done' },
-          ].map((step, i) => (
-            <div key={step.label} className="flex items-center">
-              <div className="text-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-mono text-sm ${
-                  analyzing && i === 1
-                    ? 'bg-yellow-500 text-white animate-pulse'
-                    : 'bg-black dark:bg-white text-white dark:text-black'
-                }`}>
-                  {i + 1}
+            { label: 'Forecast', desc: 'NumPy TCN', icon: BarChart3, color: 'from-blue-400 to-cyan-500' },
+            { label: 'Risk', desc: 'Agent', icon: AlertTriangle, color: 'from-orange-400 to-red-500' },
+            { label: 'Reorder', desc: 'Agent', icon: ShoppingCart, color: 'from-green-400 to-emerald-500' },
+            { label: 'Strategy', desc: 'Agent', icon: TruckIcon, color: 'from-purple-400 to-pink-500' },
+            { label: 'Explain', desc: 'Gemini', icon: Sparkles, color: 'from-amber-400 to-orange-500' },
+          ].map((step, i) => {
+            const Icon = step.icon
+            return (
+              <div key={step.label} className="flex items-center">
+                <div className="text-center">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-transform hover:scale-110 ${
+                    analyzing && i === 1
+                      ? 'bg-gradient-to-br from-yellow-400 to-orange-500 animate-pulse'
+                      : `bg-gradient-to-br ${step.color}`
+                  }`}>
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+                  <p className="font-semibold text-black dark:text-white mt-2">{step.label}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{step.desc}</p>
                 </div>
-                <p className="font-medium text-black dark:text-white mt-2">{step.label}</p>
-                <p className="text-xs text-neutral-400">{step.desc}</p>
+                {i < 4 && (
+                  <div className="w-8 sm:w-12 h-1 bg-gradient-to-r from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-600 rounded-full mx-2 sm:mx-4" />
+                )}
               </div>
-              {i < 4 && (
-                <div className="w-12 h-px bg-neutral-200 dark:bg-neutral-700 mx-4" />
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 

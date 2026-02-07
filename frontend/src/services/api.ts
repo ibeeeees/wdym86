@@ -218,6 +218,54 @@ export const createRestaurantEvent = async (event: {
   return response.data
 }
 
+// Delivery Services
+export const getDeliveryOrders = async (platform?: string, status?: string) => {
+  const params: Record<string, string> = {}
+  if (platform) params.platform = platform
+  if (status) params.status = status
+
+  const response = await api.get('/delivery/orders', { params })
+  return response.data
+}
+
+export const getDeliveryOrdersByPlatform = async (platform: string, status?: string) => {
+  const params: Record<string, string> = {}
+  if (status) params.status = status
+
+  const response = await api.get(`/delivery/orders/${platform}`, { params })
+  return response.data
+}
+
+export const acceptDeliveryOrder = async (platform: string, externalId: string) => {
+  const response = await api.post(`/delivery/orders/${platform}/${externalId}/accept`)
+  return response.data
+}
+
+export const updateDeliveryOrderStatus = async (platform: string, externalId: string, status: string) => {
+  const response = await api.put(`/delivery/orders/${platform}/${externalId}/status`, { status })
+  return response.data
+}
+
+export const cancelDeliveryOrder = async (platform: string, externalId: string, reason: string) => {
+  const response = await api.post(`/delivery/orders/${platform}/${externalId}/cancel`, { reason })
+  return response.data
+}
+
+export const getDriverLocation = async (platform: string, externalId: string) => {
+  const response = await api.get(`/delivery/orders/${platform}/${externalId}/driver-location`)
+  return response.data
+}
+
+export const getDeliveryStats = async () => {
+  const response = await api.get('/delivery/stats')
+  return response.data
+}
+
+export const getDeliveryPlatforms = async () => {
+  const response = await api.get('/delivery/platforms')
+  return response.data
+}
+
 // Helper to check if API is available (for demo mode fallback)
 export const checkApiHealth = async (): Promise<boolean> => {
   try {

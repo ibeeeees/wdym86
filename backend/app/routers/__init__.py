@@ -12,6 +12,7 @@ from .dishes import router as dishes_router
 from .events import router as events_router
 from .pos import router as pos_router
 from .payments import router as payments_router
+from .delivery import router as delivery_router
 
 __all__ = [
     'auth_router',
@@ -26,4 +27,5 @@ __all__ = [
     'events_router',
     'pos_router',
     'payments_router',
+    'delivery_router',
 ]

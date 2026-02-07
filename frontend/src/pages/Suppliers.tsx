@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Plus, Truck, Clock, Star, DollarSign, Wifi, WifiOff, Zap, Award } from 'lucide-react'
+import { Plus, Truck, Clock, Star, DollarSign, Wifi, WifiOff, Zap, Award, Sparkles, Package, MapPin, Shield } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts'
 import { getSuppliers, checkApiHealth } from '../services/api'
+
+// Supplier color gradients based on reliability
+const getSupplierGradient = (score: number) => {
+  if (score >= 0.95) return 'from-emerald-400 to-green-500'
+  if (score >= 0.85) return 'from-amber-400 to-yellow-500'
+  return 'from-red-400 to-rose-500'
+}
 
 interface Supplier {
   id: string
@@ -128,7 +135,12 @@ export default function Suppliers() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black dark:border-white"></div>
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-blue-500/30 animate-pulse">
+            <Truck className="w-8 h-8 text-white" />
+          </div>
+          <p className="text-sm text-neutral-500 mt-4 font-medium">Loading suppliers...</p>
+        </div>
       </div>
     )
   }
@@ -137,27 +149,32 @@ export default function Suppliers() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-semibold text-black dark:text-white">Suppliers</h1>
-            {apiConnected !== null && (
-              <span className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${
-                apiConnected
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                  : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-              }`}>
-                {apiConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                <span>{apiConnected ? 'Live' : 'Demo'}</span>
-              </span>
-            )}
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <Truck className="w-6 h-6 text-white" />
           </div>
-          <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">
-            Manage suppliers, lead times, and reliability for procurement optimization
-          </p>
+          <div>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-xl font-bold text-black dark:text-white">Supplier Network</h1>
+              {apiConnected !== null && (
+                <span className={`flex items-center space-x-1 text-xs px-2.5 py-1 rounded-full font-medium ${
+                  apiConnected
+                    ? 'bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-700 dark:text-green-400'
+                    : 'bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 text-amber-700 dark:text-amber-400'
+                }`}>
+                  {apiConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                  <span>{apiConnected ? 'Live' : 'Demo'}</span>
+                </span>
+              )}
+            </div>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+              Manage suppliers for AI procurement optimization
+            </p>
+          </div>
         </div>
         <button
           onClick={() => setShowAddSupplier(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
+          className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/30 transition-all hover:scale-105"
         >
           <Plus className="w-4 h-4" />
           <span>Add Supplier</span>
@@ -166,29 +183,32 @@ export default function Suppliers() {
 
       {/* Add Supplier Form */}
       {showAddSupplier && (
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-neutral-50 dark:bg-neutral-800">
-          <h3 className="font-medium text-black dark:text-white mb-4">New Supplier</h3>
-          <div className="grid grid-cols-5 gap-4">
+        <div className="border border-blue-200 dark:border-blue-900 rounded-2xl p-6 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
+          <div className="flex items-center space-x-2 mb-4">
+            <MapPin className="w-5 h-5 text-blue-500" />
+            <h3 className="font-semibold text-black dark:text-white">Add New Supplier</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <input
               type="text"
               placeholder="Supplier name"
               value={newSupplier.name}
               onChange={e => setNewSupplier({ ...newSupplier, name: e.target.value })}
-              className="px-3 py-2 border border-neutral-200 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-black dark:text-white"
+              className="px-4 py-3 border border-neutral-200 dark:border-neutral-600 rounded-xl text-sm bg-white dark:bg-neutral-800 text-black dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />
             <input
               type="number"
               placeholder="Lead time (days)"
               value={newSupplier.lead_time_days}
               onChange={e => setNewSupplier({ ...newSupplier, lead_time_days: e.target.value })}
-              className="px-3 py-2 border border-neutral-200 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-black dark:text-white"
+              className="px-4 py-3 border border-neutral-200 dark:border-neutral-600 rounded-xl text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
             />
             <input
               type="number"
               placeholder="Min order qty"
               value={newSupplier.min_order_quantity}
               onChange={e => setNewSupplier({ ...newSupplier, min_order_quantity: e.target.value })}
-              className="px-3 py-2 border border-neutral-200 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-black dark:text-white"
+              className="px-4 py-3 border border-neutral-200 dark:border-neutral-600 rounded-xl text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
             />
             <input
               type="number"
@@ -196,21 +216,21 @@ export default function Suppliers() {
               placeholder="Reliability (0-1)"
               value={newSupplier.reliability_score}
               onChange={e => setNewSupplier({ ...newSupplier, reliability_score: e.target.value })}
-              className="px-3 py-2 border border-neutral-200 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-black dark:text-white"
+              className="px-4 py-3 border border-neutral-200 dark:border-neutral-600 rounded-xl text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
             />
             <input
               type="number"
               placeholder="Shipping cost ($)"
               value={newSupplier.shipping_cost}
               onChange={e => setNewSupplier({ ...newSupplier, shipping_cost: e.target.value })}
-              className="px-3 py-2 border border-neutral-200 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-black dark:text-white"
+              className="px-4 py-3 border border-neutral-200 dark:border-neutral-600 rounded-xl text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
             />
           </div>
-          <div className="flex justify-end space-x-2 mt-4">
-            <button onClick={() => setShowAddSupplier(false)} className="px-4 py-2 text-sm text-neutral-500">
+          <div className="flex justify-end space-x-3 mt-4">
+            <button onClick={() => setShowAddSupplier(false)} className="px-4 py-2.5 text-sm text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 font-medium">
               Cancel
             </button>
-            <button onClick={handleAddSupplier} className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium">
+            <button onClick={handleAddSupplier} className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/30 hover:scale-105 transition-all">
               Add Supplier
             </button>
           </div>
@@ -218,39 +238,47 @@ export default function Suppliers() {
       )}
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
-          <div className="flex items-center space-x-2 text-neutral-500 dark:text-neutral-400 mb-1">
-            <Truck className="w-4 h-4" />
-            <p className="text-sm">Total Suppliers</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Total Suppliers</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center">
+              <Truck className="w-5 h-5 text-white" />
+            </div>
           </div>
-          <p className="text-2xl font-semibold text-black dark:text-white">{suppliers.length}</p>
+          <p className="text-3xl font-bold text-black dark:text-white">{suppliers.length}</p>
         </div>
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
-          <div className="flex items-center space-x-2 text-neutral-500 dark:text-neutral-400 mb-1">
-            <Clock className="w-4 h-4" />
-            <p className="text-sm">Avg Lead Time</p>
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Avg Lead Time</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
+              <Clock className="w-5 h-5 text-white" />
+            </div>
           </div>
-          <p className="text-2xl font-semibold text-black dark:text-white font-mono">
-            {(suppliers.reduce((sum, s) => sum + s.lead_time_days, 0) / suppliers.length || 0).toFixed(1)}d
+          <p className="text-3xl font-bold text-black dark:text-white font-mono">
+            {(suppliers.reduce((sum, s) => sum + s.lead_time_days, 0) / suppliers.length || 0).toFixed(1)}<span className="text-xl">d</span>
           </p>
         </div>
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
-          <div className="flex items-center space-x-2 text-neutral-500 dark:text-neutral-400 mb-1">
-            <Star className="w-4 h-4" />
-            <p className="text-sm">Avg Reliability</p>
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Avg Reliability</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
           </div>
-          <p className="text-2xl font-semibold text-green-600 dark:text-green-400 font-mono">
-            {((suppliers.reduce((sum, s) => sum + s.reliability_score, 0) / suppliers.length || 0) * 100).toFixed(0)}%
+          <p className="text-3xl font-bold text-green-600 dark:text-green-400 font-mono">
+            {((suppliers.reduce((sum, s) => sum + s.reliability_score, 0) / suppliers.length || 0) * 100).toFixed(0)}<span className="text-xl">%</span>
           </p>
         </div>
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800">
-          <div className="flex items-center space-x-2 text-neutral-500 dark:text-neutral-400 mb-1">
-            <DollarSign className="w-4 h-4" />
-            <p className="text-sm">Avg Shipping</p>
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Avg Shipping</p>
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-white" />
+            </div>
           </div>
-          <p className="text-2xl font-semibold text-black dark:text-white font-mono">
-            ${(suppliers.reduce((sum, s) => sum + s.shipping_cost, 0) / suppliers.length || 0).toFixed(0)}
+          <p className="text-3xl font-bold text-black dark:text-white font-mono">
+            <span className="text-xl">$</span>{(suppliers.reduce((sum, s) => sum + s.shipping_cost, 0) / suppliers.length || 0).toFixed(0)}
           </p>
         </div>
       </div>
@@ -338,82 +366,87 @@ export default function Suppliers() {
         </div>
       </div>
 
-      {/* Suppliers Table */}
-      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden bg-white dark:bg-neutral-800">
-        <table className="w-full">
-          <thead className="bg-neutral-50 dark:bg-neutral-900">
-            <tr className="text-left text-sm text-neutral-500 dark:text-neutral-400">
-              <th className="px-4 py-3 font-medium">Supplier</th>
-              <th className="px-4 py-3 font-medium">Lead Time</th>
-              <th className="px-4 py-3 font-medium">Min Order</th>
-              <th className="px-4 py-3 font-medium">Reliability</th>
-              <th className="px-4 py-3 font-medium">Shipping</th>
-              <th className="px-4 py-3 font-medium">Supplies</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700">
-            {suppliers.map(supplier => (
-              <tr key={supplier.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50">
-                <td className="px-4 py-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-neutral-100 dark:bg-neutral-700 rounded-lg flex items-center justify-center">
-                      <Truck className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-                    </div>
-                    <span className="font-medium text-black dark:text-white">{supplier.name}</span>
+      {/* Suppliers Cards */}
+      <div className="space-y-3">
+        {suppliers.map(supplier => (
+          <div key={supplier.id} className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-all hover:border-blue-300 dark:hover:border-blue-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                {/* Supplier Avatar */}
+                <div className={`w-14 h-14 bg-gradient-to-br ${getSupplierGradient(supplier.reliability_score)} rounded-xl flex items-center justify-center shadow-lg`}>
+                  <Truck className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-black dark:text-white text-lg">{supplier.name}</h3>
+                  <div className="flex items-center space-x-3 mt-1">
+                    {/* Reliability Badge */}
+                    <span className={`flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold ${getReliabilityColor(supplier.reliability_score)}`}>
+                      <Star className="w-3 h-3" />
+                      <span>{(supplier.reliability_score * 100).toFixed(0)}% Reliable</span>
+                    </span>
+                    {/* Lead Time */}
+                    <span className={`flex items-center space-x-1 text-sm font-medium ${getLeadTimeColor(supplier.lead_time_days)}`}>
+                      <Clock className="w-3 h-3" />
+                      <span>{supplier.lead_time_days}d lead</span>
+                    </span>
                   </div>
-                </td>
-                <td className="px-4 py-4">
-                  <span className={`font-mono font-medium ${getLeadTimeColor(supplier.lead_time_days)}`}>
-                    {supplier.lead_time_days} day{supplier.lead_time_days !== 1 ? 's' : ''}
-                  </span>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="font-mono text-neutral-600 dark:text-neutral-300">
-                    {supplier.min_order_quantity} units
-                  </span>
-                </td>
-                <td className="px-4 py-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReliabilityColor(supplier.reliability_score)}`}>
-                    {(supplier.reliability_score * 100).toFixed(0)}%
-                  </span>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="font-mono text-neutral-600 dark:text-neutral-300">
-                    {supplier.shipping_cost === 0 ? 'Free' : `$${supplier.shipping_cost}`}
-                  </span>
-                </td>
-                <td className="px-4 py-4">
-                  <div className="flex flex-wrap gap-1">
-                    {supplier.ingredients && supplier.ingredients.length > 0 ? (
-                      supplier.ingredients.slice(0, 3).map((ing, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-700 rounded text-xs text-neutral-600 dark:text-neutral-300">
-                          {ing}
-                        </span>
-                      ))
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="flex items-center space-x-6 text-center">
+                <div>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Min Order</p>
+                  <p className="font-mono font-bold text-black dark:text-white">{supplier.min_order_quantity}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Shipping</p>
+                  <p className="font-mono font-bold text-black dark:text-white">
+                    {supplier.shipping_cost === 0 ? (
+                      <span className="text-green-500">Free</span>
                     ) : (
-                      <span className="text-neutral-400 text-sm">-</span>
+                      `$${supplier.shipping_cost}`
                     )}
-                    {supplier.ingredients && supplier.ingredients.length > 3 && (
-                      <span className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-700 rounded text-xs text-neutral-500">
-                        +{supplier.ingredients.length - 3}
-                      </span>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Ingredients */}
+            {supplier.ingredients && supplier.ingredients.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-700">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Package className="w-4 h-4 text-neutral-400" />
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Supplies</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {supplier.ingredients.map((ing, i) => (
+                    <span key={i} className="px-3 py-1.5 bg-neutral-100 dark:bg-neutral-700 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                      {ing}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Info Panel */}
-      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6 bg-neutral-50 dark:bg-neutral-800">
-        <h2 className="text-sm font-medium text-black dark:text-white mb-2">How Suppliers Affect Agent Decisions</h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          The Supplier Strategy Agent uses lead times and reliability scores to optimize procurement.
-          When disruptions occur (weather, traffic), the agent may recommend switching to faster
-          suppliers or splitting orders. Higher reliability scores get priority for critical ingredients.
-        </p>
+      <div className="border border-blue-200 dark:border-blue-900 rounded-2xl p-6 bg-gradient-to-r from-blue-50 via-cyan-50 to-indigo-50 dark:from-blue-900/20 dark:via-cyan-900/20 dark:to-indigo-900/20">
+        <div className="flex items-start space-x-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 flex-shrink-0">
+            <Sparkles className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-black dark:text-white mb-2">How Suppliers Affect AI Decisions</h2>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+              The <span className="font-semibold text-blue-600 dark:text-blue-400">Supplier Strategy Agent</span> uses lead times and reliability scores to optimize procurement.
+              When disruptions occur (weather, traffic), the agent may recommend switching to faster
+              suppliers or splitting orders. Higher reliability scores get priority for critical ingredients.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )

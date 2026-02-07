@@ -23,7 +23,8 @@ from .routers import (
     dishes_router,
     events_router,
     pos_router,
-    payments_router
+    payments_router,
+    delivery_router
 )
 
 
@@ -81,6 +82,7 @@ app.include_router(dishes_router, prefix="/dishes", tags=["Dishes"])
 app.include_router(events_router, prefix="/events", tags=["Events & Disruptions"])
 app.include_router(pos_router, prefix="/pos", tags=["Point of Sale"])
 app.include_router(payments_router, prefix="/payments", tags=["Payments"])
+app.include_router(delivery_router, tags=["Delivery Services"])
 
 
 @app.get("/")

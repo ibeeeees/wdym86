@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { getCuisineTemplate } from '../data/cuisineTemplates'
+import { getCuisineTemplate, DemoDish } from '../data/cuisineTemplates'
 import {
   getWeeklySummary, getMonthlyTrends, getSeasonalAnalysis,
   getDayOfWeekAnalysis, getKpiSummary, checkApiHealth
@@ -8,8 +8,12 @@ import {
 import {
   BarChart3, TrendingUp, TrendingDown, Calendar, DollarSign,
   ShoppingBag, Clock, RefreshCw, ArrowUpRight, ArrowDownRight, Minus,
-  Wifi, WifiOff
+  Wifi, WifiOff, Flower2, Sun, Leaf, Snowflake,
+  Award, AlertTriangle, UtensilsCrossed
 } from 'lucide-react'
+import {
+  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell, CartesianGrid
+} from 'recharts'
 
 interface KpiData {
   total_revenue: number
@@ -131,7 +135,8 @@ function generateDemoDow(template: ReturnType<typeof getCuisineTemplate>): any[]
 export default function TimelineAnalytics() {
   const { restaurantId, restaurantName, cuisineType } = useAuth()
   const template = getCuisineTemplate(cuisineType)
-  const [activeTab, setActiveTab] = useState<'kpi' | 'weekly' | 'monthly' | 'seasonal' | 'dow'>('kpi')
+  const [activeTab, setActiveTab] = useState<'kpi' | 'weekly' | 'monthly' | 'seasonal' | 'dow' | 'dishes'>('kpi')
+  const [dishInterval, setDishInterval] = useState<'daily' | 'weekly' | 'monthly'>('weekly')
   const [loading, setLoading] = useState(true)
   const [apiConnected, setApiConnected] = useState<boolean | null>(null)
   const [kpi, setKpi] = useState<KpiData | null>(null)
@@ -147,6 +152,11 @@ export default function TimelineAnalytics() {
   }, [restaurantId, activeTab, period])
 
   const loadData = async () => {
+    // Dishes tab uses local template data only - no API call needed
+    if (activeTab === 'dishes') {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
       const connected = await checkApiHealth()
@@ -217,13 +227,56 @@ export default function TimelineAnalytics() {
     }
   }
 
+  // Compute top and bottom dishes based on selected interval
+  const { topDishes, bottomDishes, chartData, totalOrders } = useMemo(() => {
+    const dishes = template.dishes.filter(d => d.is_active)
+    const getOrders = (d: DemoDish) => {
+      switch (dishInterval) {
+        case 'daily': return d.orders_today
+        case 'weekly': return d.orders_7d
+        case 'monthly': return d.orders_30d
+      }
+    }
+    const getRevenue = (d: DemoDish) => {
+      switch (dishInterval) {
+        case 'daily': return d.price * d.orders_today
+        case 'weekly': return d.revenue_7d
+        case 'monthly': return d.price * d.orders_30d
+      }
+    }
+    const total = dishes.reduce((sum, d) => sum + getOrders(d), 0)
+    const sorted = [...dishes].sort((a, b) => getOrders(b) - getOrders(a))
+    const top5 = sorted.slice(0, 5).map((d, i) => ({
+      ...d,
+      rank: i + 1,
+      intervalOrders: getOrders(d),
+      intervalRevenue: getRevenue(d),
+      revenuePct: total > 0 ? (getOrders(d) / total) * 100 : 0,
+    }))
+    const bottom5 = sorted.slice(-5).reverse().map((d, i) => ({
+      ...d,
+      rank: sorted.length - i,
+      intervalOrders: getOrders(d),
+      intervalRevenue: getRevenue(d),
+      revenuePct: total > 0 ? (getOrders(d) / total) * 100 : 0,
+    }))
+    const chart = sorted.map(d => ({
+      name: d.name.length > 18 ? d.name.slice(0, 16) + '...' : d.name,
+      fullName: d.name,
+      orders: getOrders(d),
+      revenue: getRevenue(d),
+    }))
+    return { topDishes: top5, bottomDishes: bottom5, chartData: chart, totalOrders: total }
+  }, [template.dishes, dishInterval])
+
   const tabs = [
-    { id: 'kpi', label: 'KPIs', icon: DollarSign },
-    { id: 'weekly', label: 'Weekly', icon: Calendar },
-    { id: 'monthly', label: 'Monthly', icon: TrendingUp },
-    { id: 'seasonal', label: 'Seasonal', icon: BarChart3 },
-    { id: 'dow', label: 'Day of Week', icon: Clock },
-  ] as const
+    { id: 'kpi' as const, label: 'KPIs', icon: DollarSign },
+    { id: 'weekly' as const, label: 'Weekly', icon: Calendar },
+    { id: 'monthly' as const, label: 'Monthly', icon: TrendingUp },
+    { id: 'seasonal' as const, label: 'Seasonal', icon: BarChart3 },
+    { id: 'dow' as const, label: 'Day of Week', icon: Clock },
+    { id: 'dishes' as const, label: 'Top Dishes', icon: UtensilsCrossed },
+  ]
 
   const fmtCurrency = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   const fmtPct = (n: number) => `${n.toFixed(1)}%`
@@ -231,10 +284,10 @@ export default function TimelineAnalytics() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <BarChart3 className="w-7 h-7 text-indigo-500" />
+            <BarChart3 className="w-7 h-7 text-indigo-500 flex-shrink-0" />
             Timeline Analytics
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
@@ -254,12 +307,12 @@ export default function TimelineAnalytics() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto scrollbar-hide">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition ${
+            className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition whitespace-nowrap ${
               activeTab === tab.id
                 ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
@@ -303,15 +356,15 @@ export default function TimelineAnalytics() {
                   <p className="text-gray-500">No snapshot data for this period. Compute daily snapshots from order data to populate analytics.</p>
                 </div>
               ) : kpi && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <KpiCard title="Total Revenue" value={fmtCurrency(kpi.total_revenue)} icon={DollarSign} color="green" />
                   <KpiCard title="Avg Daily Revenue" value={fmtCurrency(kpi.avg_daily_revenue)} icon={TrendingUp} color="blue" />
                   <KpiCard title="Total Orders" value={kpi.total_orders.toLocaleString()} icon={ShoppingBag} color="purple" />
                   <KpiCard title="Avg Order Value" value={fmtCurrency(kpi.avg_order_value)} icon={DollarSign} color="indigo" />
-                  <KpiCard title="Tips" value={fmtCurrency(kpi.total_tips)} subtitle={fmtPct(kpi.tip_rate)} icon={ArrowUpRight} color="teal" />
-                  <KpiCard title="Refunds" value={fmtCurrency(kpi.total_refunds)} subtitle={fmtPct(kpi.refund_rate)} icon={ArrowDownRight} color="red" />
-                  <KpiCard title="Labor Cost" value={fmtCurrency(kpi.labor_cost)} subtitle={fmtPct(kpi.labor_cost_pct)} icon={Clock} color="amber" />
-                  <KpiCard title="Food Cost" value={fmtCurrency(kpi.food_cost)} subtitle={fmtPct(kpi.food_cost_pct)} icon={ShoppingBag} color="orange" />
+                  <KpiCard title="Tips" value={fmtCurrency(kpi.total_tips)} subtitle={`${fmtPct(kpi.tip_rate)} of revenue`} icon={ArrowUpRight} color="teal" />
+                  <KpiCard title="Refunds" value={fmtCurrency(kpi.total_refunds)} subtitle={`${fmtPct(kpi.refund_rate)} of revenue`} icon={ArrowDownRight} color="red" />
+                  <KpiCard title="Labor Cost" value={fmtCurrency(kpi.labor_cost)} subtitle={`${fmtPct(kpi.labor_cost_pct)} of revenue`} icon={Clock} color="amber" />
+                  <KpiCard title="Food Cost" value={fmtCurrency(kpi.food_cost)} subtitle={`${fmtPct(kpi.food_cost_pct)} of revenue`} icon={ShoppingBag} color="orange" />
                 </div>
               )}
             </div>
@@ -327,7 +380,7 @@ export default function TimelineAnalytics() {
                 <div className="p-8 text-center text-gray-500">No weekly data available.</div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm min-w-[640px]">
                     <thead className="bg-gray-50 dark:bg-gray-700/50">
                       <tr>
                         <th className="text-left p-3">Week</th>
@@ -369,8 +422,8 @@ export default function TimelineAnalytics() {
               ) : (
                 <>
                   {/* Bar chart visualization */}
-                  <div className="p-4">
-                    <div className="flex items-end gap-2 h-48">
+                  <div className="p-4 overflow-x-auto">
+                    <div className="flex items-end gap-2 h-48 min-w-[400px]">
                       {monthly.map((m, i) => {
                         const maxRev = Math.max(...monthly.map((x: any) => x.revenue || 0), 1)
                         const height = ((m.revenue || 0) / maxRev) * 100
@@ -393,7 +446,7 @@ export default function TimelineAnalytics() {
                     </div>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm min-w-[700px]">
                       <thead className="bg-gray-50 dark:bg-gray-700/50">
                         <tr>
                           <th className="text-left p-3">Month</th>
@@ -429,11 +482,11 @@ export default function TimelineAnalytics() {
 
           {/* Seasonal View */}
           {activeTab === 'seasonal' && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {Object.entries(seasonal).map(([season, data]: [string, any]) => (
                 <div key={season} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-4">
                   <h3 className="text-lg font-semibold capitalize text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                    {season === 'spring' ? '🌸' : season === 'summer' ? '☀️' : season === 'fall' ? '🍂' : '❄️'}
+                    {season === 'spring' ? <Flower2 className="w-5 h-5 text-pink-500" /> : season === 'summer' ? <Sun className="w-5 h-5 text-amber-500" /> : season === 'fall' ? <Leaf className="w-5 h-5 text-orange-500" /> : <Snowflake className="w-5 h-5 text-blue-400" />}
                     {season}
                   </h3>
                   <div className="mt-3 space-y-2 text-sm">
@@ -461,7 +514,7 @@ export default function TimelineAnalytics() {
                 </div>
               ))}
               {Object.keys(seasonal).length === 0 && (
-                <div className="col-span-4 bg-white dark:bg-gray-800 rounded-xl p-8 text-center border dark:border-gray-700">
+                <div className="col-span-full bg-white dark:bg-gray-800 rounded-xl p-8 text-center border dark:border-gray-700">
                   <p className="text-gray-500">No seasonal data yet. Build up daily snapshots over time.</p>
                 </div>
               )}
@@ -478,8 +531,8 @@ export default function TimelineAnalytics() {
                 <div className="p-8 text-center text-gray-500">No data available.</div>
               ) : (
                 <>
-                  <div className="p-4">
-                    <div className="flex items-end gap-3 h-40">
+                  <div className="p-4 overflow-x-auto">
+                    <div className="flex items-end gap-3 h-40 min-w-[400px]">
                       {dow.map((d, i) => {
                         const maxRev = Math.max(...dow.map((x: any) => x.avg_revenue || 0), 1)
                         const height = ((d.avg_revenue || 0) / maxRev) * 100
@@ -497,7 +550,7 @@ export default function TimelineAnalytics() {
                     </div>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm min-w-[600px]">
                       <thead className="bg-gray-50 dark:bg-gray-700/50">
                         <tr>
                           <th className="text-left p-3">Day</th>
@@ -524,6 +577,211 @@ export default function TimelineAnalytics() {
                   </div>
                 </>
               )}
+            </div>
+          )}
+
+          {/* Top Dishes View */}
+          {activeTab === 'dishes' && (
+            <div className="space-y-6">
+              {/* Interval selector */}
+              <div className="flex items-center gap-3">
+                <label className="text-sm text-gray-600 dark:text-gray-400">Interval:</label>
+                {(['daily', 'weekly', 'monthly'] as const).map(interval => (
+                  <button
+                    key={interval}
+                    onClick={() => setDishInterval(interval)}
+                    className={`px-3 py-1 rounded-full text-sm capitalize ${
+                      dishInterval === interval
+                        ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                    }`}
+                  >
+                    {interval === 'daily' ? 'Today' : interval === 'weekly' ? '7 Days' : '30 Days'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Bar Chart - All Dishes */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border dark:border-gray-700 overflow-hidden">
+                <div className="bg-gradient-to-r from-red-500 to-red-700 px-5 py-3">
+                  <h3 className="font-semibold text-white flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Orders by Dish ({dishInterval === 'daily' ? 'Today' : dishInterval === 'weekly' ? 'Last 7 Days' : 'Last 30 Days'})
+                  </h3>
+                </div>
+                <div className="p-4 overflow-x-auto">
+                  <div className="min-w-[500px]">
+                  <ResponsiveContainer width="100%" height={Math.max(300, chartData.length * 36)}>
+                    <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+                      <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v: number) => v.toLocaleString()} />
+                      <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11 }} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }}
+                        formatter={(value: number, name: string) => [
+                          name === 'orders' ? value.toLocaleString() + ' orders' : fmtCurrency(value),
+                          name === 'orders' ? 'Orders' : 'Revenue'
+                        ]}
+                        labelFormatter={(label: string) => {
+                          const item = chartData.find(d => d.name === label)
+                          return item?.fullName || label
+                        }}
+                      />
+                      <Bar dataKey="orders" radius={[0, 4, 4, 0]} maxBarSize={24}>
+                        {chartData.map((_, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={index < 5 ? '#dc2626' : index >= chartData.length - 5 ? '#9ca3af' : '#f87171'}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top 5 and Bottom 5 side by side */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Most Popular */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border dark:border-gray-700 overflow-hidden">
+                  <div className="bg-gradient-to-r from-red-500 to-red-700 px-5 py-3">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                      <Award className="w-5 h-5" />
+                      Top 5 Most Popular
+                    </h3>
+                  </div>
+                  <div className="divide-y dark:divide-gray-700">
+                    {topDishes.map((dish, i) => (
+                      <div key={dish.id} className="flex items-center gap-4 px-5 py-3.5">
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                          i === 0 ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400' :
+                          i === 1 ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300' :
+                          i === 2 ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400' :
+                          'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                        }`}>
+                          {i + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 dark:text-white truncate">{dish.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{dish.category}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-semibold text-gray-900 dark:text-white">{dish.intervalOrders.toLocaleString()}</p>
+                          <p className="text-xs text-gray-500">orders</p>
+                        </div>
+                        <div className="text-right flex-shrink-0 w-20">
+                          <p className="font-medium text-green-600 dark:text-green-400">{fmtCurrency(dish.intervalRevenue)}</p>
+                          <p className="text-xs text-gray-400">{dish.revenuePct.toFixed(1)}%</p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {dish.trend > 0 ? (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-medium text-green-600 dark:text-green-400">
+                              <TrendingUp className="w-3.5 h-3.5" />
+                              +{dish.trend.toFixed(1)}%
+                            </span>
+                          ) : dish.trend < 0 ? (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-medium text-red-600 dark:text-red-400">
+                              <TrendingDown className="w-3.5 h-3.5" />
+                              {dish.trend.toFixed(1)}%
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-medium text-gray-400">
+                              <Minus className="w-3.5 h-3.5" />
+                              0%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 px-5 py-2.5 text-xs text-gray-500 dark:text-gray-400">
+                    Top 5 account for {topDishes.reduce((s, d) => s + d.revenuePct, 0).toFixed(1)}% of all orders
+                  </div>
+                </div>
+
+                {/* Least Popular */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border dark:border-gray-700 overflow-hidden">
+                  <div className="bg-gradient-to-r from-gray-600 to-gray-800 dark:from-gray-700 dark:to-gray-900 px-5 py-3">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5" />
+                      Bottom 5 Least Popular
+                    </h3>
+                  </div>
+                  <div className="divide-y dark:divide-gray-700">
+                    {bottomDishes.map((dish) => (
+                      <div key={dish.id} className="flex items-center gap-4 px-5 py-3.5">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-red-50 dark:bg-red-900/20 text-red-400 dark:text-red-500">
+                          {dish.rank}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 dark:text-white truncate">{dish.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{dish.category}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-semibold text-gray-900 dark:text-white">{dish.intervalOrders.toLocaleString()}</p>
+                          <p className="text-xs text-gray-500">orders</p>
+                        </div>
+                        <div className="text-right flex-shrink-0 w-20">
+                          <p className="font-medium text-green-600 dark:text-green-400">{fmtCurrency(dish.intervalRevenue)}</p>
+                          <p className="text-xs text-gray-400">{dish.revenuePct.toFixed(1)}%</p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {dish.trend > 0 ? (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-medium text-green-600 dark:text-green-400">
+                              <TrendingUp className="w-3.5 h-3.5" />
+                              +{dish.trend.toFixed(1)}%
+                            </span>
+                          ) : dish.trend < 0 ? (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-medium text-red-600 dark:text-red-400">
+                              <TrendingDown className="w-3.5 h-3.5" />
+                              {dish.trend.toFixed(1)}%
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-medium text-gray-400">
+                              <Minus className="w-3.5 h-3.5" />
+                              0%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 px-5 py-2.5 text-xs text-gray-500 dark:text-gray-400">
+                    Bottom 5 account for {bottomDishes.reduce((s, d) => s + d.revenuePct, 0).toFixed(1)}% of all orders
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <KpiCard
+                  title="Total Dishes"
+                  value={template.dishes.filter(d => d.is_active).length.toString()}
+                  icon={UtensilsCrossed}
+                  color="indigo"
+                />
+                <KpiCard
+                  title="Total Orders"
+                  value={totalOrders.toLocaleString()}
+                  subtitle={dishInterval === 'daily' ? 'today' : dishInterval === 'weekly' ? 'last 7d' : 'last 30d'}
+                  icon={ShoppingBag}
+                  color="purple"
+                />
+                <KpiCard
+                  title="Top Dish Orders"
+                  value={topDishes[0]?.intervalOrders.toLocaleString() || '0'}
+                  subtitle={topDishes[0]?.name}
+                  icon={Award}
+                  color="green"
+                />
+                <KpiCard
+                  title="Avg Orders/Dish"
+                  value={Math.round(totalOrders / Math.max(template.dishes.filter(d => d.is_active).length, 1)).toLocaleString()}
+                  icon={BarChart3}
+                  color="blue"
+                />
+              </div>
             </div>
           )}
         </>
@@ -559,7 +817,7 @@ function KpiCard({ title, value, subtitle, icon: Icon, color }: {
         </div>
       </div>
       <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
-      {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle} of revenue</p>}
+      {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
     </div>
   )
 }

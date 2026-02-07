@@ -3,7 +3,8 @@ import {
   ShoppingCart, Plus, Minus, Trash2, CreditCard, DollarSign,
   Smartphone, X, Check, Clock, Users,
   Wifi, WifiOff, Receipt, Banknote, Sparkles, UtensilsCrossed, Coffee, IceCream,
-  Utensils, Package as PackageIcon, Truck, ChefHat, Bell
+  Utensils, Package as PackageIcon, Truck, ChefHat, Bell,
+  ArrowRightLeft, UserPlus, Hash
 } from 'lucide-react'
 import { checkApiHealth } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -36,9 +37,10 @@ interface Order {
 interface TableInfo {
   id: number
   capacity: number
-  status: 'available' | 'occupied' | 'cleaning'
+  status: 'available' | 'occupied' | 'cleaning' | 'reserved'
   server?: string
   orderId?: string
+  partySize?: number
 }
 
 interface TakeoutOrder {
@@ -94,12 +96,12 @@ const demoServers = ['Elena D.', 'Nikos S.', 'Sofia B.']
 
 const demoTables: TableInfo[] = [
   { id: 1, capacity: 2, status: 'available' },
-  { id: 2, capacity: 4, status: 'occupied', server: 'Elena D.' },
-  { id: 3, capacity: 4, status: 'available' },
-  { id: 4, capacity: 6, status: 'occupied', server: 'Nikos S.' },
+  { id: 2, capacity: 4, status: 'occupied', server: 'Elena D.', partySize: 3 },
+  { id: 3, capacity: 4, status: 'reserved' },
+  { id: 4, capacity: 6, status: 'occupied', server: 'Nikos S.', partySize: 5 },
   { id: 5, capacity: 2, status: 'cleaning' },
   { id: 6, capacity: 4, status: 'available' },
-  { id: 7, capacity: 8, status: 'occupied', server: 'Sofia B.' },
+  { id: 7, capacity: 8, status: 'occupied', server: 'Sofia B.', partySize: 6 },
   { id: 8, capacity: 6, status: 'available' },
 ]
 
@@ -160,6 +162,15 @@ export default function POS() {
   const [tables, setTables] = useState<TableInfo[]>(demoTables.map((t, i) => i === 1 || i === 3 || i === 6 ? { ...t, server: template.serverNames[i === 1 ? 0 : i === 3 ? 1 : 2] } : t))
   const [selectedTable, setSelectedTable] = useState<number | null>(null)
   const [selectedServer, setSelectedServer] = useState('')
+
+  // Seat party flow
+  const [showSeatModal, setShowSeatModal] = useState(false)
+  const [seatModalTableId, setSeatModalTableId] = useState<number | null>(null)
+  const [seatPartySize, setSeatPartySize] = useState<number>(2)
+
+  // Move table flow
+  const [moveMode, setMoveMode] = useState(false)
+  const [moveSourceTable, setMoveSourceTable] = useState<number | null>(null)
 
   // Takeout state
   const [takeoutOrders, setTakeoutOrders] = useState<TakeoutOrder[]>(template.takeoutOrders)
@@ -240,9 +251,9 @@ export default function POS() {
 
     // If dine-in, free the table
     if (activeTab === 'dine_in' && selectedTable) {
-      setTables(prev => prev.map(t => t.id === selectedTable ? { ...t, status: 'cleaning' as const } : t))
+      setTables(prev => prev.map(t => t.id === selectedTable ? { ...t, status: 'cleaning' as const, partySize: undefined } : t))
       setTimeout(() => {
-        setTables(prev => prev.map(t => t.id === selectedTable ? { ...t, status: 'available' as const, server: undefined } : t))
+        setTables(prev => prev.map(t => t.id === selectedTable ? { ...t, status: 'available' as const, server: undefined, partySize: undefined } : t))
       }, 5000)
     }
 
@@ -267,12 +278,59 @@ export default function POS() {
 
   const handleSelectTable = (tableId: number) => {
     const table = tables.find(t => t.id === tableId)
-    if (table?.status === 'available') {
+
+    // Move mode: pick the destination table
+    if (moveMode && moveSourceTable !== null) {
+      if (tableId === moveSourceTable) {
+        // Cancel move by clicking same table
+        setMoveMode(false)
+        setMoveSourceTable(null)
+        return
+      }
+      if (table?.status !== 'available') return // Can only move to available tables
+      const sourceTable = tables.find(t => t.id === moveSourceTable)
+      if (!sourceTable) return
+      setTables(prev => prev.map(t => {
+        if (t.id === moveSourceTable) return { ...t, status: 'available' as const, server: undefined, partySize: undefined }
+        if (t.id === tableId) return { ...t, status: 'occupied' as const, server: sourceTable.server, partySize: sourceTable.partySize }
+        return t
+      }))
       setSelectedTable(tableId)
-      setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'occupied' as const, server: selectedServer || template.serverNames[0] } : t))
+      setMoveMode(false)
+      setMoveSourceTable(null)
+      return
+    }
+
+    if (table?.status === 'available' || table?.status === 'reserved') {
+      // Open seat-party modal
+      setSeatModalTableId(tableId)
+      setSeatPartySize(2)
+      setShowSeatModal(true)
     } else if (table?.status === 'occupied') {
       setSelectedTable(tableId)
     }
+  }
+
+  const handleConfirmSeat = () => {
+    if (seatModalTableId === null) return
+    setTables(prev => prev.map(t =>
+      t.id === seatModalTableId
+        ? { ...t, status: 'occupied' as const, server: selectedServer || template.serverNames[0], partySize: seatPartySize }
+        : t
+    ))
+    setSelectedTable(seatModalTableId)
+    setShowSeatModal(false)
+    setSeatModalTableId(null)
+  }
+
+  const handleStartMove = (tableId: number) => {
+    setMoveSourceTable(tableId)
+    setMoveMode(true)
+  }
+
+  const handleCancelMove = () => {
+    setMoveMode(false)
+    setMoveSourceTable(null)
   }
 
   const handleTakeoutSubmit = () => {
@@ -306,10 +364,12 @@ export default function POS() {
   const changeAmount = selectedPayment === 'cash' && cashReceived
     ? parseFloat(cashReceived) - order.total : 0
 
-  const getTableColor = (status: TableInfo['status']) => {
+  const getTableColor = (status: TableInfo['status'], isMoveDest?: boolean) => {
+    if (isMoveDest) return 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-500 text-blue-700 dark:text-blue-400 ring-2 ring-blue-400 ring-offset-1 dark:ring-offset-neutral-900 animate-pulse'
     switch (status) {
       case 'available': return 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400'
       case 'occupied': return 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700 text-red-700 dark:text-red-400'
+      case 'reserved': return 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400'
       case 'cleaning': return 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-400'
     }
   }
@@ -319,9 +379,9 @@ export default function POS() {
     : deliveryOrders.filter(o => o.platform === deliveryPlatformFilter)
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col gap-4">
+    <div className="min-h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)] flex flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between flex-shrink-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 flex-shrink-0">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/25">
             <ShoppingCart className="w-5 h-5 text-white" />
@@ -341,7 +401,7 @@ export default function POS() {
         </div>
 
         {/* Order Type Tabs */}
-        <div className="flex rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 p-1">
+        <div className="flex rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 p-1 w-full sm:w-auto">
           {([
             { key: 'dine_in' as OrderTab, label: 'Dine-In', icon: Utensils },
             { key: 'takeout' as OrderTab, label: 'Takeout', icon: PackageIcon },
@@ -350,7 +410,7 @@ export default function POS() {
             <button
               key={key}
               onClick={() => { setActiveTab(key); setOrder(prev => ({ ...prev, orderType: key })) }}
-              className={`flex items-center space-x-2 px-4 py-3 text-sm font-medium capitalize rounded-lg transition-all ${activeTab === key
+              className={`flex-1 sm:flex-none flex items-center justify-center space-x-2 px-3 sm:px-4 py-3 text-sm font-medium capitalize rounded-lg transition-all ${activeTab === key
                   ? 'bg-white dark:bg-neutral-700 text-black dark:text-white shadow-sm'
                   : 'text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white'
                 }`}
@@ -371,34 +431,106 @@ export default function POS() {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex gap-4 min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
         {/* Left Side */}
         <div className="flex-1 flex flex-col min-h-0">
           {activeTab === 'dine_in' && (
             <>
               {/* Table Floor Plan */}
               <div className="mb-4">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
                   <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Table Floor Plan</h3>
-                  <div className="flex items-center space-x-3 text-xs">
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs">
                     <span className="flex items-center space-x-1"><span className="w-2 h-2 bg-green-500 rounded-full" /> <span className="text-neutral-500">Available</span></span>
                     <span className="flex items-center space-x-1"><span className="w-2 h-2 bg-red-500 rounded-full" /> <span className="text-neutral-500">Occupied</span></span>
+                    <span className="flex items-center space-x-1"><span className="w-2 h-2 bg-blue-500 rounded-full" /> <span className="text-neutral-500">Reserved</span></span>
                     <span className="flex items-center space-x-1"><span className="w-2 h-2 bg-yellow-500 rounded-full" /> <span className="text-neutral-500">Cleaning</span></span>
                   </div>
                 </div>
-                <div className="grid grid-cols-4 gap-3">
-                  {tables.map(table => (
+
+                {/* Move Mode Banner */}
+                {moveMode && (
+                  <div className="mb-3 flex items-center justify-between px-4 py-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-xl">
+                    <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-400">
+                      <ArrowRightLeft className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Moving Table {moveSourceTable}</span>
+                      <span className="text-xs opacity-75">-- Select an available table as destination</span>
+                    </div>
                     <button
-                      key={table.id}
-                      onClick={() => handleSelectTable(table.id)}
-                      className={`p-4 rounded-xl border-2 transition-all min-h-[80px] flex flex-col items-center justify-center ${getTableColor(table.status)} ${selectedTable === table.id ? 'ring-2 ring-red-500 ring-offset-2 dark:ring-offset-neutral-900 scale-105' : 'hover:scale-[1.02]'
-                        }`}
+                      onClick={handleCancelMove}
+                      className="px-3 py-1.5 text-xs font-medium bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
                     >
-                      <span className="text-lg font-bold">T{table.id}</span>
-                      <span className="text-xs mt-1">{table.capacity} seats</span>
-                      {table.server && <span className="text-[10px] mt-0.5 opacity-75">{table.server}</span>}
+                      Cancel
                     </button>
-                  ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {tables.map(table => {
+                    const isMoveTarget = moveMode && table.status === 'available'
+                    const isMoveSource = moveMode && table.id === moveSourceTable
+                    return (
+                      <button
+                        key={table.id}
+                        onClick={() => handleSelectTable(table.id)}
+                        disabled={moveMode && table.status !== 'available' && table.id !== moveSourceTable}
+                        className={`relative p-3 rounded-xl border-2 transition-all min-h-[100px] flex flex-col items-center justify-center ${
+                          isMoveSource
+                            ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-400 dark:border-amber-500 text-amber-700 dark:text-amber-400 ring-2 ring-amber-400 ring-offset-1 dark:ring-offset-neutral-900'
+                            : isMoveTarget
+                              ? getTableColor(table.status, true)
+                              : getTableColor(table.status)
+                        } ${
+                          selectedTable === table.id && !moveMode ? 'ring-2 ring-red-500 ring-offset-2 dark:ring-offset-neutral-900 scale-105' : ''
+                        } ${
+                          moveMode && table.status !== 'available' && table.id !== moveSourceTable ? 'opacity-40 cursor-not-allowed' : 'hover:scale-[1.02]'
+                        }`}
+                      >
+                        {/* Move button on occupied tables */}
+                        {table.status === 'occupied' && !moveMode && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleStartMove(table.id) }}
+                            className="absolute top-1.5 right-1.5 w-6 h-6 bg-white/80 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-600 rounded-md flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:border-blue-300 dark:hover:border-blue-600 transition-colors group/move"
+                            title="Move party to another table"
+                          >
+                            <ArrowRightLeft className="w-3 h-3 text-neutral-400 group-hover/move:text-blue-600 dark:group-hover/move:text-blue-400" />
+                          </button>
+                        )}
+
+                        <span className="text-lg font-bold">T{table.id}</span>
+
+                        {/* Party size / capacity utilization for occupied tables */}
+                        {table.status === 'occupied' && table.partySize ? (
+                          <div className="flex items-center space-x-1 mt-1">
+                            <Users className="w-3 h-3" />
+                            <span className="text-xs font-semibold">{table.partySize}/{table.capacity}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs mt-1">{table.capacity} seats</span>
+                        )}
+
+                        {/* Capacity bar for occupied tables */}
+                        {table.status === 'occupied' && table.partySize && (
+                          <div className="w-full mt-1.5 h-1.5 bg-white/40 dark:bg-black/20 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                table.partySize / table.capacity > 0.8
+                                  ? 'bg-red-500 dark:bg-red-400'
+                                  : table.partySize / table.capacity > 0.5
+                                    ? 'bg-amber-500 dark:bg-amber-400'
+                                    : 'bg-green-500 dark:bg-green-400'
+                              }`}
+                              style={{ width: `${Math.min(100, (table.partySize / table.capacity) * 100)}%` }}
+                            />
+                          </div>
+                        )}
+
+                        {table.server && <span className="text-[10px] mt-1 opacity-75">{table.server}</span>}
+                        {table.status === 'reserved' && <span className="text-[10px] mt-0.5 font-medium">Reserved</span>}
+                        {isMoveTarget && <span className="text-[10px] mt-0.5 font-bold">Tap to move here</span>}
+                      </button>
+                    )
+                  })}
                 </div>
                 {/* Server Assignment */}
                 <div className="mt-3 flex items-center space-x-3">
@@ -472,7 +604,7 @@ export default function POS() {
                   <PackageIcon className="w-4 h-4" />
                   <span>Takeout Order</span>
                 </h3>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <input
                     type="text"
                     placeholder="Customer name"
@@ -521,7 +653,7 @@ export default function POS() {
                 })}
               </div>
 
-              <div className="flex-1 flex gap-4 min-h-0">
+              <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
                 {/* Menu Grid */}
                 <div className="flex-1 overflow-y-auto pr-2">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -548,7 +680,7 @@ export default function POS() {
                 </div>
 
                 {/* Takeout Order Queue */}
-                <div className="w-72 flex flex-col min-h-0">
+                <div className="w-full lg:w-72 flex flex-col min-h-0">
                   <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2 flex items-center space-x-2">
                     <Clock className="w-4 h-4" />
                     <span>Pickup Queue</span>
@@ -596,7 +728,7 @@ export default function POS() {
           {activeTab === 'delivery' && (
             <>
               {/* Platform Filters */}
-              <div className="flex items-center space-x-2 mb-4 flex-shrink-0">
+              <div className="flex items-center space-x-2 mb-4 flex-shrink-0 overflow-x-auto pb-2 scrollbar-hide">
                 <button
                   onClick={() => setDeliveryPlatformFilter('all')}
                   className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${deliveryPlatformFilter === 'all' ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
@@ -619,7 +751,7 @@ export default function POS() {
               </div>
 
               {/* Connection Status */}
-              <div className="flex items-center space-x-4 mb-4 flex-shrink-0">
+              <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mb-4 flex-shrink-0">
                 {['DoorDash', 'Uber Eats', 'Grubhub'].map(name => (
                   <span key={name} className="flex items-center space-x-1.5 text-xs text-neutral-500 dark:text-neutral-400">
                     <span className="w-2 h-2 bg-green-500 rounded-full" />
@@ -698,7 +830,7 @@ export default function POS() {
 
         {/* Right Side - Order Panel (shown for dine_in and takeout) */}
         {activeTab !== 'delivery' && (
-          <div className="w-96 flex flex-col bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-xl overflow-hidden flex-shrink-0">
+          <div className="w-full lg:w-96 flex flex-col bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-xl overflow-hidden flex-shrink-0">
             {/* Order Header */}
             <div className="p-4 bg-gradient-to-r from-red-500 to-red-700 text-white flex-shrink-0">
               <div className="flex items-center justify-between">
@@ -962,6 +1094,125 @@ export default function POS() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Seat Party Modal */}
+      {showSeatModal && seatModalTableId !== null && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-neutral-800 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="p-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold">Seat Party</h2>
+                  <p className="text-green-100 text-sm">Table {seatModalTableId} -- {tables.find(t => t.id === seatModalTableId)?.capacity} seats</p>
+                </div>
+              </div>
+              <button onClick={() => { setShowSeatModal(false); setSeatModalTableId(null) }} className="p-2 hover:bg-white/20 rounded-xl transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Party Size Selection */}
+            <div className="p-5">
+              <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3 flex items-center space-x-2">
+                <Users className="w-4 h-4" />
+                <span>Party Size</span>
+              </p>
+
+              {/* Quick-select buttons 1-8 */}
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(size => {
+                  const tableCapacity = tables.find(t => t.id === seatModalTableId)?.capacity || 8
+                  const overCapacity = size > tableCapacity
+                  return (
+                    <button
+                      key={size}
+                      onClick={() => setSeatPartySize(size)}
+                      className={`py-3 rounded-xl text-sm font-bold transition-all flex flex-col items-center ${
+                        seatPartySize === size
+                          ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30 scale-105'
+                          : overCapacity
+                            ? 'bg-red-50 dark:bg-red-900/20 text-red-400 dark:text-red-500 border border-red-200 dark:border-red-800'
+                            : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 hover:scale-105'
+                      }`}
+                    >
+                      <span className="text-lg">{size}</span>
+                      {overCapacity && <span className="text-[9px] mt-0.5">Over</span>}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Custom number input for 9+ */}
+              <div className="flex items-center space-x-3 mb-4">
+                <Hash className="w-4 h-4 text-neutral-400" />
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={seatPartySize}
+                  onChange={e => setSeatPartySize(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-20 px-3 py-2 text-center text-sm font-bold border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-black dark:text-white focus:ring-2 focus:ring-green-500"
+                />
+                <span className="text-sm text-neutral-500 dark:text-neutral-400">guests</span>
+                {seatPartySize > (tables.find(t => t.id === seatModalTableId)?.capacity || 8) && (
+                  <span className="text-xs text-red-500 dark:text-red-400 font-medium">Exceeds capacity</span>
+                )}
+              </div>
+
+              {/* Server assignment within modal */}
+              <div className="flex items-center space-x-3 mb-5">
+                <Users className="w-4 h-4 text-neutral-400" />
+                <select
+                  value={selectedServer}
+                  onChange={e => setSelectedServer(e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-black dark:text-white"
+                >
+                  <option value="">Assign Server</option>
+                  {demoServers.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              {/* Capacity visualization */}
+              <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-4 mb-5">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-neutral-500 dark:text-neutral-400">Capacity</span>
+                  <span className={`font-bold ${
+                    seatPartySize > (tables.find(t => t.id === seatModalTableId)?.capacity || 8)
+                      ? 'text-red-500' : 'text-green-600 dark:text-green-400'
+                  }`}>
+                    {seatPartySize} / {tables.find(t => t.id === seatModalTableId)?.capacity} seats
+                  </span>
+                </div>
+                <div className="w-full h-3 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      seatPartySize > (tables.find(t => t.id === seatModalTableId)?.capacity || 8)
+                        ? 'bg-red-500'
+                        : seatPartySize / (tables.find(t => t.id === seatModalTableId)?.capacity || 8) > 0.8
+                          ? 'bg-amber-500'
+                          : 'bg-green-500'
+                    }`}
+                    style={{ width: `${Math.min(100, (seatPartySize / (tables.find(t => t.id === seatModalTableId)?.capacity || 8)) * 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Confirm button */}
+              <button
+                onClick={handleConfirmSeat}
+                className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-bold text-base shadow-lg shadow-green-500/30 flex items-center justify-center space-x-3 transition-all"
+              >
+                <Check className="w-5 h-5" />
+                <span>Seat {seatPartySize} Guest{seatPartySize !== 1 ? 's' : ''} at Table {seatModalTableId}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,8 +1,20 @@
 # WDYM86 - AI-Powered Restaurant Intelligence Platform
 
-A comprehensive AI-powered restaurant management platform featuring probabilistic forecasting, autonomous AI agents, business-specific Gemini AI, drag-and-drop floor plans, automated disruption simulation, full non-food inventory tracking, timeline analytics, staff management, and POS integrations.
+> **NCR Voyix BSP Integration** | **Google Gemini Disruption Simulation** | **NumPy TCN Forecasting**
 
-**Demo Restaurant:** Mykonos Mediterranean Restaurant (Athens, GA)
+A comprehensive AI-powered restaurant management platform featuring **live NCR Voyix POS integration** (Aloha, Toast, Square, Clover), **Gemini-powered disruption simulation** (weather, traffic, supply chain), probabilistic TCN forecasting in pure NumPy, autonomous AI agents, drag-and-drop floor plans, multi-restaurant management, and full analytics.
+
+**6 Demo Restaurants across the USA:**
+| Restaurant | Cuisine | Location |
+|-----------|---------|----------|
+| Mykonos Mediterranean | Greek | Athens, GA |
+| Sakura Japanese Kitchen | Japanese | San Francisco, CA |
+| Casa del Sol | Mexican | Austin, TX |
+| Spice Route | Indian | Chicago, IL |
+| Trattoria Bella | Italian | New York, NY |
+| Magnolia Smokehouse | Southern BBQ | Nashville, TN |
+
+**Demo Users:** Ibe Mohammed Ali (Admin), Carter Tierney (Manager), Shaw Tesafye (POS)
 
 ## Features
 
@@ -32,9 +44,17 @@ A comprehensive AI-powered restaurant management platform featuring probabilisti
 - **Business PIN Join Codes** - Generate invite codes for new staff to self-onboard
 - **Demo Roles**: Ibe Mohammed Ali (Admin), Carter Tierney (Manager), Shaw Tesafye (Manager)
 
-### POS Integrations
+### NCR Voyix BSP Integration (Headline Feature)
+- **HMAC-SHA512 Authentication** - Production-grade NCR BSP API auth with signed requests
+- **Live Catalog Sync** - Pull menu items, categories, and prices from NCR BSP
+- **Transaction Logs (TDM)** - Revenue, tips, item sales, employee data from NCR
+- **Order Management** - Push/pull orders to/from NCR BSP API
+- **Connection Verification** - Real-time NCR API connectivity checks
+- **Sandbox Credentials** - Pre-configured with NCR test-drive environment
+
+### POS Platform Support
 - **Toast** - Menu sync, order sync, inventory sync, reporting
-- **Aloha (NCR)** - Enterprise restaurant management
+- **Aloha (NCR Voyix)** - Full BSP API integration with HMAC auth
 - **Square** - Payment processing, order management
 - **Clover** - Cloud POS and employee management
 
@@ -166,14 +186,18 @@ GEMINI_API_KEY=your-gemini-key
 
 # Database (SQLite default, PostgreSQL for production)
 DATABASE_URL=sqlite+aiosqlite:///./data/wdym86.db
-# Or for AWS RDS:
-DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/wdym86
+
+# NCR Voyix BSP Integration (pre-configured sandbox)
+NCR_BSP_SHARED_KEY=your-shared-key
+NCR_BSP_SECRET_KEY=your-secret-key
+NCR_BSP_ORGANIZATION=your-org-id
+NCR_BSP_ENTERPRISE_UNIT=your-enterprise-unit
+NCR_BSP_BASE_URL=https://api.ncr.com
 
 # AWS (optional)
 AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-AWS_S3_BUCKET=your-bucket
+S3_ENABLED=false
+S3_BUCKET_NAME=wdym86-uploads
 
 # Solana Pay (optional)
 SOLANA_NETWORK=devnet
@@ -246,6 +270,13 @@ SOLANA_RPC_URL=https://api.devnet.solana.com
 - `POST /pos-integrations/{restaurant_id}/integrations/{id}/verify` - Verify credentials
 - `POST /pos-integrations/{restaurant_id}/integrations/{id}/sync` - Trigger sync
 
+### NCR Voyix BSP (Direct API)
+- `GET /pos-integrations/{restaurant_id}/ncr/catalog` - Live NCR catalog items
+- `GET /pos-integrations/{restaurant_id}/ncr/tlogs` - Transaction logs with revenue/tips summary
+- `GET /pos-integrations/{restaurant_id}/ncr/orders` - NCR orders
+- `POST /pos-integrations/{restaurant_id}/ncr/push-order` - Push order to NCR BSP
+- `GET /pos-integrations/{restaurant_id}/ncr/verify` - NCR API connectivity check
+
 ### POS
 - `POST /pos/orders` - Create order
 - `GET /pos/orders` - List orders
@@ -290,9 +321,13 @@ wdym86/
 │       │   ├── prompts.py         # Dynamic system prompts (build_system_prompt)
 │       │   └── explainer.py       # Business-grounded explainer
 │       ├── services/              # Business logic
+│       │   ├── ncr_auth.py        # NCR BSP HMAC-SHA512 authentication
+│       │   ├── ncr_client.py      # NCR BSP async API client (Order, TDM, Catalog, Sites)
+│       │   ├── ncr_adapter.py     # NCR data mapping adapter
+│       │   ├── disruption_engine.py # Location-aware disruption generation (6 regions)
+│       │   ├── gemini_client.py   # Google Gemini integration
 │       │   ├── delivery.py        # Delivery platforms
 │       │   ├── solana_pay.py      # Crypto payments
-│       │   ├── disruption_engine.py # Automated disruption generation
 │       │   ├── full_inventory.py  # Non-food inventory templates (89 items)
 │       │   ├── events.py          # Event management
 │       │   └── payments.py        # Payment processing
@@ -373,11 +408,13 @@ Adapts procurement during disruptions:
 - Recommends earlier ordering, split shipments
 - Suggests alternative suppliers when needed
 
-### Automated Disruption Engine
-Generates realistic daily disruptions per-restaurant (never user-triggered):
-- **Weather Events** - Regional patterns (snow, heat waves, storms) with seasonal probability
+### Gemini-Powered Disruption Engine (Headline Feature)
+Generates realistic daily disruptions per-restaurant with **location-aware intelligence** (never user-triggered):
+- **6 Regional Profiles** - Southeast (Athens), West Coast (SF), South Central (Austin), Midwest (Chicago), Northeast (NYC), Mid-South (Nashville)
+- **Weather Events** - Region-specific patterns: lake effect snow (Chicago), nor'easters (NYC), heat waves (Austin), fog (SF), tornadoes (Nashville), hurricanes (Athens)
 - **Supply Chain Issues** - Carrier delays, port congestion, crop failures, supplier-specific
-- **Local Events** - University events, festivals, sports games, holidays
+- **Local Events** - UGA football, SXSW, Lollapalooza, Broadway openings, CMA Fest, Fleet Week
+- **Gemini Analysis** - Location context fed to Google Gemini for intelligent impact assessment
 - Ingredient-level risk scoring and menu impact assessment
 
 ## Forecasting Model
@@ -405,25 +442,16 @@ Captures overdispersion common in restaurant demand.
 
 ## Demo Data
 
-The system includes demo data for **Mykonos Mediterranean Restaurant**:
+The system includes complete demo data for **6 restaurants** across the USA, each with 20+ ingredients, 15+ dishes, 5 suppliers, and full menu/order/delivery mock data:
 
-### Ingredients (30+)
-- Proteins: Lamb, Chicken, Branzino, Octopus, Shrimp
-- Dairy: Feta, Halloumi, Greek Yogurt
-- Produce: Tomatoes, Cucumbers, Eggplant, Spinach
-- Dry Goods: Orzo, Phyllo, Chickpeas, Olive Oil
-
-### Menu Items (20+)
-- Appetizers: Hummus, Spanakopita, Saganaki, Grilled Octopus
-- Entrees: Lamb Souvlaki, Moussaka, Grilled Branzino
-- Desserts: Baklava, Greek Yogurt with Honey
-
-### Suppliers (5)
-- Aegean Imports (4-day lead, 94% reliability)
-- Athens Fresh Market (2-day lead, 88% reliability)
-- Mediterranean Seafood Co. (1-day lead, 92% reliability)
-- Hellenic Wines & Spirits (5-day lead, 96% reliability)
-- Olympus Dairy (2-day lead, 90% reliability)
+| Restaurant | Cuisine | Signature Dishes | Location |
+|-----------|---------|-----------------|----------|
+| Mykonos Mediterranean | Greek | Lamb Souvlaki, Moussaka, Spanakopita | Athens, GA |
+| Sakura Japanese Kitchen | Japanese | Sushi, Ramen, Tempura | San Francisco, CA |
+| Casa del Sol | Mexican | Tacos, Mole Poblano, Ceviche | Austin, TX |
+| Spice Route | Indian | Chicken Tikka, Biryani, Palak Paneer | Chicago, IL |
+| Trattoria Bella | Italian | Margherita Pizza, Osso Buco, Tiramisu | New York, NY |
+| Magnolia Smokehouse | BBQ | Brisket, Pulled Pork, Smoked Wings | Nashville, TN |
 
 ### Non-Food Inventory (89 default items across 5 categories)
 - **Kitchen Equipment** - Pans, knives, thermometers, cutting boards, tongs
@@ -479,12 +507,33 @@ Major feature expansion adding 6 new backend routers, 3 new services, 9 new data
 - 44+ API functions in `api.ts`
 - Updated routing and navigation with new pages
 
+## Security
+
+- **Rate Limiting** - 100 req/min general, 10 req/min auth (sliding window)
+- **Security Headers** - X-Content-Type-Options, X-Frame-Options, HSTS, XSS Protection
+- **API Key Masking** - Automatic detection and masking of secrets in response bodies
+- **Global Exception Handler** - Safe error responses, never exposes stack traces
+- **S3 Graceful Degradation** - Falls back to local storage when S3 is disabled
+
+## Demo Script
+
+1. Visit the app and click **"Try Demo"** on the login page
+2. Select any of the 6 restaurant cuisines (Greek, Japanese, Mexican, Indian, Italian, BBQ)
+3. Choose a role (Admin has full access, Manager sees operational pages, POS sees only the register)
+4. **Dashboard** - View AI risk assessments, today's disruptions, revenue metrics
+5. **POS** - Select a table, enter party size, take orders, process payment
+6. **NCR Aloha** - View live NCR catalog, transaction logs, orders synced from BSP API
+7. **Timeline Analytics** - Switch between KPIs, weekly, monthly, seasonal, Top Dishes tabs
+8. **Gemini Chat** - Ask the AI advisor about your restaurant's inventory and operations
+9. **Inventory** - Track non-food items, filter by category, view low stock alerts
+10. **Floor Plan** - Drag and drop tables, assign servers, manage zones
+
 ## Hackathon Tracks
 
 Built for:
 - **Ground-Up Model Track** - TCN + NB in pure NumPy
-- **Best Overall Track** - Full-stack restaurant platform
-- **MLH Best Use of Google Gemini API** - Business-specific conversational AI advisor
+- **Best Overall Track** - Full-stack restaurant platform with NCR Voyix + Gemini
+- **MLH Best Use of Google Gemini API** - Business-specific conversational AI advisor + disruption simulation
 
 ## License
 

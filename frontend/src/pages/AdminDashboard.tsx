@@ -45,8 +45,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* Restaurant Card */}
-      <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-2xl p-6 border border-red-200 dark:border-red-900 shadow-lg">
-        <div className="flex items-start justify-between">
+      <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-2xl p-4 sm:p-6 border border-red-200 dark:border-red-900 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div>
             <div className="flex items-center space-x-2 mb-1">
               <Building2 className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -55,12 +55,12 @@ export default function AdminDashboard() {
             <p className="text-sm text-neutral-500 dark:text-neutral-400">{template.restaurantSettings.address}</p>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-neutral-800 border border-red-200 dark:border-red-800 rounded-xl">
-              <Key className="w-4 h-4 text-red-500" />
-              <span className="font-mono text-sm font-bold text-black dark:text-white">{restaurantKey}</span>
+            <div className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-white dark:bg-neutral-800 border border-red-200 dark:border-red-800 rounded-xl overflow-x-auto">
+              <Key className="w-4 h-4 text-red-500 flex-shrink-0" />
+              <span className="font-mono text-sm font-bold text-black dark:text-white truncate">{restaurantKey}</span>
               <button
                 onClick={handleCopyKey}
-                className="p-1 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                className="p-1 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors flex-shrink-0"
                 title="Copy key"
               >
                 <Copy className="w-4 h-4 text-neutral-400 hover:text-red-500" />
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-all hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">Managers</p>
@@ -166,11 +166,11 @@ export default function AdminDashboard() {
       </div>
 
       {/* Current Subscription */}
-      <div className="bg-gradient-to-r from-red-50 via-rose-50 to-pink-50 dark:from-red-900/20 dark:via-rose-900/20 dark:to-pink-900/20 rounded-2xl p-6 border border-red-200 dark:border-red-900 shadow-lg">
-        <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-r from-red-50 via-rose-50 to-pink-50 dark:from-red-900/20 dark:via-rose-900/20 dark:to-pink-900/20 rounded-2xl p-4 sm:p-6 border border-red-200 dark:border-red-900 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/30">
-              <Crown className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/30 flex-shrink-0">
+              <Crown className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
             <div>
               <h3 className="font-bold text-black dark:text-white text-lg">Pro Plan</h3>
@@ -179,12 +179,12 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 flex-shrink-0">
             <div className="flex items-center space-x-1 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 rounded-full">
               <Shield className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
               <span className="text-xs font-semibold text-green-600 dark:text-green-400">Active</span>
             </div>
-            <button className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl text-sm font-semibold shadow-lg shadow-red-500/30 transition-all hover:scale-105">
+            <button className="px-4 sm:px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl text-sm font-semibold shadow-lg shadow-red-500/30 transition-all hover:scale-105 whitespace-nowrap">
               Upgrade to Enterprise
             </button>
           </div>

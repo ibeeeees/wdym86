@@ -4,8 +4,16 @@ WDYM86 - AI-Powered Restaurant Inventory Intelligence Platform
 FastAPI application entry point.
 """
 
-from fastapi import FastAPI
+import re
+import time
+import logging
+from collections import defaultdict
+from typing import Callable
+
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
 
 from .config import settings
@@ -35,6 +43,191 @@ from .routers import (
     pos_integration_router,
     payroll_router,
 )
+
+logger = logging.getLogger("wdym86.security")
+
+# ---------------------------------------------------------------------------
+# Sensitive key patterns used by the API key safety middleware
+# ---------------------------------------------------------------------------
+_SENSITIVE_PATTERNS = re.compile(
+    r'("(?:api_key|apikey|api[-_]?secret|secret_key|secret[-_]?key|'
+    r'access_key|access[-_]?token|private_key|auth_token|'
+    r'aws_secret_access_key|aws_access_key_id|'
+    r'gemini_api_key|ncr_bsp_secret_key|ncr_bsp_shared_key|'
+    r'rds_password|solana_wallet_address)"'
+    r'\s*:\s*")'           # captures up to the opening quote of the value
+    r'([^"]{4,})'          # the actual secret value (4+ chars to avoid masking short placeholders)
+    r'(")',                 # closing quote
+    re.IGNORECASE,
+)
+
+
+def _mask_secret(match: re.Match) -> str:
+    """Replace the middle of a captured secret value with asterisks."""
+    prefix = match.group(1)
+    value = match.group(2)
+    suffix = match.group(3)
+    if len(value) <= 6:
+        masked = value[0] + "*" * (len(value) - 1)
+    else:
+        masked = value[:3] + "*" * (len(value) - 6) + value[-3:]
+    return f"{prefix}{masked}{suffix}"
+
+
+# ---------------------------------------------------------------------------
+# 1. Rate Limiting Middleware  (sliding window, in-memory)
+# ---------------------------------------------------------------------------
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """
+    Simple in-memory sliding-window rate limiter.
+    - 100 req/min for general endpoints
+    - 10 req/min  for auth endpoints (paths starting with /auth)
+    """
+
+    GENERAL_LIMIT = 100
+    AUTH_LIMIT = 10
+    WINDOW_SECONDS = 60
+
+    def __init__(self, app):
+        super().__init__(app)
+        # {ip: [timestamps]}
+        self._general_hits: dict[str, list[float]] = defaultdict(list)
+        self._auth_hits: dict[str, list[float]] = defaultdict(list)
+
+    def _prune(self, hits: list[float], now: float) -> list[float]:
+        """Remove timestamps older than the sliding window."""
+        cutoff = now - self.WINDOW_SECONDS
+        # Bisect-style pruning (list is append-only so already sorted)
+        idx = 0
+        for i, t in enumerate(hits):
+            if t >= cutoff:
+                idx = i
+                break
+        else:
+            # All entries are stale
+            return []
+        return hits[idx:]
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        client_ip = request.client.host if request.client else "unknown"
+        now = time.time()
+        path = request.url.path
+
+        is_auth = path.startswith("/auth")
+        bucket = self._auth_hits if is_auth else self._general_hits
+        limit = self.AUTH_LIMIT if is_auth else self.GENERAL_LIMIT
+
+        # Prune old entries
+        bucket[client_ip] = self._prune(bucket[client_ip], now)
+
+        remaining = max(0, limit - len(bucket[client_ip]))
+        reset_at = int(now + self.WINDOW_SECONDS)
+
+        if len(bucket[client_ip]) >= limit:
+            logger.warning(
+                "Rate limit exceeded for %s on %s (%d/%d)",
+                client_ip, path, len(bucket[client_ip]), limit,
+            )
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many requests. Please try again later."},
+                headers={
+                    "X-RateLimit-Remaining": "0",
+                    "X-RateLimit-Reset": str(reset_at),
+                    "Retry-After": str(self.WINDOW_SECONDS),
+                },
+            )
+
+        # Record this request
+        bucket[client_ip].append(now)
+        remaining = max(0, limit - len(bucket[client_ip]))
+
+        response = await call_next(request)
+        response.headers["X-RateLimit-Remaining"] = str(remaining)
+        response.headers["X-RateLimit-Reset"] = str(reset_at)
+        return response
+
+
+# ---------------------------------------------------------------------------
+# 2. Security Headers Middleware
+# ---------------------------------------------------------------------------
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Injects standard security headers into every response."""
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+
+# ---------------------------------------------------------------------------
+# 4. API Key Safety Middleware  (strip leaked secrets from response bodies)
+# ---------------------------------------------------------------------------
+class APIKeySafetyMiddleware(BaseHTTPMiddleware):
+    """
+    Scans JSON response bodies for accidental secret leaks and masks them.
+    Only processes application/json responses to avoid mangling binary data.
+    """
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        response = await call_next(request)
+
+        content_type = response.headers.get("content-type", "")
+        if "application/json" not in content_type:
+            return response
+
+        # Read the body from the streaming response
+        body_chunks: list[bytes] = []
+        async for chunk in response.body_iterator:  # type: ignore[attr-defined]
+            if isinstance(chunk, str):
+                body_chunks.append(chunk.encode("utf-8"))
+            else:
+                body_chunks.append(chunk)
+        body_text = b"".join(body_chunks).decode("utf-8", errors="replace")
+
+        # Mask any sensitive values
+        scrubbed = _SENSITIVE_PATTERNS.sub(_mask_secret, body_text)
+
+        if scrubbed != body_text:
+            logger.warning(
+                "API key safety middleware masked secrets in response for %s",
+                request.url.path,
+            )
+
+        return Response(
+            content=scrubbed,
+            status_code=response.status_code,
+            headers=dict(response.headers),
+            media_type=response.media_type,
+        )
+
+
+# ---------------------------------------------------------------------------
+# 3. Global Exception Handler
+# ---------------------------------------------------------------------------
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """
+    Catch-all handler: logs the real error, returns a safe generic message.
+    In debug mode, includes error details for local development.
+    """
+    logger.error(
+        "Unhandled exception on %s %s: %s",
+        request.method,
+        request.url.path,
+        exc,
+        exc_info=True,
+    )
+    content: dict = {"detail": "Internal server error."}
+    if settings.debug:
+        content["debug_error"] = str(exc)
+        content["debug_type"] = type(exc).__name__
+    return JSONResponse(status_code=500, content=content)
 
 
 @asynccontextmanager
@@ -75,6 +268,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security middleware (order matters -- outermost middleware runs first)
+# Starlette adds middleware in reverse order: last added = outermost.
+# Desired execution order per request:
+#   Rate Limit -> Security Headers -> API Key Safety -> route handler
+# So we add them in reverse:
+app.add_middleware(APIKeySafetyMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
+
+# Global exception handler (catches anything not handled by route-level handlers)
+app.add_exception_handler(Exception, global_exception_handler)
 
 # Include routers
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])

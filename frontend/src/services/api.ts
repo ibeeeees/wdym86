@@ -612,6 +612,39 @@ export const removePosIntegration = async (restaurantId: string, integrationId: 
 
 
 // ==========================================
+// NCR BSP Integration (Aloha POS)
+// ==========================================
+
+export const getNcrCatalog = async (restaurantId: string) => {
+  const response = await api.get(`/pos-integrations/${restaurantId}/ncr/catalog`)
+  return response.data
+}
+
+export const getNcrTlogs = async (restaurantId: string, fromDate?: string, toDate?: string) => {
+  const params: Record<string, string> = {}
+  if (fromDate) params.from_date = fromDate
+  if (toDate) params.to_date = toDate
+  const response = await api.get(`/pos-integrations/${restaurantId}/ncr/tlogs`, { params })
+  return response.data
+}
+
+export const getNcrOrders = async (restaurantId: string) => {
+  const response = await api.get(`/pos-integrations/${restaurantId}/ncr/orders`)
+  return response.data
+}
+
+export const pushOrderToNcr = async (restaurantId: string, orderData: Record<string, unknown>) => {
+  const response = await api.post(`/pos-integrations/${restaurantId}/ncr/push-order`, orderData)
+  return response.data
+}
+
+export const verifyNcrConnection = async (restaurantId: string) => {
+  const response = await api.get(`/pos-integrations/${restaurantId}/ncr/verify`)
+  return response.data
+}
+
+
+// ==========================================
 // Payroll
 // ==========================================
 

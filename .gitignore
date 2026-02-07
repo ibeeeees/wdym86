@@ -55,3 +55,6 @@ data/*.db
 
 # Local data (top-level only)
 /data/
+
+# Local upload storage (S3 fallback)
+uploads/

@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     # AWS S3
     s3_enabled: bool = False
     s3_bucket_name: Optional[str] = None
+    s3_region: str = "us-east-1"
     aws_s3_bucket: Optional[str] = None  # Alternative env var name
 
     # AWS Cognito
@@ -69,6 +70,13 @@ class Settings(BaseSettings):
     solana_network: str = "devnet"
     solana_wallet_address: Optional[str] = None
     solana_rpc_url: str = "https://api.devnet.solana.com"
+
+    # NCR BSP Integration (Aloha POS)
+    ncr_bsp_shared_key: Optional[str] = None
+    ncr_bsp_secret_key: Optional[str] = None
+    ncr_bsp_organization: Optional[str] = None
+    ncr_bsp_enterprise_unit: Optional[str] = None
+    ncr_bsp_base_url: str = "https://api.ncr.com"
 
     class Config:
         env_file = [

@@ -133,6 +133,7 @@ export default function Layout({ children }: LayoutProps) {
             { path: '/floor-plan', icon: Grid3X3, label: 'Floor Plan' },
             { path: '/timeline', icon: BarChart3, label: 'Analytics' },
             { path: '/inventory-tracking', icon: ClipboardList, label: 'Inventory' },
+            { path: '/pos-integration', icon: Monitor, label: 'NCR Aloha' },
           ],
         },
       ]
@@ -156,6 +157,7 @@ export default function Layout({ children }: LayoutProps) {
           { path: '/floor-plan', icon: Grid3X3, label: 'Floor Plan' },
           { path: '/timeline', icon: BarChart3, label: 'Analytics' },
           { path: '/inventory-tracking', icon: ClipboardList, label: 'Inventory' },
+          { path: '/pos-integration', icon: Monitor, label: 'NCR Aloha' },
         ],
       },
       {
@@ -193,6 +195,7 @@ export default function Layout({ children }: LayoutProps) {
         { path: '/floor-plan', icon: Grid3X3, label: 'Floor Plan' },
         { path: '/timeline', icon: BarChart3, label: 'Analytics' },
         { path: '/inventory-tracking', icon: ClipboardList, label: 'Inventory' },
+        { path: '/pos-integration', icon: Monitor, label: 'NCR Aloha' },
       ]
     }
 
@@ -210,6 +213,7 @@ export default function Layout({ children }: LayoutProps) {
       { path: '/inventory-tracking', icon: ClipboardList, label: 'Inventory' },
       { path: '/team', icon: Users, label: 'Team' },
       { path: '/payroll', icon: Banknote, label: 'Payroll' },
+      { path: '/pos-integration', icon: Monitor, label: 'NCR Aloha' },
       { path: '/restaurant/settings', icon: Settings, label: 'Settings' },
     ]
   }

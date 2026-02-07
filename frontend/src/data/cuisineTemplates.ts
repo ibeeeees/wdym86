@@ -401,9 +401,9 @@ const mediterranean: CuisineTemplate = {
     email: 'info@mykonosathens.com',
   },
   demoUsers: {
-    restaurant_admin: { name: 'Yiannis Papadopoulos', email: 'admin@mykonos.com', restaurant: 'Mykonos Mediterranean', restaurantKey: 'REST-MYK2026-ATHNS' },
-    manager: { name: 'Elena Dimitriou', email: 'elena@mykonos.com', restaurant: 'Mykonos Mediterranean', managerId: 'MGR-ELENA26-MYKNS' },
-    pos_user: { name: 'Nikos Server', email: 'nikos@mykonos.com', restaurant: 'Mykonos Mediterranean' },
+    restaurant_admin: { name: 'Ibe Mohammed Ali', email: 'admin@mykonos.com', restaurant: 'Mykonos Mediterranean', restaurantKey: 'REST-MYK2026-ATHNS' },
+    manager: { name: 'Carter Tierney', email: 'manager@mykonos.com', restaurant: 'Mykonos Mediterranean', managerId: 'MGR-CART26-MYKNS' },
+    pos_user: { name: 'Shaw Tesafye', email: 'pos@mykonos.com', restaurant: 'Mykonos Mediterranean' },
   },
 }
 
@@ -693,14 +693,14 @@ const japanese: CuisineTemplate = {
   initialChatMessage: "Konnichiwa! I'm your AI assistant for Sakura Japanese Kitchen. I can help with:\n\n- **Inventory** - Stock levels, forecasts, reorder recommendations\n- **AI Agents** - Risk assessment, optimization decisions\n- **Menu** - Sushi, ramen, dishes, recipes, pricing\n- **Orders** - POS, delivery platforms\n- **Payments** - Including Solana Pay crypto\n- **Suppliers** - Lead times, reliability\n\nWhat would you like to know?",
   restaurantSettings: {
     name: 'Sakura Japanese Kitchen',
-    address: '789 Sakura Lane, Athens, GA 30601',
-    phone: '(706) 555-0198',
-    email: 'info@sakurakitchen.com',
+    address: '789 Sakura Lane, San Francisco, CA 94102',
+    phone: '(415) 555-0198',
+    email: 'info@sakurakitchensf.com',
   },
   demoUsers: {
-    restaurant_admin: { name: 'Takeshi Yamada', email: 'admin@sakura.com', restaurant: 'Sakura Japanese Kitchen', restaurantKey: 'REST-SKR2026-ATHNS' },
-    manager: { name: 'Yuki Tanaka', email: 'yuki@sakura.com', restaurant: 'Sakura Japanese Kitchen', managerId: 'MGR-YUKI26-SAKRA' },
-    pos_user: { name: 'Kenji Server', email: 'kenji@sakura.com', restaurant: 'Sakura Japanese Kitchen' },
+    restaurant_admin: { name: 'Ibe Mohammed Ali', email: 'admin@sakura.com', restaurant: 'Sakura Japanese Kitchen', restaurantKey: 'REST-SKR2026-SANFR' },
+    manager: { name: 'Carter Tierney', email: 'manager@sakura.com', restaurant: 'Sakura Japanese Kitchen', managerId: 'MGR-CART26-SAKRA' },
+    pos_user: { name: 'Shaw Tesafye', email: 'pos@sakura.com', restaurant: 'Sakura Japanese Kitchen' },
   },
 }
 
@@ -830,11 +830,11 @@ const mexican: CuisineTemplate = {
   ],
   chatIngredientKeywords: ['carne asada', 'carnitas', 'al pastor', 'chorizo', 'birria', 'chicken', 'shrimp', 'queso fresco', 'oaxaca cheese', 'crema', 'avocado', 'tomatillo', 'jalapeno', 'serrano', 'cilantro', 'lime', 'onion', 'tomato', 'poblano', 'corn tortilla', 'flour tortilla', 'black beans', 'pinto beans', 'rice', 'chipotle', 'ancho chile', 'mole', 'masa', 'cotija', 'tequila', 'mezcal'],
   initialChatMessage: "Hola! I'm your AI assistant for Casa del Sol Mexican Restaurant. I can help with:\n\n- **Inventory** - Stock levels, forecasts, reorder recommendations\n- **AI Agents** - Risk assessment, optimization decisions\n- **Menu** - Tacos, burritos, platos fuertes, recipes, pricing\n- **Orders** - POS, delivery platforms\n- **Payments** - Including Solana Pay crypto\n- **Suppliers** - Lead times, reliability\n\nWhat would you like to know?",
-  restaurantSettings: { name: 'Casa del Sol', address: '321 Sol Avenue, Athens, GA 30602', phone: '(706) 555-0187', email: 'info@casadelsolathens.com' },
+  restaurantSettings: { name: 'Casa del Sol', address: '321 Sol Avenue, Austin, TX 78701', phone: '(512) 555-0187', email: 'info@casadelsolaustin.com' },
   demoUsers: {
-    restaurant_admin: { name: 'Carlos Mendoza', email: 'admin@casadelsol.com', restaurant: 'Casa del Sol', restaurantKey: 'REST-CDS2026-ATHNS' },
-    manager: { name: 'Isabella Reyes', email: 'isabella@casadelsol.com', restaurant: 'Casa del Sol', managerId: 'MGR-ISAB26-CDSOL' },
-    pos_user: { name: 'Miguel Server', email: 'miguel@casadelsol.com', restaurant: 'Casa del Sol' },
+    restaurant_admin: { name: 'Ibe Mohammed Ali', email: 'admin@casadelsol.com', restaurant: 'Casa del Sol', restaurantKey: 'REST-CDS2026-AUSTN' },
+    manager: { name: 'Carter Tierney', email: 'manager@casadelsol.com', restaurant: 'Casa del Sol', managerId: 'MGR-CART26-CDSOL' },
+    pos_user: { name: 'Shaw Tesafye', email: 'pos@casadelsol.com', restaurant: 'Casa del Sol' },
   },
 }
 
@@ -965,11 +965,11 @@ const indian: CuisineTemplate = {
   ],
   chatIngredientKeywords: ['chicken', 'chicken tikka', 'lamb', 'lamb keema', 'shrimp', 'paneer', 'yogurt', 'ghee', 'cream', 'tomatoes', 'spinach', 'ginger', 'garlic', 'green chiles', 'cilantro', 'onions', 'basmati rice', 'rice', 'naan', 'chickpeas', 'lentils', 'dal', 'garam masala', 'turmeric', 'cumin', 'saffron', 'cardamom', 'coconut milk', 'tamarind', 'mango', 'mustard seeds', 'fenugreek'],
   initialChatMessage: "Namaste! I'm your AI assistant for Spice Route. I can help with:\n\n- **Inventory** - Stock levels, forecasts, reorder recommendations\n- **AI Agents** - Risk assessment, optimization decisions\n- **Menu** - Curries, tandoor dishes, recipes, pricing\n- **Orders** - POS, delivery platforms\n- **Payments** - Including Solana Pay crypto\n- **Suppliers** - Lead times, reliability\n\nWhat would you like to know?",
-  restaurantSettings: { name: 'Spice Route', address: '890 Spice Lane, Athens, GA 30602', phone: '(706) 555-0198', email: 'info@spicerouteathens.com' },
+  restaurantSettings: { name: 'Spice Route', address: '890 Spice Lane, Chicago, IL 60601', phone: '(312) 555-0198', email: 'info@spiceroutechicago.com' },
   demoUsers: {
-    restaurant_admin: { name: 'Rajesh Sharma', email: 'admin@spiceroute.com', restaurant: 'Spice Route', restaurantKey: 'REST-SPR2026-ATHNS' },
-    manager: { name: 'Priya Patel', email: 'priya@spiceroute.com', restaurant: 'Spice Route', managerId: 'MGR-PRIY26-SPICE' },
-    pos_user: { name: 'Amit Server', email: 'amit@spiceroute.com', restaurant: 'Spice Route' },
+    restaurant_admin: { name: 'Ibe Mohammed Ali', email: 'admin@spiceroute.com', restaurant: 'Spice Route', restaurantKey: 'REST-SPR2026-CHCGO' },
+    manager: { name: 'Carter Tierney', email: 'manager@spiceroute.com', restaurant: 'Spice Route', managerId: 'MGR-CART26-SPICE' },
+    pos_user: { name: 'Shaw Tesafye', email: 'pos@spiceroute.com', restaurant: 'Spice Route' },
   },
 }
 
@@ -1154,14 +1154,14 @@ const italian: CuisineTemplate = {
   initialChatMessage: "Buongiorno! I'm your AI assistant for Trattoria Bella. I can help with:\n\n- **Inventory** - Stock levels, forecasts, reorder recommendations\n- **AI Agents** - Risk assessment, optimization decisions\n- **Menu** - Pizza, pasta, secondi, recipes, pricing\n- **Orders** - POS, delivery platforms\n- **Payments** - Including Solana Pay crypto\n- **Suppliers** - Lead times, reliability\n\nWhat would you like to know?",
   restaurantSettings: {
     name: 'Trattoria Bella',
-    address: '567 Bella Vista Dr, Athens, GA 30602',
-    phone: '(706) 555-0165',
-    email: 'info@trattoriabellaathens.com',
+    address: '567 Bella Vista Dr, New York, NY 10001',
+    phone: '(212) 555-0165',
+    email: 'info@trattoriabellanyc.com',
   },
   demoUsers: {
-    restaurant_admin: { name: 'Marco Rossi', email: 'admin@trattoriabella.com', restaurant: 'Trattoria Bella', restaurantKey: 'REST-TRB2026-ATHNS' },
-    manager: { name: 'Giulia Conti', email: 'giulia@trattoriabella.com', restaurant: 'Trattoria Bella', managerId: 'MGR-GIUL26-TRBLA' },
-    pos_user: { name: 'Luca Server', email: 'luca@trattoriabella.com', restaurant: 'Trattoria Bella' },
+    restaurant_admin: { name: 'Ibe Mohammed Ali', email: 'admin@trattoriabella.com', restaurant: 'Trattoria Bella', restaurantKey: 'REST-TRB2026-NYCNY' },
+    manager: { name: 'Carter Tierney', email: 'manager@trattoriabella.com', restaurant: 'Trattoria Bella', managerId: 'MGR-CART26-TRBLA' },
+    pos_user: { name: 'Shaw Tesafye', email: 'pos@trattoriabella.com', restaurant: 'Trattoria Bella' },
   },
 }
 
@@ -1347,14 +1347,14 @@ const american_bbq: CuisineTemplate = {
   initialChatMessage: "Howdy! I'm your AI assistant for Magnolia Smokehouse. I can help with:\n\n- **Inventory** - Stock levels, forecasts, reorder recommendations\n- **AI Agents** - Risk assessment, optimization decisions\n- **Menu** - BBQ plates, sandwiches, sides, recipes, pricing\n- **Orders** - POS, delivery platforms\n- **Payments** - Including Solana Pay crypto\n- **Suppliers** - Lead times, reliability\n\nWhat can I help you with today?",
   restaurantSettings: {
     name: 'Magnolia Smokehouse',
-    address: '234 Magnolia Blvd, Athens, GA 30602',
-    phone: '(706) 555-0211',
-    email: 'info@magnoliasmokehouse.com',
+    address: '234 Magnolia Blvd, Nashville, TN 37201',
+    phone: '(615) 555-0211',
+    email: 'info@magnoliasmokenashville.com',
   },
   demoUsers: {
-    restaurant_admin: { name: 'Bobby Ray Thompson', email: 'admin@magnoliasmokehouse.com', restaurant: 'Magnolia Smokehouse', restaurantKey: 'REST-MAG2026-ATHNS' },
-    manager: { name: 'Savannah Brooks', email: 'savannah@magnoliasmokehouse.com', restaurant: 'Magnolia Smokehouse', managerId: 'MGR-SAVA26-MAGNO' },
-    pos_user: { name: 'Tyler Server', email: 'tyler@magnoliasmokehouse.com', restaurant: 'Magnolia Smokehouse' },
+    restaurant_admin: { name: 'Ibe Mohammed Ali', email: 'admin@magnoliasmokehouse.com', restaurant: 'Magnolia Smokehouse', restaurantKey: 'REST-MAG2026-NASHV' },
+    manager: { name: 'Carter Tierney', email: 'manager@magnoliasmokehouse.com', restaurant: 'Magnolia Smokehouse', managerId: 'MGR-CART26-MAGNO' },
+    pos_user: { name: 'Shaw Tesafye', email: 'pos@magnoliasmokehouse.com', restaurant: 'Magnolia Smokehouse' },
   },
 }
 

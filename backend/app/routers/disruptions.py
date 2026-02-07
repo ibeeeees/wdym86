@@ -15,7 +15,7 @@ from typing import Optional, List
 from ..database import (
     get_session, DisruptionLog, Restaurant, Ingredient, Dish, Recipe
 )
-from ..services.disruption_engine import AutomatedDisruptionEngine
+from ..services.disruption_engine import AutomatedDisruptionEngine, infer_region
 
 router = APIRouter(prefix="/disruptions", tags=["disruptions"])
 
@@ -44,7 +44,7 @@ async def get_todays_disruptions(
     engine = AutomatedDisruptionEngine(
         restaurant_id=restaurant_id,
         location=restaurant.location or "Unknown",
-        region=_infer_region(restaurant.location),
+        region=infer_region(restaurant.location),
     )
 
     today = date.today()
@@ -108,7 +108,7 @@ async def get_disruptions_range(
     engine = AutomatedDisruptionEngine(
         restaurant_id=restaurant_id,
         location=restaurant.location or "Unknown",
-        region=_infer_region(restaurant.location),
+        region=infer_region(restaurant.location),
     )
 
     all_disruptions = []
@@ -147,7 +147,7 @@ async def get_ingredient_risk(
     engine = AutomatedDisruptionEngine(
         restaurant_id=restaurant_id,
         location=restaurant.location or "Unknown",
-        region=_infer_region(restaurant.location),
+        region=infer_region(restaurant.location),
     )
 
     # Get restaurant's ingredients
@@ -187,7 +187,7 @@ async def get_menu_impact(
     engine = AutomatedDisruptionEngine(
         restaurant_id=restaurant_id,
         location=restaurant.location or "Unknown",
-        region=_infer_region(restaurant.location),
+        region=infer_region(restaurant.location),
     )
 
     # Get ingredients
@@ -268,21 +268,3 @@ async def get_disruption_history(
     }
 
 
-def _infer_region(location: str) -> str:
-    """Infer US region from location string for disruption patterns."""
-    if not location:
-        return "southeast"
-    loc = location.lower()
-    northeast = ["new york", "boston", "philadelphia", "dc", "baltimore", "connecticut", "new jersey", "maine", "vermont"]
-    midwest = ["chicago", "detroit", "cleveland", "minneapolis", "st louis", "kansas city", "columbus", "indianapolis", "milwaukee"]
-    west = ["los angeles", "san francisco", "seattle", "portland", "denver", "phoenix", "las vegas", "san diego", "sacramento"]
-    for term in northeast:
-        if term in loc:
-            return "northeast"
-    for term in midwest:
-        if term in loc:
-            return "midwest"
-    for term in west:
-        if term in loc:
-            return "west_coast"
-    return "southeast"

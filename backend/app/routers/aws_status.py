@@ -4,7 +4,7 @@ AWS Status Router
 Endpoints for checking AWS service connectivity.
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from typing import Dict, Any
 
 from ..config import settings
@@ -44,15 +44,17 @@ async def get_aws_status():
     else:
         status["services"]["rds"] = {"enabled": False, "using": "sqlite"}
 
-    # S3 Status
-    if settings.s3_enabled:
-        try:
-            from ..aws.s3 import s3_client
-            status["services"]["s3"] = s3_client.get_status()
-        except Exception as e:
-            status["services"]["s3"] = {"enabled": True, "status": "error", "error": str(e)}
-    else:
-        status["services"]["s3"] = {"enabled": False}
+    # S3 Status (always return full status, even when disabled)
+    try:
+        from ..aws.s3 import s3_client
+        status["services"]["s3"] = s3_client.get_status()
+    except Exception as e:
+        status["services"]["s3"] = {
+            "enabled": False,
+            "status": "error",
+            "error": str(e),
+            "message": "S3 module failed to load - using local storage"
+        }
 
     # Cognito Status
     if settings.cognito_enabled:
@@ -98,17 +100,46 @@ async def aws_health_check():
             checks["rds"] = "error"
             healthy = False
 
-    if settings.s3_enabled:
-        try:
-            from ..aws.s3 import s3_client
-            s3_status = s3_client.get_status()
-            checks["s3"] = "ok" if s3_status.get("status") == "connected" else "failed"
-            healthy = healthy and (s3_status.get("status") == "connected")
-        except:
-            checks["s3"] = "error"
-            healthy = False
+    # S3 health check -- always report, never crash
+    try:
+        from ..aws.s3 import s3_client
+        s3_status = s3_client.get_status()
+        if not settings.s3_enabled:
+            checks["s3"] = "local_storage"
+        elif s3_status.get("status") == "connected":
+            checks["s3"] = "ok"
+        else:
+            checks["s3"] = "degraded_local_fallback"
+            # S3 being unreachable is not a hard failure if local fallback works
+    except:
+        checks["s3"] = "local_storage"
 
     return {
         "healthy": healthy,
         "checks": checks
     }
+
+
+@router.get("/s3/status", response_model=Dict[str, Any])
+async def get_s3_status():
+    """
+    Dedicated S3 storage status endpoint.
+
+    Returns:
+    - Whether S3 is enabled or disabled
+    - Bucket name and region
+    - Connection status (connected / disabled / error)
+    - Current storage mode (s3 / local / local_fallback)
+    - Local file count when using local storage
+    """
+    try:
+        from ..aws.s3 import s3_client
+        return s3_client.get_status()
+    except Exception as e:
+        return {
+            "enabled": False,
+            "status": "error",
+            "error": str(e),
+            "storage_mode": "local",
+            "message": "S3 module unavailable - using local storage"
+        }

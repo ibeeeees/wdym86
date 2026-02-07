@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, ChefHat, Users, ShoppingCart, X, ChevronLeft, LogIn, Flame, DollarSign, UtensilsCrossed, Soup } from 'lucide-react'
+import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, ChefHat, Users, ShoppingCart, X, ChevronLeft, LogIn, Flame, DollarSign, UtensilsCrossed, Soup, HelpCircle } from 'lucide-react'
 import { register } from '../services/api'
 import { useAuth, UserRole } from '../context/AuthContext'
 import { CUISINE_OPTIONS } from '../data/cuisineTemplates'
@@ -220,11 +220,11 @@ export default function Login() {
       {/* Right Side - Login Form */}
       <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-900 dark:to-neutral-800">
         <div className="w-full max-w-sm">
-          {/* Mobile Logo */}
-          <div className="text-center mb-8 lg:hidden">
-            <div className="relative w-28 h-28 mx-auto mb-4">
-              <img src="/logo.jpg" alt="wdym86" className="w-28 h-28 rounded-2xl shadow-lg shadow-red-500/30 object-cover" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-pulse" />
+          {/* Logo - Large on desktop, medium on mobile */}
+          <div className="text-center mb-8">
+            <div className="relative w-48 h-48 lg:w-56 lg:h-56 mx-auto mb-4">
+              <img src="/logo.jpg" alt="wdym86" className="w-48 h-48 lg:w-56 lg:h-56 rounded-3xl shadow-2xl shadow-red-500/30 object-cover" />
+              <div className="absolute -top-2 -right-2 w-5 h-5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-pulse" />
             </div>
             <h1 className="text-2xl font-bold text-black dark:text-white">wdym86</h1>
             <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">AI-Powered Inventory Intelligence</p>
@@ -385,6 +385,14 @@ export default function Login() {
               <LogIn className="w-4 h-4" />
               <span>Log In</span>
             </button>
+            <Link
+              to="/how-it-works"
+              className="w-full py-3.5 rounded-xl font-semibold text-sm border-2 border-neutral-300 dark:border-neutral-600 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all flex items-center justify-center space-x-2 hover:scale-[1.02]"
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span>How It Works</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
             <div className="flex items-center justify-center text-sm">
               <Link
                 to="/staff/login"

@@ -54,9 +54,10 @@ SUPPORTED_PLATFORMS = {
 
 class IntegrationCreate(BaseModel):
     platform: str  # toast, aloha, square, clover
-    api_key: Optional[str] = None  # Stored encrypted in production via AWS Secrets
-    merchant_id: Optional[str] = None
-    location_id: Optional[str] = None
+    api_key: Optional[str] = None  # NCR: shared_key. Stored encrypted in production.
+    secret_key: Optional[str] = None  # NCR: secret_key
+    merchant_id: Optional[str] = None  # NCR: organization
+    location_id: Optional[str] = None  # NCR: enterprise_unit
     webhook_url: Optional[str] = None
     sync_menu: bool = True
     sync_orders: bool = True
@@ -222,8 +223,16 @@ async def verify_integration(
     if not integration:
         raise HTTPException(404, "Integration not found")
 
-    # In production: Make actual API call to verify credentials
-    # For now, mark as verified
+    # For Aloha (NCR): actually verify via NCR BSP API
+    ncr_result = None
+    if integration.platform == "aloha":
+        try:
+            from ..services.ncr_adapter import NCRAlohaAdapter
+            adapter = NCRAlohaAdapter()
+            ncr_result = await adapter.verify_connection()
+        except Exception as e:
+            ncr_result = {"connected": False, "error": str(e)}
+
     integration.status = "active"
     integration.is_active = True
     integration.last_sync = datetime.utcnow().isoformat()
@@ -231,11 +240,14 @@ async def verify_integration(
     await db.commit()
     await db.refresh(integration)
 
-    return {
+    response = {
         "verified": True,
         "integration": _serialize_integration(integration),
         "note": "Credentials verified. Integration is now active.",
     }
+    if ncr_result:
+        response["ncr_connection"] = ncr_result
+    return response
 
 
 @router.post("/{restaurant_id}/integrations/{integration_id}/sync")
@@ -262,7 +274,27 @@ async def trigger_sync(
     if not integration.is_active:
         raise HTTPException(400, "Integration is not active. Verify credentials first.")
 
-    # In production: Execute actual sync logic per platform
+    sync_results = {}
+
+    # For Aloha (NCR): execute real sync via NCR BSP API
+    if integration.platform == "aloha":
+        from ..services.ncr_adapter import NCRAlohaAdapter
+        adapter = NCRAlohaAdapter()
+        try:
+            if sync_type in ("menu", "all"):
+                catalog = await adapter.get_catalog_items()
+                sync_results["catalog"] = {"items_found": len(catalog), "items": catalog[:10]}
+            if sync_type in ("orders", "all"):
+                orders = await adapter.get_all_orders()
+                sync_results["orders"] = {"orders_found": len(orders), "orders": orders[:10]}
+            if sync_type in ("analytics", "all"):
+                from_date = "2020-01-01T00:00:00.000Z"
+                to_date = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+                tlogs = await adapter.get_tlogs(from_date, to_date)
+                sync_results["analytics"] = {"tlogs_found": len(tlogs), "tlogs": tlogs[:5]}
+        except Exception as e:
+            sync_results["error"] = str(e)
+
     integration.last_sync = datetime.utcnow().isoformat()
     await db.commit()
 
@@ -271,7 +303,7 @@ async def trigger_sync(
         "platform": integration.platform,
         "sync_type": sync_type,
         "last_sync": integration.last_sync,
-        "note": f"Sync completed for {sync_type}. In production, this pulls real data from {integration.platform}.",
+        "results": sync_results,
     }
 
 
@@ -322,6 +354,75 @@ async def get_sync_status(
             for i in integrations
         ],
     }
+
+
+# ─── NCR BSP Direct Endpoints ─────────────────────────────────────────
+
+
+@router.get("/{restaurant_id}/ncr/catalog")
+async def get_ncr_catalog(restaurant_id: str):
+    """Fetch catalog items directly from NCR BSP API."""
+    from ..services.ncr_adapter import NCRAlohaAdapter
+    adapter = NCRAlohaAdapter()
+    items = await adapter.get_catalog_items()
+    return {"restaurant_id": restaurant_id, "source": "ncr_bsp", "items": items, "total": len(items)}
+
+
+@router.get("/{restaurant_id}/ncr/tlogs")
+async def get_ncr_tlogs(
+    restaurant_id: str,
+    from_date: str = Query("2020-01-01T00:00:00.000Z", description="Start date (ISO 8601)"),
+    to_date: str = Query(None, description="End date (ISO 8601)"),
+):
+    """Fetch transaction logs directly from NCR BSP API."""
+    from ..services.ncr_adapter import NCRAlohaAdapter
+    adapter = NCRAlohaAdapter()
+    if not to_date:
+        to_date = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    tlogs = await adapter.get_tlogs(from_date, to_date)
+
+    # Aggregate summary
+    total_revenue = sum(t.get("total_revenue", 0) for t in tlogs)
+    total_tips = sum(t.get("total_tips", 0) for t in tlogs)
+    total_orders = sum(t.get("total_orders", 0) for t in tlogs)
+
+    return {
+        "restaurant_id": restaurant_id,
+        "source": "ncr_bsp",
+        "tlogs": tlogs,
+        "total": len(tlogs),
+        "summary": {"total_revenue": total_revenue, "total_tips": total_tips, "total_orders": total_orders},
+    }
+
+
+@router.get("/{restaurant_id}/ncr/orders")
+async def get_ncr_orders(restaurant_id: str):
+    """Fetch orders directly from NCR BSP API."""
+    from ..services.ncr_adapter import NCRAlohaAdapter
+    adapter = NCRAlohaAdapter()
+    orders = await adapter.get_all_orders()
+    return {"restaurant_id": restaurant_id, "source": "ncr_bsp", "orders": orders, "total": len(orders)}
+
+
+@router.post("/{restaurant_id}/ncr/push-order")
+async def push_order_to_ncr(
+    restaurant_id: str,
+    order_data: dict,
+):
+    """Push an order to NCR BSP API."""
+    from ..services.ncr_adapter import NCRAlohaAdapter
+    adapter = NCRAlohaAdapter()
+    result = await adapter.push_order(order_data)
+    return {"restaurant_id": restaurant_id, "pushed": True, "ncr_response": result}
+
+
+@router.get("/{restaurant_id}/ncr/verify")
+async def verify_ncr_connection(restaurant_id: str):
+    """Quick verification of NCR BSP API connectivity."""
+    from ..services.ncr_adapter import NCRAlohaAdapter
+    adapter = NCRAlohaAdapter()
+    result = await adapter.verify_connection()
+    return {"restaurant_id": restaurant_id, "source": "ncr_bsp", **result}
 
 
 def _serialize_integration(i: POSIntegration) -> dict:

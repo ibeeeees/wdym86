@@ -6,7 +6,9 @@ import {
 } from '../services/api'
 import {
   Package, AlertTriangle, Plus, Trash2, RefreshCw,
-  Search, Filter, ArrowUp, Wifi, WifiOff
+  Search, Filter, ArrowUp, Wifi, WifiOff,
+  ChefHat, UtensilsCrossed, SprayCan, Wine, Shirt,
+  type LucideIcon
 } from 'lucide-react'
 
 interface InventoryItem {
@@ -40,12 +42,12 @@ interface ValueSummary {
   total_items: number
 }
 
-const CATEGORIES = [
-  { id: 'kitchen_equipment', label: 'Kitchen Equipment', emoji: '🍳' },
-  { id: 'serviceware', label: 'Serviceware', emoji: '🍽️' },
-  { id: 'cleaning', label: 'Cleaning & Facility', emoji: '🧹' },
-  { id: 'beverages', label: 'Beverages', emoji: '🥤' },
-  { id: 'staff_supplies', label: 'Staff Supplies', emoji: '👔' },
+const CATEGORIES: { id: string; label: string; icon: LucideIcon }[] = [
+  { id: 'kitchen_equipment', label: 'Kitchen Equipment', icon: ChefHat },
+  { id: 'serviceware', label: 'Serviceware', icon: UtensilsCrossed },
+  { id: 'cleaning', label: 'Cleaning & Facility', icon: SprayCan },
+  { id: 'beverages', label: 'Beverages', icon: Wine },
+  { id: 'staff_supplies', label: 'Staff Supplies', icon: Shirt },
 ]
 
 const DEMO_ITEMS: InventoryItem[] = [
@@ -110,7 +112,12 @@ export default function InventoryTracking() {
   }, [restaurantId])
 
   useEffect(() => {
-    if (apiConnected) loadItems()
+    if (apiConnected === null) return
+    if (apiConnected) {
+      loadItems()
+    } else {
+      loadDemoData()
+    }
   }, [activeCategory, showLowOnly])
 
   const loadAll = async () => {
@@ -286,7 +293,7 @@ export default function InventoryTracking() {
 
       {/* Value Summary Cards */}
       {valueSummary && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-3">
             <p className="text-xs text-gray-500 uppercase">Total Value</p>
             <p className="text-lg font-bold text-gray-900 dark:text-white">
@@ -297,7 +304,7 @@ export default function InventoryTracking() {
             const catData = valueSummary.by_category[cat.id]
             return (
               <div key={cat.id} className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-3">
-                <p className="text-xs text-gray-500 uppercase">{cat.emoji} {cat.label}</p>
+                <p className="text-xs text-gray-500 uppercase flex items-center gap-1"><cat.icon className="w-3 h-3" /> {cat.label}</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-white">
                   {catData ? catData.count : 0} items
                 </p>
@@ -322,10 +329,10 @@ export default function InventoryTracking() {
             className="w-full pl-9 pr-4 py-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg text-sm"
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           <button
             onClick={() => setActiveCategory(null)}
-            className={`px-3 py-2 rounded-lg text-sm ${!activeCategory ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}
+            className={`px-3 py-2 rounded-lg text-sm whitespace-nowrap ${!activeCategory ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}
           >
             All
           </button>
@@ -333,14 +340,14 @@ export default function InventoryTracking() {
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id === activeCategory ? null : cat.id)}
-              className={`px-3 py-2 rounded-lg text-sm ${activeCategory === cat.id ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}
+              className={`px-3 py-2 rounded-lg text-sm whitespace-nowrap ${activeCategory === cat.id ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}
             >
-              {cat.emoji} {cat.label}
+              <cat.icon className="w-3.5 h-3.5 inline-block" /> {cat.label}
             </button>
           ))}
           <button
             onClick={() => setShowLowOnly(!showLowOnly)}
-            className={`px-3 py-2 rounded-lg text-sm flex items-center gap-1 ${showLowOnly ? 'bg-red-100 dark:bg-red-900/40 text-red-700' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}
+            className={`px-3 py-2 rounded-lg text-sm flex items-center gap-1 whitespace-nowrap ${showLowOnly ? 'bg-red-100 dark:bg-red-900/40 text-red-700' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}
           >
             <Filter className="w-3 h-3" />
             Low Stock
@@ -357,7 +364,7 @@ export default function InventoryTracking() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[768px]">
               <thead className="bg-gray-50 dark:bg-gray-700/50">
                 <tr>
                   <th className="text-left p-3">Item</th>
@@ -384,8 +391,9 @@ export default function InventoryTracking() {
                         </div>
                       </td>
                       <td className="p-3">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-700 rounded-full px-2 py-0.5">
-                          {CATEGORIES.find(c => c.id === item.category)?.emoji} {item.category.replace('_', ' ')}
+                        <span className="text-xs bg-gray-100 dark:bg-gray-700 rounded-full px-2 py-0.5 inline-flex items-center gap-1">
+                          {(() => { const CatIcon = CATEGORIES.find(c => c.id === item.category)?.icon; return CatIcon ? <CatIcon className="w-3 h-3" /> : null })()}
+                          {item.category.replace('_', ' ')}
                         </span>
                       </td>
                       <td className="p-3 text-right">
@@ -490,7 +498,7 @@ function AddItemModal({ restaurantId, onClose, onCreated }: {
               className="w-full border dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-sm"
             >
               {CATEGORIES.map(c => (
-                <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
+                <option key={c.id} value={c.id}>{c.label}</option>
               ))}
             </select>
           </div>

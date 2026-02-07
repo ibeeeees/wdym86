@@ -13,6 +13,7 @@ import Pricing from './pages/Pricing'
 import SolanaPay from './pages/SolanaPay'
 import Downloads from './pages/Downloads'
 import Login from './pages/Login'
+import HowItWorks from './pages/HowItWorks'
 import StaffLogin from './pages/StaffLogin'
 import Onboarding from './pages/Onboarding'
 import AdminDashboard from './pages/AdminDashboard'
@@ -24,6 +25,7 @@ import FloorPlanEditor from './pages/FloorPlanEditor'
 import TimelineAnalytics from './pages/TimelineAnalytics'
 import InventoryTracking from './pages/InventoryTracking'
 import Payroll from './pages/Payroll'
+import POSIntegration from './pages/POSIntegration'
 
 function AppRoutes() {
   const { isAuthenticated, role } = useAuth()
@@ -32,6 +34,7 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/staff/login" element={<StaffLogin />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
@@ -64,6 +67,7 @@ function AppRoutes() {
           <Route path="/timeline" element={<TimelineAnalytics />} />
           <Route path="/inventory-tracking" element={<InventoryTracking />} />
           <Route path="/payroll" element={<Payroll />} />
+          <Route path="/pos-integration" element={<POSIntegration />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -104,6 +108,7 @@ function AppRoutes() {
           <Route path="/timeline" element={<TimelineAnalytics />} />
           <Route path="/inventory-tracking" element={<InventoryTracking />} />
           <Route path="/payroll" element={<Payroll />} />
+          <Route path="/pos-integration" element={<POSIntegration />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -135,6 +140,7 @@ function AppRoutes() {
         <Route path="/timeline" element={<TimelineAnalytics />} />
         <Route path="/inventory-tracking" element={<InventoryTracking />} />
         <Route path="/payroll" element={<Payroll />} />
+        <Route path="/pos-integration" element={<POSIntegration />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -31,6 +31,7 @@ class AWSSettings(BaseSettings):
     # S3 Configuration
     s3_enabled: bool = False
     s3_bucket_name: Optional[str] = None
+    s3_region: str = "us-east-1"
     s3_prefix: str = "wdym86"
 
     # Secrets Manager

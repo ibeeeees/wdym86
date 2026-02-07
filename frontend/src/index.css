@@ -55,7 +55,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glass-card {
-  @apply relative overflow-hidden backdrop-blur-xl bg-white/40 dark:bg-neutral-900/40 border border-white/20 dark:border-white/5 shadow-xl rounded-2xl;
+  @apply relative backdrop-blur-xl bg-white/40 dark:bg-neutral-900/40 border border-white/20 dark:border-white/5 shadow-xl rounded-2xl;
 }
 
 .glass-panel {

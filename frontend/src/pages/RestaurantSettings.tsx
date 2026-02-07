@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Settings, Building2, Phone, Mail, MapPin, CreditCard, Zap, Crown, Check } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { getCuisineTemplate } from '../data/cuisineTemplates'
 
 interface Integration {
   name: string
@@ -16,13 +17,14 @@ const subscriptionTiers = [
 ]
 
 export default function RestaurantSettings() {
-  const { restaurantName } = useAuth()
+  const { restaurantName, cuisineType } = useAuth()
+  const template = getCuisineTemplate(cuisineType)
 
   const [form, setForm] = useState({
-    name: restaurantName || 'Mykonos Mediterranean',
-    address: '456 Mediterranean Ave, Athens, GA 30602',
-    phone: '(706) 555-0142',
-    email: 'info@mykonosathens.com',
+    name: restaurantName || template.restaurantSettings.name,
+    address: template.restaurantSettings.address,
+    phone: template.restaurantSettings.phone,
+    email: template.restaurantSettings.email,
   })
 
   const [selectedTier, setSelectedTier] = useState('Pro')

@@ -249,7 +249,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Header */}
       <header className={cn(
-        "sticky top-0 z-50 transition-all duration-500 border-b",
+        "sticky top-0 z-50 transition-all duration-500 border-b overflow-visible",
         scrolled
           ? "glass-panel h-16"
           : "bg-transparent border-transparent h-20"
@@ -276,11 +276,12 @@ export default function Layout({ children }: LayoutProps) {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav ref={dropdownRef} className="hidden lg:flex items-center p-1 bg-white/50 dark:bg-neutral-800/50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/10 shadow-sm">
-              {navEntries.map((entry) => {
+            <nav ref={dropdownRef} className="hidden lg:flex items-center p-1 bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 shadow-sm">
+              {navEntries.map((entry, entryIdx) => {
                 if (isDropdown(entry)) {
                   const active = isDropdownActive(entry.items)
                   const isOpen = openDropdown === entry.id
+                  const isLast = entryIdx === navEntries.length - 1
                   return (
                     <div key={entry.id} className="relative">
                       <button
@@ -303,7 +304,10 @@ export default function Layout({ children }: LayoutProps) {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
                             transition={{ duration: 0.2 }}
-                            className="absolute left-0 top-full mt-2 w-56 glass-card p-1.5 z-50"
+                            className={cn(
+                              "absolute top-full mt-2 w-56 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-xl rounded-2xl p-1.5 z-50 max-h-[calc(100vh-6rem)] overflow-y-auto",
+                              isLast ? "right-0" : "left-0"
+                            )}
                           >
                             {entry.items.map(({ path, icon: Icon, label }) => (
                               <Link
@@ -427,9 +431,13 @@ export default function Layout({ children }: LayoutProps) {
                 <nav className="p-2 space-y-1 max-h-[calc(100vh-8rem)] overflow-y-auto">
                   {/* User Profile */}
                   <div className="flex items-center space-x-3 px-4 py-3 mb-2 bg-neutral-50/50 dark:bg-neutral-800/50 rounded-xl">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
-                      {user?.name?.[0] || 'U'}
-                    </div>
+                    {user?.profilePictureUrl && !user.profilePictureUrl.startsWith('avatar:') ? (
+                      <img src={user.profilePictureUrl} alt={user.name} className="w-10 h-10 rounded-full object-cover shadow-lg" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
+                        {user?.name?.[0] || 'U'}
+                      </div>
+                    )}
                     <div>
                       <p className="text-sm font-semibold text-neutral-900 dark:text-white">{user?.name}</p>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 capitalize">{role?.replace('_', ' ')}</p>

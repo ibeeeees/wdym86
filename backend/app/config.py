@@ -8,6 +8,7 @@ Supports AWS RDS for production database.
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 from typing import Optional
+from pathlib import Path
 
 
 class Settings(BaseSettings):
@@ -70,8 +71,12 @@ class Settings(BaseSettings):
     solana_rpc_url: str = "https://api.devnet.solana.com"
 
     class Config:
-        env_file = ".env"
+        env_file = [
+            ".env",                                                          # CWD (when running from backend/)
+            str(Path(__file__).resolve().parent.parent / ".env"),             # backend/.env relative to app/
+        ]
         case_sensitive = False
+        extra = "ignore"
 
     def get_database_url(self) -> str:
         """Get database URL, using AWS RDS if enabled"""

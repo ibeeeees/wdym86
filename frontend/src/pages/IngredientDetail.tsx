@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, RefreshCw, AlertTriangle, Send, Lightbulb, Plus, Minus, Edit3, Cloud, Truck, Zap, AlertOctagon, Package } from 'lucide-react'
 import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart, PieChart, Pie, Cell } from 'recharts'
 import { getIngredient, runAgentPipeline, generateForecast, getForecasts, analyzeWhatIf, updateInventory } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 interface ForecastPoint {
   date: string
@@ -53,12 +54,12 @@ const demoIngredient = {
   unit: 'lbs',
 }
 
-const demoDecision: AgentDecision = {
+const getDemoDecision = (restName: string): AgentDecision => ({
   risk: {
     level: 'URGENT',
     probability: 0.42,
     days_of_cover: 2,
-    factors: ['Low inventory vs weekend demand', 'Valentine\'s Day event approaching', 'Mediterranean lamb season peak']
+    factors: ['Low inventory vs weekend demand', 'Valentine\'s Day event approaching', 'Seasonal demand peak']
   },
   reorder: {
     should_reorder: true,
@@ -69,23 +70,23 @@ const demoDecision: AgentDecision = {
   },
   strategy: {
     type: 'early_order',
-    description: 'Contact Hellenic Farms for priority delivery before weekend rush',
+    description: 'Contact primary supplier for priority delivery before weekend rush',
     adjusted_lead_time: 3
   },
-  explanation: `Lamb Leg shows elevated risk at Mykonos Mediterranean. Current inventory of 38 lbs provides only 2 days of cover with the weekend approaching.
+  explanation: `Lamb Leg shows elevated risk at ${restName}. Current inventory of 38 lbs provides only 2 days of cover with the weekend approaching.
 
 **Key Insights:**
-- Lamb Souvlaki and Beef Kofta are top sellers, consuming ~25 lbs daily
+- Top-selling dishes are consuming ~25 lbs daily
 - Valentine's Day weekend expected to increase demand by 40%
-- Hellenic Farms has 97% reliability - recommend priority order
+- Primary supplier has 97% reliability - recommend priority order
 
-**Recommendation:** Order 85 lbs from Hellenic Farms by February 8th. This quantity includes safety stock for the expected Valentine's surge.
+**Recommendation:** Order 85 lbs from primary supplier by February 8th. This quantity includes safety stock for the expected Valentine's surge.
 
 **Risk Factors:**
 1. Weekend dining surge (typically +35% covers)
-2. Special event menu featuring lamb dishes
+2. Special event menu featuring premium dishes
 3. Current stock critically low for premium protein`
-}
+})
 
 const riskStyles: Record<string, string> = {
   SAFE: 'text-green-600 dark:text-green-400',
@@ -120,10 +121,12 @@ const getInventoryStatus = (daysOfCover: number) => {
 
 export default function IngredientDetail() {
   const { id } = useParams<{ id: string }>()
+  const { restaurantName } = useAuth()
   const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
   const [ingredient, setIngredient] = useState(demoIngredient)
   const [forecast, setForecast] = useState<ForecastPoint[]>(demoForecast)
+  const demoDecision = getDemoDecision(restaurantName)
   const [decision, setDecision] = useState<AgentDecision>(demoDecision)
   const [error, setError] = useState<string | null>(null)
   const [whatIfScenario, setWhatIfScenario] = useState('')

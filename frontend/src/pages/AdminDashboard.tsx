@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Building2, Users, ShoppingCart, Key, Settings, Clock, Activity, Crown, Copy, ExternalLink, Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { getCuisineTemplate } from '../data/cuisineTemplates'
 
 const recentActivity = [
   { name: 'Elena Dimitriou', action: 'logged in', time: '2h ago', icon: Users },
@@ -18,7 +19,8 @@ const quickLinks = [
 ]
 
 export default function AdminDashboard() {
-  const { user, restaurantKey } = useAuth()
+  const { user, restaurantKey, restaurantName, cuisineType } = useAuth()
+  const template = getCuisineTemplate(cuisineType)
   const [copied, setCopied] = useState(false)
 
   const handleCopyKey = () => {
@@ -48,9 +50,9 @@ export default function AdminDashboard() {
           <div>
             <div className="flex items-center space-x-2 mb-1">
               <Building2 className="w-5 h-5 text-red-600 dark:text-red-400" />
-              <h2 className="text-lg font-bold text-black dark:text-white">Mykonos Mediterranean</h2>
+              <h2 className="text-lg font-bold text-black dark:text-white">{restaurantName}</h2>
             </div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">456 Mediterranean Ave, Athens, GA 30602</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">{template.restaurantSettings.address}</p>
           </div>
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-neutral-800 border border-red-200 dark:border-red-800 rounded-xl">

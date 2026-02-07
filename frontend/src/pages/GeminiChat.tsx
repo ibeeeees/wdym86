@@ -1,6 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Send, RotateCcw, Wifi, WifiOff, AlertTriangle, TrendingDown, Sparkles, Bot, User, MessageCircle, Lightbulb, Zap } from 'lucide-react'
 import { chatWithAdvisor, checkApiHealth, getIngredients } from '../services/api'
+import { useAuth } from '../context/AuthContext'
+import { getCuisineTemplate } from '../data/cuisineTemplates'
 
 interface Message {
   id: string
@@ -18,12 +20,12 @@ const suggestedQuestions = [
 ]
 
 // Smart fallback response generator when API is unavailable
-const generateSmartResponse = (question: string): string => {
+const generateSmartResponse = (question: string, restName: string, ingredientKeywords: string[]): string => {
   const q = question.toLowerCase()
 
   // Risk and stockout questions
   if (q.includes('risk') || q.includes('urgent') || q.includes('critical') || q.includes('stockout')) {
-    const ingredient = extractIngredient(question) || 'this ingredient'
+    const ingredient = extractIngredient(question, ingredientKeywords) || 'this ingredient'
     return `Based on my analysis of ${ingredient}:
 
 **Risk Assessment:**
@@ -65,7 +67,7 @@ The Strategy Agent continuously monitors supplier reliability scores to anticipa
 
   // Ordering questions
   if (q.includes('order') || q.includes('reorder') || q.includes('buy') || q.includes('quantity')) {
-    const ingredient = extractIngredient(question) || 'the ingredient'
+    const ingredient = extractIngredient(question, ingredientKeywords) || 'the ingredient'
     return `Let me check the optimal order for ${ingredient}...
 
 **Reorder Analysis:**
@@ -221,7 +223,7 @@ Check the Dashboard for specific ingredient recommendations.`
   if (q.includes('pos') || q.includes('point of sale') || q.includes('orders') || q.includes('table') || q.includes('checkout')) {
     return `**POS System Overview:**
 
-Your Mykonos POS handles all order types:
+Your ${restName} POS handles all order types:
 
 **Order Types:**
 • **Dine-in**: Table assignment, course timing, split checks
@@ -246,7 +248,7 @@ Open the **POS** tab to view current orders and process payments.`
   if (q.includes('delivery') || q.includes('doordash') || q.includes('uber eats') || q.includes('grubhub') || q.includes('postmates') || q.includes('seamless')) {
     return `**Delivery Platform Integration:**
 
-Mykonos is connected to all major platforms:
+${restName} is connected to all major platforms:
 
 **Active Platforms:**
 • 🚗 DoorDash - Most popular, best for lunch
@@ -274,7 +276,7 @@ Check the **Delivery** tab to manage platform settings and view analytics.`
   if (q.includes('solana') || q.includes('crypto') || q.includes('bitcoin') || q.includes('wallet') || q.includes('sol') || q.includes('blockchain')) {
     return `**Solana Pay Integration:**
 
-Accept cryptocurrency payments directly at Mykonos!
+Accept cryptocurrency payments directly at ${restName}!
 
 **How It Works:**
 1. Generate a QR code for the order amount
@@ -333,38 +335,6 @@ The system tracks all crypto transactions for accounting.`
 Check the **Pricing** tab to see feature comparison and upgrade options.`
   }
 
-  // Menu and dishes questions (Mykonos specific)
-  if (q.includes('menu') || q.includes('moussaka') || q.includes('souvlaki') || q.includes('spanakopita') || q.includes('mediterranean')) {
-    return `**Mykonos Mediterranean Menu:**
-
-Your menu features authentic Greek & Mediterranean dishes:
-
-**Popular Appetizers:**
-• Classic Hummus - $12
-• Spanakopita - $14
-• Saganaki (Halloumi) - $16
-• Grilled Octopus - $24
-
-**Best-Selling Entrees:**
-• Lamb Souvlaki - $28
-• Moussaka - $26
-• Grilled Branzino - $34
-• Chicken Souvlaki - $22
-
-**Recipe Integration:**
-Each dish links to ingredient quantities:
-• Moussaka uses: Ground Lamb, Eggplant, Tomatoes, Greek Yogurt
-• When sold, ingredients automatically deduct from inventory
-
-**Menu Analytics:**
-• Track dish popularity over time
-• Identify slow-moving items
-• Calculate profit margins
-• Optimize pricing
-
-Manage dishes and recipes in the **Dishes** tab.`
-  }
-
   // Default intelligent response
   return `I can help with that question about "${question.slice(0, 50)}${question.length > 50 ? '...' : ''}".
 
@@ -391,18 +361,9 @@ What specific aspect would you like me to dive deeper into?`
 }
 
 // Helper to extract ingredient name from question
-const extractIngredient = (question: string): string | null => {
-  const ingredients = [
-    // Mediterranean ingredients
-    'lamb', 'lamb leg', 'ground lamb', 'chicken', 'chicken thighs',
-    'branzino', 'octopus', 'shrimp', 'feta', 'feta cheese', 'halloumi',
-    'greek yogurt', 'yogurt', 'tomatoes', 'cucumbers', 'red onions',
-    'eggplant', 'bell peppers', 'spinach', 'lemons', 'orzo', 'arborio rice',
-    'phyllo', 'phyllo dough', 'chickpeas', 'olive oil', 'tahini',
-    'oregano', 'dill', 'mint', 'ouzo', 'metaxa', 'wine', 'pomegranate', 'honey'
-  ]
+const extractIngredient = (question: string, keywords: string[]): string | null => {
   const q = question.toLowerCase()
-  for (const ing of ingredients) {
+  for (const ing of keywords) {
     if (q.includes(ing)) {
       return ing.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
     }
@@ -417,11 +378,14 @@ interface InventoryContext {
 }
 
 export default function GeminiChat() {
+  const { cuisineType, restaurantName } = useAuth()
+  const template = useMemo(() => getCuisineTemplate(cuisineType || 'mediterranean'), [cuisineType])
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: "Kalimera! 🏝️ I'm your AI assistant for Mykonos Mediterranean Restaurant. I can help with:\n\n• **Inventory** - Stock levels, forecasts, reorder recommendations\n• **AI Agents** - Risk assessment, optimization decisions\n• **Menu** - Dishes, recipes, pricing\n• **Orders** - POS, delivery platforms\n• **Payments** - Including Solana Pay crypto\n• **Suppliers** - Lead times, reliability\n\nWhat would you like to know?"
+      content: template.initialChatMessage
     }
   ])
   const [input, setInput] = useState('')
@@ -453,16 +417,16 @@ export default function GeminiChat() {
           )
         }
       } catch {
-        // Demo fallback with Mykonos ingredients
-        setInventoryContext([
-          { name: 'Lamb Leg', risk_level: 'URGENT', days_of_cover: 2 },
-          { name: 'Feta Cheese', risk_level: 'MONITOR', days_of_cover: 4 },
-          { name: 'Branzino', risk_level: 'CRITICAL', days_of_cover: 1 },
-        ])
+        // Demo fallback using cuisine template ingredients
+        const criticalItems = template.ingredients
+          .filter(i => i.risk_level === 'CRITICAL' || i.risk_level === 'URGENT' || i.risk_level === 'MONITOR')
+          .slice(0, 3)
+          .map(i => ({ name: i.name, risk_level: i.risk_level, days_of_cover: i.days_of_cover }))
+        setInventoryContext(criticalItems)
       }
     }
     init()
-  }, [])
+  }, [template])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -496,7 +460,7 @@ export default function GeminiChat() {
       setMessages(prev => [...prev, assistantMessage])
     } catch {
       // Fallback to smart demo responses with keyword matching
-      const response = generateSmartResponse(text)
+      const response = generateSmartResponse(text, restaurantName, template.chatIngredientKeywords)
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),

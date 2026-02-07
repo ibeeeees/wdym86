@@ -10,7 +10,6 @@ from contextlib import asynccontextmanager
 
 from .config import settings
 from .database import init_db
-from .data.seed import seed_database
 from .routers import (
     auth_router,
     restaurants_router,
@@ -42,8 +41,6 @@ async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
     await init_db()
-    # Seed demo data if database is empty
-    await seed_database(force=False)
     yield
     # Shutdown
     pass

@@ -8,10 +8,13 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
+import base64
+import uuid
 
-from ..database import get_session, User as UserDB
-from ..models.user import UserCreate, User, Token, TokenData
+from ..database import get_session, User as UserDB, Restaurant as RestaurantDB
+from ..models.user import UserCreate, User, Token, TokenData, OnboardingData
 from ..config import settings
+from ..aws.s3 import s3_client
 
 router = APIRouter()
 
@@ -116,3 +119,48 @@ async def login(
 async def get_me(current_user: UserDB = Depends(get_current_user)):
     """Get current user profile"""
     return current_user
+
+
+@router.post("/complete-onboarding")
+async def complete_onboarding(
+    data: OnboardingData,
+    current_user: UserDB = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session)
+):
+    """Complete onboarding for a new user"""
+    profile_url = data.profile_picture_url
+
+    # Upload base64 profile picture to S3 if enabled
+    if profile_url and profile_url.startswith("data:image/") and s3_client.enabled:
+        try:
+            # Parse base64 data URI: "data:image/png;base64,iVBOR..."
+            header, b64_data = profile_url.split(",", 1)
+            content_type = header.split(":")[1].split(";")[0]  # e.g. "image/png"
+            ext = content_type.split("/")[1]  # e.g. "png"
+            image_bytes = base64.b64decode(b64_data)
+            filename = f"{current_user.id}-{uuid.uuid4().hex[:8]}.{ext}"
+            s3_url = await s3_client.upload_bytes(
+                image_bytes, filename, folder="profile-pictures", content_type=content_type
+            )
+            if s3_url:
+                # Generate a presigned URL for access
+                key = f"{s3_client.prefix}/profile-pictures/{filename}"
+                presigned = await s3_client.get_presigned_url(key, expiration=86400 * 7)
+                profile_url = presigned or s3_url
+        except Exception:
+            pass  # Fall back to storing the base64 string
+
+    current_user.profile_picture_url = profile_url
+    current_user.onboarding_completed = True
+
+    restaurant = RestaurantDB(
+        user_id=current_user.id,
+        name=data.restaurant_name,
+        location=data.restaurant_location,
+        cuisine_type=data.cuisine_type,
+        subscription_tier=data.subscription_tier
+    )
+    db.add(restaurant)
+    await db.commit()
+
+    return {"status": "ok", "restaurant_id": restaurant.id}

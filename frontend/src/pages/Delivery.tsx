@@ -4,6 +4,8 @@ import {
   CheckCircle, XCircle, ChefHat, RefreshCw,
   AlertCircle, TrendingUp
 } from 'lucide-react'
+import { getCuisineTemplate } from '../data/cuisineTemplates'
+import { useAuth } from '../context/AuthContext'
 
 interface DeliveryOrder {
   id: string
@@ -78,129 +80,57 @@ const statusConfig: Record<string, { color: string; bg: string; icon: any }> = {
   cancelled: { color: 'text-red-600', bg: 'bg-red-100 dark:bg-red-900/30', icon: XCircle },
 }
 
-// Mock data for demo - Mykonos Mediterranean orders
-const mockOrders: DeliveryOrder[] = [
-  {
-    id: '1',
-    platform: 'doordash',
-    external_id: 'DD-MYK91E',
-    customer_name: 'Nikos P.',
-    customer_phone: '(555) 123-4567',
-    customer_address: '123 Aegean Way, Athens, GA 30601',
-    items: [
-      { name: 'Grilled Branzino', quantity: 1, price: 34.00 },
-      { name: 'Greek Salad', quantity: 1, price: 14.00 },
-      { name: 'Baklava', quantity: 2, price: 20.00 },
-    ],
-    subtotal: 68.00,
-    delivery_fee: 4.99,
-    tax: 6.12,
-    tip: 12.00,
-    total: 91.11,
-    status: 'preparing',
-    estimated_delivery_time: new Date(Date.now() + 25 * 60000).toISOString(),
-    driver_name: 'Dimitri K.',
-    driver_phone: '(555) 987-6543',
-    created_at: new Date(Date.now() - 15 * 60000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    platform: 'uber_eats',
-    external_id: 'UE-MYK82F',
-    customer_name: 'Elena S.',
-    customer_phone: '(555) 234-5678',
-    customer_address: '456 Santorini Blvd, Athens, GA 30602',
-    items: [
-      { name: 'Lamb Souvlaki', quantity: 2, price: 56.00 },
-      { name: 'Tzatziki & Pita', quantity: 1, price: 10.00 },
-      { name: 'Mykonos Sunset', quantity: 2, price: 28.00 },
-    ],
-    subtotal: 94.00,
-    delivery_fee: 3.99,
-    tax: 8.46,
-    tip: 15.00,
-    total: 121.45,
-    status: 'confirmed',
-    estimated_delivery_time: new Date(Date.now() + 40 * 60000).toISOString(),
-    driver_name: null,
-    driver_phone: null,
-    created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    platform: 'grubhub',
-    external_id: 'GH-MYK93A',
-    customer_name: 'Sophia M.',
-    customer_phone: '(555) 345-6789',
-    customer_address: '789 Olympus Dr, Athens, GA 30605',
-    items: [
-      { name: 'Moussaka', quantity: 2, price: 52.00 },
-      { name: 'Spanakopita', quantity: 2, price: 28.00 },
-      { name: 'Greek Wine', quantity: 1, price: 12.00 },
-    ],
-    subtotal: 92.00,
-    delivery_fee: 2.99,
-    tax: 8.28,
-    tip: 18.00,
-    total: 121.27,
-    status: 'out_for_delivery',
-    estimated_delivery_time: new Date(Date.now() + 10 * 60000).toISOString(),
-    driver_name: 'Yiannis T.',
-    driver_phone: '(555) 876-5432',
-    created_at: new Date(Date.now() - 35 * 60000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    platform: 'doordash',
-    external_id: 'DD-MYK04B',
-    customer_name: 'Costa V.',
-    customer_phone: '(555) 456-7890',
-    customer_address: '321 Parthenon Ave, Athens, GA 30606',
-    items: [
-      { name: 'Grilled Octopus', quantity: 1, price: 24.00 },
-      { name: 'Shrimp Saganaki', quantity: 1, price: 29.00 },
-      { name: 'Loukoumades', quantity: 1, price: 9.00 },
-    ],
-    subtotal: 62.00,
-    delivery_fee: 4.99,
-    tax: 5.58,
-    tip: 10.00,
-    total: 82.57,
-    status: 'pending',
-    estimated_delivery_time: null,
-    driver_name: null,
-    driver_phone: null,
-    created_at: new Date(Date.now() - 2 * 60000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '5',
-    platform: 'uber_eats',
-    external_id: 'UE-MYK55C',
-    customer_name: 'Maria K.',
-    customer_phone: '(555) 567-8901',
-    customer_address: '555 Mediterranean Ln, Athens, GA 30607',
-    items: [
-      { name: 'Chicken Souvlaki', quantity: 3, price: 66.00 },
-      { name: 'Classic Hummus', quantity: 2, price: 24.00 },
-      { name: 'Fresh Lemonade', quantity: 3, price: 18.00 },
-    ],
-    subtotal: 108.00,
-    delivery_fee: 3.99,
-    tax: 9.72,
-    tip: 20.00,
-    total: 141.71,
-    status: 'delivered',
-    estimated_delivery_time: new Date(Date.now() - 5 * 60000).toISOString(),
-    driver_name: 'Alexandros P.',
-    driver_phone: '(555) 654-3210',
-    created_at: new Date(Date.now() - 60 * 60000).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-]
+const statusMap: Record<string, string> = {
+  received: 'confirmed',
+  preparing: 'preparing',
+  ready: 'ready_for_pickup',
+  picked_up: 'delivered',
+}
+
+const deliveryFees = [4.99, 3.99, 2.99, 4.99]
+const tips = [12.00, 15.00, 18.00, 10.00]
+const phones = ['(555) 123-4567', '(555) 234-5678', '(555) 345-6789', '(555) 456-7890']
+const addresses = ['123 Main St, Athens, GA 30601', '456 Oak Blvd, Athens, GA 30602', '789 Elm Dr, Athens, GA 30605', '321 Pine Ave, Athens, GA 30606']
+const driverNames = ['Alex K.', 'Jordan T.', null, null]
+const driverPhones = ['(555) 987-6543', '(555) 876-5432', null, null]
+const etaOffsets = [25, 10, null, null]
+const createdOffsets = [15, 5, 25, 2]
+
+function buildMockOrders(cuisineType: string): DeliveryOrder[] {
+  const template = getCuisineTemplate(cuisineType || 'mediterranean')
+  const platformOrders = template.deliveryPlatformOrders
+  return platformOrders.map((po, i) => {
+    const subtotal = po.items.reduce((sum, item) => sum + item.price, 0)
+    const fee = deliveryFees[i % deliveryFees.length]
+    const tax = parseFloat((subtotal * 0.09).toFixed(2))
+    const tip = tips[i % tips.length]
+    const mappedStatus = statusMap[po.status] || po.status
+    const hasDriver = mappedStatus === 'preparing' || mappedStatus === 'ready_for_pickup' || mappedStatus === 'delivered' || mappedStatus === 'out_for_delivery'
+    const dName = hasDriver ? (driverNames[i % driverNames.length] || template.customerNames[((i + 2) % template.customerNames.length)] ) : null
+    const dPhone = hasDriver ? (driverPhones[i % driverPhones.length] || '(555) 654-3210') : null
+    const offset = etaOffsets[i % etaOffsets.length]
+    return {
+      id: (i + 1).toString(),
+      platform: po.platform,
+      external_id: po.platformId,
+      customer_name: po.customerName,
+      customer_phone: phones[i % phones.length],
+      customer_address: addresses[i % addresses.length],
+      items: po.items.map(item => ({ name: item.name, quantity: item.quantity, price: item.price })),
+      subtotal,
+      delivery_fee: fee,
+      tax,
+      tip,
+      total: parseFloat((subtotal + fee + tax + tip).toFixed(2)),
+      status: mappedStatus,
+      estimated_delivery_time: offset !== null ? new Date(Date.now() + offset * 60000).toISOString() : null,
+      driver_name: dName,
+      driver_phone: dPhone,
+      created_at: new Date(Date.now() - createdOffsets[i % createdOffsets.length] * 60000).toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+  })
+}
 
 const mockPlatforms: Platform[] = [
   { id: 'doordash', name: 'DoorDash', connected: true, color: '#FF3008', commission: '15-30%' },
@@ -211,7 +141,8 @@ const mockPlatforms: Platform[] = [
 ]
 
 export default function Delivery() {
-  const [orders, setOrders] = useState<DeliveryOrder[]>(mockOrders)
+  const { cuisineType } = useAuth()
+  const [orders, setOrders] = useState<DeliveryOrder[]>(() => buildMockOrders(cuisineType))
   const [platforms] = useState<Platform[]>(mockPlatforms)
   const [selectedPlatform, setSelectedPlatform] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')

@@ -63,6 +63,8 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     name = Column(String)
+    profile_picture_url = Column(String, nullable=True)
+    onboarding_completed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 
@@ -75,6 +77,7 @@ class Restaurant(Base):
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     location = Column(String)
+    cuisine_type = Column(String, nullable=True)
     subscription_tier = Column(String, default="free")  # free, starter, pro, enterprise
     created_at = Column(DateTime, server_default=func.now())
 

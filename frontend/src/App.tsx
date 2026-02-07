@@ -14,6 +14,7 @@ import SolanaPay from './pages/SolanaPay'
 import Downloads from './pages/Downloads'
 import Login from './pages/Login'
 import StaffLogin from './pages/StaffLogin'
+import Onboarding from './pages/Onboarding'
 import AdminDashboard from './pages/AdminDashboard'
 import RestaurantSettings from './pages/RestaurantSettings'
 import KeyManagement from './pages/KeyManagement'
@@ -24,7 +25,7 @@ import TimelineAnalytics from './pages/TimelineAnalytics'
 import InventoryTracking from './pages/InventoryTracking'
 
 function AppRoutes() {
-  const { isAuthenticated, role } = useAuth()
+  const { isAuthenticated, role, onboardingCompleted } = useAuth()
 
   if (!isAuthenticated) {
     return (
@@ -32,6 +33,16 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/staff/login" element={<StaffLogin />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    )
+  }
+
+  // Restaurant admin needs onboarding before accessing the app
+  if (!onboardingCompleted && role === 'restaurant_admin') {
+    return (
+      <Routes>
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="*" element={<Navigate to="/onboarding" replace />} />
       </Routes>
     )
   }

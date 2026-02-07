@@ -10,6 +10,7 @@
     "lint": "eslint . --ext ts,tsx"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "axios": "^1.6.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.33.0",

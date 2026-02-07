@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, Zap, ChefHat, TrendingUp, Users, ShoppingCart, X, ChevronLeft } from 'lucide-react'
-import { login, register } from '../services/api'
+import { register } from '../services/api'
 import { useAuth, UserRole } from '../context/AuthContext'
 import { CUISINE_OPTIONS } from '../data/cuisineTemplates'
 
@@ -36,7 +36,7 @@ function getRoleRedirect(role: UserRole): string {
 }
 
 export default function Login() {
-  const { demoLogin } = useAuth()
+  const { demoLogin, login: authLogin } = useAuth()
   const navigate = useNavigate()
 
   const [isRegister, setIsRegister] = useState(false)
@@ -82,9 +82,8 @@ export default function Login() {
       if (isRegister) {
         await register(email, password, name)
       }
-      const data = await login(email, password)
-      localStorage.setItem('token', data.access_token)
-      window.location.reload()
+      await authLogin(email, password)
+      // AuthContext handles state + routing handles navigation
     } catch (err: any) {
       setError(err.response?.data?.detail || 'An error occurred')
     } finally {

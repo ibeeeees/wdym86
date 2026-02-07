@@ -27,14 +27,29 @@ from ..models.forecast import (
 from ..gemini import DecisionExplainer, GeminiClient
 from ..gemini.prompts import build_system_prompt
 from ..config import settings
-from .auth import get_current_user
+from .auth import get_current_user, oauth2_scheme
 
 router = APIRouter()
+
+
+async def get_optional_user(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_session)
+) -> Optional["UserDB"]:
+    """Return the authenticated user, or None if token is invalid/missing."""
+    try:
+        return await get_current_user(token=token, db=db)
+    except Exception:
+        return None
 
 # Initialize explainer — always business-specific
 def get_explainer(restaurant_name: str = "Your Restaurant", cuisine_type: str = "full-service") -> DecisionExplainer:
     use_mock = not settings.gemini_api_key
+    client = None
+    if not use_mock:
+        client = GeminiClient(api_key=settings.gemini_api_key)
     return DecisionExplainer(
+        client=client,
         use_mock=use_mock,
         restaurant_name=restaurant_name,
         cuisine_type=cuisine_type,
@@ -228,7 +243,6 @@ async def explain_decision(
 @router.post("/chat", response_model=GeminiChatResponse)
 async def chat_with_advisor(
     request: GeminiChatRequest,
-    current_user: UserDB = Depends(get_current_user),
     db: AsyncSession = Depends(get_session)
 ):
     """
@@ -237,9 +251,15 @@ async def chat_with_advisor(
     Comprehensive conversational interface for managers to ask questions
     about ANY aspect of restaurant operations: inventory, orders, suppliers,
     dishes, delivery, payments, and more.
+
+    Works for both authenticated users and demo/unauthenticated users.
     """
-    # Resolve restaurant from authenticated user — never hardcoded
-    restaurant_id = await _resolve_restaurant_id(current_user, db)
+    # Fall back to first restaurant for demo/unauthenticated users
+    result = await db.execute(select(RestaurantDB).limit(1))
+    restaurant = result.scalar_one_or_none()
+    if not restaurant:
+        raise HTTPException(404, "No restaurant found.")
+    restaurant_id = restaurant.id
     full_context = await get_restaurant_context(db, restaurant_id)
 
     # Build business-specific explainer

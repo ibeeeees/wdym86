@@ -3,12 +3,17 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Shield, Users, ShoppingCart, Check, X, ArrowRight, Key, UserPlus, LogIn, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { login as apiLogin, register } from '../services/api'
+import { CUISINE_OPTIONS, getCuisineTemplate } from '../data/cuisineTemplates'
 
 type StaffMode = 'manager' | 'pos'
 type AuthTab = 'signin' | 'signup'
 
-const VALID_RESTAURANT_KEY = 'REST-MYK2026-ATHNS'
-const VALID_MANAGER_ID = 'MGR-ELENA26-MYKNS'
+const VALID_KEYS = CUISINE_OPTIONS.map(c => {
+  const t = getCuisineTemplate(c.key)
+  return { key: t.demoUsers.restaurant_admin?.restaurantKey || '', name: t.restaurantName, managerId: t.demoUsers.manager?.managerId || '', managerName: t.demoUsers.manager?.name || '', cuisine: c.key }
+}).filter(k => k.key)
+
+const DEFAULT_KEY = VALID_KEYS[0]
 
 export default function StaffLogin() {
   const { demoLogin } = useAuth()
@@ -50,9 +55,10 @@ export default function StaffLogin() {
       setKeyRestaurantName('')
       return
     }
-    if (restaurantKey === VALID_RESTAURANT_KEY) {
+    const match = VALID_KEYS.find(k => k.key === restaurantKey)
+    if (match) {
       setKeyValid(true)
-      setKeyRestaurantName('Mykonos Mediterranean')
+      setKeyRestaurantName(match.name)
     } else {
       setKeyValid(false)
       setKeyRestaurantName('')
@@ -66,9 +72,10 @@ export default function StaffLogin() {
       setIdManagerName('')
       return
     }
-    if (managerId === VALID_MANAGER_ID) {
+    const match = VALID_KEYS.find(k => k.managerId === managerId)
+    if (match) {
       setIdValid(true)
-      setIdManagerName('Elena Dimitriou')
+      setIdManagerName(match.managerName)
     } else {
       setIdValid(false)
       setIdManagerName('')
@@ -110,16 +117,16 @@ export default function StaffLogin() {
     await new Promise(resolve => setTimeout(resolve, 600))
 
     if (mode === 'manager') {
-      setRestaurantKey(VALID_RESTAURANT_KEY)
+      setRestaurantKey(DEFAULT_KEY.key)
       setKeyValid(true)
-      setKeyRestaurantName('Mykonos Mediterranean')
+      setKeyRestaurantName(DEFAULT_KEY.name)
       await new Promise(resolve => setTimeout(resolve, 400))
       demoLogin('manager')
       navigate('/')
     } else {
-      setManagerId(VALID_MANAGER_ID)
+      setManagerId(DEFAULT_KEY.managerId)
       setIdValid(true)
-      setIdManagerName('Elena Dimitriou')
+      setIdManagerName(DEFAULT_KEY.managerName)
       await new Promise(resolve => setTimeout(resolve, 400))
       demoLogin('pos_user')
       navigate('/pos')

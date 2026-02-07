@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Wallet, QrCode, ArrowRightLeft, CheckCircle2, XCircle, Clock, DollarSign, Coins, Copy, ExternalLink } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 interface PaymentRequest {
   payment_id: string
@@ -29,6 +30,7 @@ interface PaymentStatus {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export default function SolanaPay() {
+  const { restaurantName } = useAuth()
   const [activeTab, setActiveTab] = useState<'create' | 'history' | 'convert'>('create')
   const [solPrice, setSolPrice] = useState<number>(0)
   const [loading, setLoading] = useState(false)
@@ -155,7 +157,7 @@ export default function SolanaPay() {
           <div>
             <h1 className="text-xl font-bold text-black dark:text-white">Crypto Pay</h1>
             <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-              Accept Solana payments at Mykonos
+              Accept Solana payments at {restaurantName}
             </p>
           </div>
         </div>
@@ -249,7 +251,7 @@ export default function SolanaPay() {
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Payment for your order at Mykonos Mediterranean"
+                  placeholder={`Payment for your order at ${restaurantName}`}
                   rows={3}
                   className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl text-black dark:text-white resize-none"
                 />

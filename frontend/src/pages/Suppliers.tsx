@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Plus, Truck, Clock, Star, DollarSign, Wifi, WifiOff, Zap, Award, Sparkles, Package, MapPin, Shield, Search, ShoppingCart, Check, ArrowRight, FileText, Building2 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts'
 import { getSuppliers, checkApiHealth } from '../services/api'
+import { getCuisineTemplate } from '../data/cuisineTemplates'
+import { useAuth } from '../context/AuthContext'
 
 const getSupplierGradient = (score: number) => {
   if (score >= 0.95) return 'from-emerald-400 to-green-500'
@@ -36,79 +38,6 @@ interface OrderHistory {
   date: string
 }
 
-const demoSuppliers: Supplier[] = [
-  {
-    id: '1', name: 'Aegean Imports', lead_time_days: 2, min_order_quantity: 50, reliability_score: 0.98, shipping_cost: 45,
-    ingredients: ['Kalamata Olives', 'Feta Cheese', 'Greek Yogurt', 'Olive Oil'],
-    pricing: [
-      { ingredient: 'Olive Oil', price: 18.50, unit: 'L' },
-      { ingredient: 'Feta Cheese', price: 12.00, unit: 'lb' },
-      { ingredient: 'Kalamata Olives', price: 8.50, unit: 'lb' },
-      { ingredient: 'Greek Yogurt', price: 6.00, unit: 'lb' },
-    ]
-  },
-  {
-    id: '2', name: 'Athens Fresh Market', lead_time_days: 1, min_order_quantity: 25, reliability_score: 0.95, shipping_cost: 25,
-    ingredients: ['Fresh Spinach', 'Tomatoes', 'Cucumbers', 'Red Onions', 'Eggplant'],
-    pricing: [
-      { ingredient: 'Fresh Spinach', price: 3.50, unit: 'lb' },
-      { ingredient: 'Tomatoes', price: 2.80, unit: 'lb' },
-      { ingredient: 'Cucumbers', price: 1.90, unit: 'lb' },
-      { ingredient: 'Red Onions', price: 1.50, unit: 'lb' },
-      { ingredient: 'Eggplant', price: 2.20, unit: 'lb' },
-      { ingredient: 'Olive Oil', price: 20.00, unit: 'L' },
-      { ingredient: 'Feta Cheese', price: 13.50, unit: 'lb' },
-    ]
-  },
-  {
-    id: '3', name: 'Mediterranean Seafood Co', lead_time_days: 1, min_order_quantity: 30, reliability_score: 0.94, shipping_cost: 55,
-    ingredients: ['Branzino', 'Octopus', 'Shrimp', 'Salmon'],
-    pricing: [
-      { ingredient: 'Branzino', price: 22.00, unit: 'lb' },
-      { ingredient: 'Shrimp', price: 18.00, unit: 'lb' },
-      { ingredient: 'Octopus', price: 28.00, unit: 'lb' },
-      { ingredient: 'Salmon', price: 16.50, unit: 'lb' },
-    ]
-  },
-  {
-    id: '4', name: 'Hellenic Farms', lead_time_days: 2, min_order_quantity: 40, reliability_score: 0.97, shipping_cost: 35,
-    ingredients: ['Lamb Leg', 'Chicken Thighs', 'Ground Lamb'],
-    pricing: [
-      { ingredient: 'Lamb Leg', price: 14.00, unit: 'lb' },
-      { ingredient: 'Chicken Thighs', price: 5.50, unit: 'lb' },
-      { ingredient: 'Ground Lamb', price: 12.00, unit: 'lb' },
-      { ingredient: 'Olive Oil', price: 19.00, unit: 'L' },
-    ]
-  },
-  {
-    id: '5', name: 'Santorini Spirits', lead_time_days: 3, min_order_quantity: 24, reliability_score: 0.92, shipping_cost: 0,
-    ingredients: ['Ouzo', 'Metaxa', 'Assyrtiko Wine', 'Retsina'],
-    pricing: [
-      { ingredient: 'Ouzo', price: 22.00, unit: 'btl' },
-      { ingredient: 'Assyrtiko Wine', price: 18.00, unit: 'btl' },
-      { ingredient: 'Retsina', price: 12.00, unit: 'btl' },
-    ]
-  },
-  {
-    id: '6', name: 'Mykonos Pantry', lead_time_days: 2, min_order_quantity: 50, reliability_score: 0.96, shipping_cost: 20,
-    ingredients: ['Phyllo Dough', 'Tahini', 'Arborio Rice', 'Greek Honey'],
-    pricing: [
-      { ingredient: 'Phyllo Dough', price: 8.00, unit: 'lb' },
-      { ingredient: 'Tahini', price: 9.50, unit: 'lb' },
-      { ingredient: 'Greek Honey', price: 15.00, unit: 'lb' },
-      { ingredient: 'Feta Cheese', price: 11.50, unit: 'lb' },
-    ]
-  }
-]
-
-const demoOrderHistory: OrderHistory[] = [
-  { id: 'PO-001', supplier: 'Aegean Imports', items: 4, total: 485.00, status: 'Delivered', date: 'Feb 5, 2026' },
-  { id: 'PO-002', supplier: 'Mediterranean Seafood Co', items: 3, total: 820.00, status: 'Delivered', date: 'Feb 4, 2026' },
-  { id: 'PO-003', supplier: 'Athens Fresh Market', items: 5, total: 215.00, status: 'In Transit', date: 'Feb 6, 2026' },
-  { id: 'PO-004', supplier: 'Hellenic Farms', items: 2, total: 560.00, status: 'Processing', date: 'Feb 7, 2026' },
-  { id: 'PO-005', supplier: 'Mykonos Pantry', items: 3, total: 340.00, status: 'Delivered', date: 'Feb 3, 2026' },
-]
-
 const realDistributors = [
   { name: 'Sysco', products: '625,000+', delivery: 'Mon-Sat', minOrder: '$500', gradient: 'from-blue-500 to-blue-600' },
   { name: 'US Foods', products: '400,000+', delivery: 'Tue/Thu/Sat', minOrder: '$350', gradient: 'from-green-500 to-emerald-600' },
@@ -116,6 +45,11 @@ const realDistributors = [
 ]
 
 export default function Suppliers() {
+  const { cuisineType } = useAuth()
+  const template = getCuisineTemplate(cuisineType || 'mediterranean')
+  const demoSuppliers: Supplier[] = template.suppliers
+  const demoOrderHistory: OrderHistory[] = template.orderHistory
+
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
   const [apiConnected, setApiConnected] = useState<boolean | null>(null)
@@ -269,7 +203,7 @@ export default function Suppliers() {
                 </span>
               )}
             </div>
-            <p className="text-neutral-500 dark:text-neutral-400 text-sm">Mediterranean supplier network for Mykonos</p>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">{template.label} supplier network for {template.restaurantName}</p>
           </div>
         </div>
         <button
@@ -524,11 +458,7 @@ export default function Suppliers() {
               <span>Smart Order Suggestions</span>
             </h3>
             <div className="space-y-3">
-              {[
-                { ingredient: 'Olive Oil', supplier: 'Aegean Imports', qty: '10 L', cost: '$185.00', urgency: 'critical' },
-                { ingredient: 'Feta Cheese', supplier: 'Mykonos Pantry', qty: '15 lb', cost: '$172.50', urgency: 'urgent' },
-                { ingredient: 'Lamb Leg', supplier: 'Hellenic Farms', qty: '20 lb', cost: '$280.00', urgency: 'normal' },
-              ].map(suggestion => (
+              {template.smartSuggestions.map(suggestion => (
                 <div key={suggestion.ingredient} className="flex items-center justify-between bg-white dark:bg-neutral-800 p-4 rounded-xl border border-neutral-200 dark:border-neutral-700">
                   <div>
                     <div className="flex items-center space-x-2">

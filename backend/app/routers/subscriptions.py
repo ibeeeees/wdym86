@@ -1,16 +1,16 @@
 """
 Subscription Router
 
-Endpoints for managing restaurant subscriptions and billing.
+Endpoints for managing restaurant subscriptions and billing with Stripe integration.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
 from datetime import datetime, timedelta
 
-from ..database import get_session, Restaurant, Subscription
+from ..database import get_session, Restaurant, Subscription, User as UserDB
 from ..models.subscription import (
     SubscriptionTier,
     TierFeatures,
@@ -21,7 +21,7 @@ from ..models.subscription import (
     SubscriptionResponse
 )
 from .auth import get_current_user
-from ..database import User as UserDB
+from ..services.stripe_service import stripe_service
 
 router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 
@@ -87,9 +87,9 @@ async def create_subscription(
     db: AsyncSession = Depends(get_session)
 ):
     """
-    Create or update subscription for a restaurant.
-
-    In production, this would integrate with Stripe for payment processing.
+    Create or update subscription for a restaurant using Stripe.
+    
+    This creates a Stripe Checkout Session for the user to complete payment.
     """
     # Verify restaurant exists and belongs to user
     result = await db.execute(
@@ -103,53 +103,95 @@ async def create_subscription(
     if restaurant.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    # Check for existing subscription
+    # Get or create Stripe customer
     result = await db.execute(
         select(Subscription).where(Subscription.restaurant_id == restaurant_id)
     )
     subscription = result.scalar_one_or_none()
-
-    # Calculate period
-    now = datetime.now()
-    if request.billing_cycle == "yearly":
-        period_end = now + timedelta(days=365)
+    
+    stripe_customer_id = None
+    if subscription and subscription.stripe_customer_id:
+        stripe_customer_id = subscription.stripe_customer_id
     else:
-        period_end = now + timedelta(days=30)
-
-    if subscription:
-        # Update existing subscription
-        subscription.tier = request.tier.value
-        subscription.billing_cycle = request.billing_cycle
-        subscription.status = "active"
-        subscription.current_period_start = now
-        subscription.current_period_end = period_end
-        subscription.cancel_at_period_end = False
-    else:
-        # Create new subscription
-        subscription = Subscription(
-            restaurant_id=restaurant_id,
-            tier=request.tier.value,
-            billing_cycle=request.billing_cycle,
-            status="active",
-            current_period_start=now,
-            current_period_end=period_end
+        # Create new Stripe customer
+        try:
+            customer = await stripe_service.create_customer(
+                email=current_user.email,
+                name=current_user.name or current_user.email,
+                metadata={
+                    "restaurant_id": restaurant_id,
+                    "user_id": current_user.id
+                }
+            )
+            stripe_customer_id = customer.get("id")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to create customer: {str(e)}")
+    
+    # Get Stripe price ID for the tier
+    price_id = stripe_service.get_price_id_for_tier(
+        request.tier.value,
+        request.billing_cycle
+    )
+    
+    if not price_id:
+        raise HTTPException(status_code=400, detail="Invalid tier or billing cycle")
+    
+    # Create Stripe Checkout Session
+    try:
+        # TODO: Update these URLs to match your frontend
+        success_url = f"http://localhost:5173/dashboard?subscription=success&restaurant_id={restaurant_id}"
+        cancel_url = f"http://localhost:5173/pricing?subscription=cancelled"
+        
+        checkout_session = await stripe_service.create_checkout_session(
+            customer_id=stripe_customer_id,
+            price_id=price_id,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "restaurant_id": restaurant_id,
+                "user_id": current_user.id,
+                "tier": request.tier.value,
+                "billing_cycle": request.billing_cycle
+            }
         )
-        db.add(subscription)
-
-    # Update restaurant tier
-    restaurant.subscription_tier = request.tier.value
-
-    await db.commit()
-    await db.refresh(subscription)
-
-    features = get_tier_features(request.tier)
-    return {
-        "success": True,
-        "subscription_id": subscription.id,
-        "tier": subscription.tier,
-        "features": features.model_dump(),
-        "message": f"Successfully subscribed to {features.name} plan"
-    }
+        
+        # Update or create subscription record (will be finalized by webhook)
+        now = datetime.now()
+        if request.billing_cycle == "yearly":
+            period_end = now + timedelta(days=365)
+        else:
+            period_end = now + timedelta(days=30)
+        
+        if subscription:
+            subscription.stripe_customer_id = stripe_customer_id
+            subscription.tier = request.tier.value
+            subscription.billing_cycle = request.billing_cycle
+            subscription.status = "pending"  # Will be updated by webhook
+            subscription.current_period_start = now
+            subscription.current_period_end = period_end
+        else:
+            subscription = Subscription(
+                restaurant_id=restaurant_id,
+                tier=request.tier.value,
+                billing_cycle=request.billing_cycle,
+                stripe_customer_id=stripe_customer_id,
+                status="pending",
+                current_period_start=now,
+                current_period_end=period_end
+            )
+            db.add(subscription)
+        
+        await db.commit()
+        
+        return {
+            "success": True,
+            "checkout_url": checkout_session.get("url"),
+            "session_id": checkout_session.get("id"),
+            "message": "Redirect to Stripe Checkout to complete payment"
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create checkout session: {str(e)}")
 
 
 @router.post("/cancel", response_model=dict)
@@ -158,7 +200,7 @@ async def cancel_subscription(
     current_user: UserDB = Depends(get_current_user),
     db: AsyncSession = Depends(get_session)
 ):
-    """Cancel subscription at end of current period"""
+    """Cancel subscription at end of current period using Stripe"""
     result = await db.execute(
         select(Subscription).where(Subscription.restaurant_id == restaurant_id)
     )
@@ -166,15 +208,35 @@ async def cancel_subscription(
 
     if not subscription:
         raise HTTPException(status_code=404, detail="No subscription found")
+    
+    if not subscription.stripe_subscription_id:
+        # No Stripe subscription, just mark as cancelled locally
+        subscription.cancel_at_period_end = True
+        subscription.status = "canceled"
+        await db.commit()
+        return {
+            "success": True,
+            "message": "Subscription cancelled",
+            "cancellation_date": subscription.current_period_end.isoformat() if subscription.current_period_end else None
+        }
+    
+    # Cancel via Stripe
+    try:
+        stripe_subscription = await stripe_service.cancel_subscription(
+            subscription.stripe_subscription_id,
+            at_period_end=True
+        )
+        
+        subscription.cancel_at_period_end = True
+        await db.commit()
 
-    subscription.cancel_at_period_end = True
-    await db.commit()
-
-    return {
-        "success": True,
-        "message": "Subscription will be cancelled at end of billing period",
-        "cancellation_date": subscription.current_period_end.isoformat() if subscription.current_period_end else None
-    }
+        return {
+            "success": True,
+            "message": "Subscription will be cancelled at end of billing period",
+            "cancellation_date": subscription.current_period_end.isoformat() if subscription.current_period_end else None
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to cancel subscription: {str(e)}")
 
 
 @router.get("/check-feature/{feature_name}", response_model=dict)

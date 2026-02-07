@@ -21,6 +21,7 @@ python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
 bcrypt>=4.0.0,<5.0.0  # bcrypt 5.x has breaking changes with passlib
 python-multipart>=0.0.6
+email-validator>=2.0.0  # required by pydantic EmailStr
 
 # ML (NumPy only - ground up implementation)
 numpy>=1.26.0
@@ -28,6 +29,10 @@ scipy>=1.12.0  # Only for stats functions, not ML
 
 # Gemini
 google-generativeai>=0.3.0
+
+# Payments
+stripe>=8.0.0
+taxjar>=2.0.0
 
 # Utilities
 httpx>=0.26.0

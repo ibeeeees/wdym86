@@ -8,6 +8,7 @@ import GeminiChat from './pages/GeminiChat'
 import Dishes from './pages/Dishes'
 import Suppliers from './pages/Suppliers'
 import POS from './pages/POS'
+import BOHPOS from './pages/BOHPOS'
 import Delivery from './pages/Delivery'
 import Pricing from './pages/Pricing'
 import SolanaPay from './pages/SolanaPay'
@@ -26,6 +27,7 @@ import TimelineAnalytics from './pages/TimelineAnalytics'
 import InventoryTracking from './pages/InventoryTracking'
 import Payroll from './pages/Payroll'
 import POSIntegration from './pages/POSIntegration'
+import NavigationGuard from './guards/NavigationGuard'
 
 function AppRoutes() {
   const { isAuthenticated, role } = useAuth()
@@ -54,6 +56,7 @@ function AppRoutes() {
           <Route path="/dishes" element={<Dishes />} />
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/pos" element={<POS />} />
+          <Route path="/bohpos" element={<BOHPOS />} />
           <Route path="/delivery" element={<Delivery />} />
           <Route path="/solana-pay" element={<SolanaPay />} />
           <Route path="/chat" element={<GeminiChat />} />
@@ -75,15 +78,18 @@ function AppRoutes() {
     )
   }
 
-  // POS user: only POS page
+  // POS user: only POS page and BOHPOS
   if (role === 'pos_user') {
     return (
       <Layout>
-        <Routes>
-          <Route path="/" element={<POS />} />
-          <Route path="/pos" element={<POS />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <NavigationGuard userRole={role}>
+          <Routes>
+            <Route path="/" element={<POS />} />
+            <Route path="/pos" element={<POS />} />
+            <Route path="/bohpos" element={<BOHPOS />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </NavigationGuard>
       </Layout>
     )
   }
@@ -98,6 +104,7 @@ function AppRoutes() {
           <Route path="/dishes" element={<Dishes />} />
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/pos" element={<POS />} />
+          <Route path="/bohpos" element={<BOHPOS />} />
           <Route path="/delivery" element={<Delivery />} />
           <Route path="/solana-pay" element={<SolanaPay />} />
           <Route path="/chat" element={<GeminiChat />} />
@@ -127,6 +134,7 @@ function AppRoutes() {
         <Route path="/dishes" element={<Dishes />} />
         <Route path="/suppliers" element={<Suppliers />} />
         <Route path="/pos" element={<POS />} />
+        <Route path="/bohpos" element={<BOHPOS />} />
         <Route path="/delivery" element={<Delivery />} />
         <Route path="/solana-pay" element={<SolanaPay />} />
         <Route path="/chat" element={<GeminiChat />} />

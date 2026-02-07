@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@stripe/stripe-js": "^2.4.0",
+    "@stripe/react-stripe-js": "^2.4.0",
     "axios": "^1.6.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.33.0",

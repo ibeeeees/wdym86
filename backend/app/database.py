@@ -80,6 +80,14 @@ class Restaurant(Base):
     cuisine_type = Column(String, nullable=True)
     subscription_tier = Column(String, default="free")  # free, starter, pro, enterprise
     created_at = Column(DateTime, server_default=func.now())
+    
+    # Address for tax calculation
+    address_street = Column(String, nullable=True)
+    address_city = Column(String, nullable=True)
+    address_state = Column(String, nullable=True)
+    address_zip = Column(String, nullable=True)
+    address_country = Column(String, default="US")
+    default_tax_rate = Column(Float, default=0.08)  # Fallback rate when TaxJar not available
 
 
 class Subscription(Base):
@@ -603,6 +611,126 @@ class ExpenseRecord(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     restaurant = relationship("Restaurant", backref="expenses")
+
+
+# ==========================================
+# Audit Log
+# ==========================================
+
+class AuditLog(Base):
+    """Audit log for tracking all important actions"""
+    __tablename__ = "audit_logs"
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.id"))
+    action = Column(String, nullable=False)  # create, update, delete, login, payment, etc.
+    resource_type = Column(String)  # order, ingredient, user, subscription, etc.
+    resource_id = Column(String)  # ID of the resource affected
+    details = Column(JSON, default=dict)  # Additional context
+    ip_address = Column(String)
+    user_agent = Column(String)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    restaurant = relationship("Restaurant", backref="audit_logs")
+    user = relationship("User", backref="audit_logs")
+
+
+# ==========================================
+# Check Management (26.md specification)
+# ==========================================
+
+class Check(Base):
+    """POS Check/Order entity for managing restaurant orders"""
+    __tablename__ = "checks"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    order_type = Column(String, nullable=False)  # "dine_in", "takeout", "delivery"
+    check_name = Column(String, nullable=False)  # User-provided name (e.g., "Table 5", "John Doe")
+    check_number = Column(String, nullable=False)  # Auto-generated (e.g., "DIN-001", "TO-001")
+    created_by = Column(String, ForeignKey("users.id"), nullable=False)  # POS user who created it
+    status = Column(String, nullable=False, default="active")  # "active", "sent", "paid", "finalized", "voided"
+    subtotal = Column(Float, default=0.0)
+    tax = Column(Float, default=0.0)
+    tip = Column(Float, nullable=True)
+    total = Column(Float, default=0.0)
+    final_total = Column(Float, nullable=True)  # Total + Tip
+    table_id = Column(String, nullable=True)  # For dine-in orders
+    customer_name = Column(String, nullable=True)  # For takeout/delivery
+    customer_phone = Column(String, nullable=True)
+    special_instructions = Column(Text, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    finalized_at = Column(DateTime, nullable=True)
+    
+    restaurant = relationship("Restaurant", backref="checks")
+    created_by_user = relationship("User", backref="created_checks")
+
+
+class CheckItem(Base):
+    """Items in a check"""
+    __tablename__ = "check_items"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    check_id = Column(String, ForeignKey("checks.id"), nullable=False)
+    menu_item_id = Column(String, nullable=True)  # Link to menu item if exists
+    name = Column(String, nullable=False)
+    quantity = Column(Integer, nullable=False, default=1)
+    price = Column(Float, nullable=False)
+    modifiers = Column(JSON, nullable=True)  # List of modifiers (e.g., ["extra sauce", "no onions"])
+    special_instructions = Column(Text, nullable=True)
+    sent_to_bohpos = Column(Boolean, default=False)  # Tracks if sent to kitchen
+    created_at = Column(DateTime, server_default=func.now())
+    
+    check = relationship("Check", backref="items")
+
+
+class SentOrder(Base):
+    """Orders sent to BOHPOS (kitchen display)"""
+    __tablename__ = "sent_orders"
+
+    id = Column(String, primary_key=True, default=generate_uuid)  # Unique sent_order_id
+    check_id = Column(String, ForeignKey("checks.id"), nullable=False)
+    check_name = Column(String, nullable=False)
+    check_number = Column(String, nullable=False)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    order_type = Column(String, nullable=False)  # "dine_in", "takeout", "delivery"
+    items_data = Column(JSON, nullable=False)  # Snapshot of items sent
+    item_count = Column(Integer, nullable=False)
+    sent_at = Column(DateTime, server_default=func.now())
+    status = Column(String, nullable=False, default="pending")  # "pending", "in_progress", "completed"
+    completed_at = Column(DateTime, nullable=True)
+    completed_by = Column(String, ForeignKey("users.id"), nullable=True)  # Kitchen staff who bumped it
+    
+    check = relationship("Check", backref="sent_orders")
+    restaurant = relationship("Restaurant", backref="sent_orders")
+    completed_by_user = relationship("User", backref="completed_orders")
+
+
+class Receipt(Base):
+    """Generated receipts for completed orders"""
+    __tablename__ = "receipts"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    receipt_number = Column(String, nullable=False, unique=True)  # Auto-generated (e.g., "RCP-001")
+    check_id = Column(String, ForeignKey("checks.id"), nullable=False)
+    check_name = Column(String, nullable=False)
+    check_number = Column(String, nullable=False)
+    restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    order_type = Column(String, nullable=False)
+    items_data = Column(JSON, nullable=False)  # Snapshot of items
+    subtotal = Column(Float, nullable=False)
+    tax = Column(Float, nullable=False)
+    tip = Column(Float, nullable=True)
+    total = Column(Float, nullable=False)
+    final_total = Column(Float, nullable=False)  # Total + Tip
+    payment_method = Column(String, nullable=False)  # "credit_card", "cash", "crypto"
+    payment_id = Column(String, nullable=True)  # Reference to PaymentTransaction
+    restaurant_customization = Column(JSON, nullable=True)  # Custom receipt data
+    generated_at = Column(DateTime, server_default=func.now())
+    
+    check = relationship("Check", backref="receipts")
+    restaurant = relationship("Restaurant", backref="receipts")
 
 
 # ==========================================

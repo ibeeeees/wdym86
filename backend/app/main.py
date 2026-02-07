@@ -42,6 +42,11 @@ from .routers import (
     timeline_router,
     pos_integration_router,
     payroll_router,
+    stripe_webhooks_router,
+    pos_payments_router,
+    tax_router,
+    checks_router,
+    bohpos_router,
 )
 
 logger = logging.getLogger("wdym86.security")
@@ -54,6 +59,8 @@ _SENSITIVE_PATTERNS = re.compile(
     r'access_key|access[-_]?token|private_key|auth_token|'
     r'aws_secret_access_key|aws_access_key_id|'
     r'gemini_api_key|ncr_bsp_secret_key|ncr_bsp_shared_key|'
+    r'stripe_secret_key|stripe_publishable_key|stripe_webhook_secret|'
+    r'taxjar_api_key|'
     r'rds_password|solana_wallet_address)"'
     r'\s*:\s*")'           # captures up to the opening quote of the value
     r'([^"]{4,})'          # the actual secret value (4+ chars to avoid masking short placeholders)
@@ -305,6 +312,11 @@ app.include_router(staff_router, tags=["Staff & Roles"])
 app.include_router(timeline_router, tags=["Timeline Analytics"])
 app.include_router(pos_integration_router, tags=["POS Integrations"])
 app.include_router(payroll_router, tags=["Payroll"])
+app.include_router(stripe_webhooks_router, tags=["Webhooks"])
+app.include_router(pos_payments_router, tags=["POS Payments"])
+app.include_router(tax_router, tags=["Tax Calculation"])
+app.include_router(checks_router, tags=["Check Management"])
+app.include_router(bohpos_router, tags=["BOHPOS"])
 
 
 @app.get("/")

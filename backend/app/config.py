@@ -78,6 +78,21 @@ class Settings(BaseSettings):
     ncr_bsp_enterprise_unit: Optional[str] = None
     ncr_bsp_base_url: str = "https://api.ncr.com"
 
+    # Stripe Payment Processing
+    stripe_secret_key: Optional[str] = None
+    stripe_publishable_key: Optional[str] = None
+    stripe_webhook_secret: Optional[str] = None
+    stripe_price_starter_monthly: Optional[str] = None
+    stripe_price_starter_yearly: Optional[str] = None
+    stripe_price_pro_monthly: Optional[str] = None
+    stripe_price_pro_yearly: Optional[str] = None
+    stripe_price_enterprise_monthly: Optional[str] = None
+    stripe_price_enterprise_yearly: Optional[str] = None
+
+    # TaxJar API for Sales Tax Calculation
+    taxjar_api_key: Optional[str] = None
+    taxjar_enabled: bool = False
+
     class Config:
         env_file = [
             ".env",                                                          # CWD (when running from backend/)

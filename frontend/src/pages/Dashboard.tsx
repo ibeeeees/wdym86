@@ -16,34 +16,63 @@ interface Ingredient {
   trend: number
 }
 
-// Demo data fallback
+// Demo data fallback - Mykonos Mediterranean Restaurant ingredients
 const demoIngredients: Ingredient[] = [
-  { id: '1', name: 'Chicken Breast', category: 'meat', current_inventory: 45, unit: 'lbs', risk_level: 'URGENT', days_of_cover: 2, stockout_prob: 0.38, trend: -12 },
-  { id: '2', name: 'Ground Beef', category: 'meat', current_inventory: 80, unit: 'lbs', risk_level: 'MONITOR', days_of_cover: 5, stockout_prob: 0.15, trend: 5 },
-  { id: '3', name: 'Romaine Lettuce', category: 'produce', current_inventory: 35, unit: 'cases', risk_level: 'SAFE', days_of_cover: 8, stockout_prob: 0.03, trend: 0 },
-  { id: '4', name: 'Tomatoes', category: 'produce', current_inventory: 120, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 12, stockout_prob: 0.02, trend: 8 },
-  { id: '5', name: 'Salmon Fillet', category: 'meat', current_inventory: 15, unit: 'lbs', risk_level: 'CRITICAL', days_of_cover: 1, stockout_prob: 0.65, trend: -25 },
-  { id: '6', name: 'Cheese Blend', category: 'dairy', current_inventory: 50, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 10, stockout_prob: 0.04, trend: 2 },
-  { id: '7', name: 'Avocados', category: 'produce', current_inventory: 80, unit: 'units', risk_level: 'MONITOR', days_of_cover: 4, stockout_prob: 0.18, trend: -8 },
-  { id: '8', name: 'Flour', category: 'dry', current_inventory: 200, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 20, stockout_prob: 0.01, trend: 0 },
+  // Proteins - Mediterranean
+  { id: '1', name: 'Lamb Shoulder', category: 'meat', current_inventory: 45, unit: 'lbs', risk_level: 'MONITOR', days_of_cover: 5, stockout_prob: 0.15, trend: 8 },
+  { id: '2', name: 'Lamb Chops', category: 'meat', current_inventory: 18, unit: 'lbs', risk_level: 'URGENT', days_of_cover: 2, stockout_prob: 0.42, trend: -15 },
+  { id: '3', name: 'Chicken Thighs', category: 'meat', current_inventory: 65, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 8, stockout_prob: 0.05, trend: 3 },
+  { id: '4', name: 'Branzino (Sea Bass)', category: 'meat', current_inventory: 12, unit: 'lbs', risk_level: 'CRITICAL', days_of_cover: 1, stockout_prob: 0.68, trend: -22 },
+  { id: '5', name: 'Octopus', category: 'meat', current_inventory: 25, unit: 'lbs', risk_level: 'MONITOR', days_of_cover: 4, stockout_prob: 0.18, trend: 5 },
+  { id: '6', name: 'Shrimp (Jumbo)', category: 'meat', current_inventory: 35, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 6, stockout_prob: 0.08, trend: 2 },
+  // Dairy - Greek
+  { id: '7', name: 'Feta Cheese', category: 'dairy', current_inventory: 28, unit: 'lbs', risk_level: 'MONITOR', days_of_cover: 4, stockout_prob: 0.22, trend: -8 },
+  { id: '8', name: 'Halloumi Cheese', category: 'dairy', current_inventory: 15, unit: 'lbs', risk_level: 'URGENT', days_of_cover: 2, stockout_prob: 0.38, trend: -12 },
+  { id: '9', name: 'Greek Yogurt', category: 'dairy', current_inventory: 45, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 7, stockout_prob: 0.06, trend: 0 },
+  // Produce - Mediterranean
+  { id: '10', name: 'Tomatoes (Roma)', category: 'produce', current_inventory: 85, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 10, stockout_prob: 0.03, trend: 5 },
+  { id: '11', name: 'Cucumbers', category: 'produce', current_inventory: 60, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 9, stockout_prob: 0.04, trend: 2 },
+  { id: '12', name: 'Red Onions', category: 'produce', current_inventory: 70, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 12, stockout_prob: 0.02, trend: 0 },
+  { id: '13', name: 'Eggplant', category: 'produce', current_inventory: 32, unit: 'lbs', risk_level: 'MONITOR', days_of_cover: 5, stockout_prob: 0.14, trend: -5 },
+  { id: '14', name: 'Bell Peppers (Red)', category: 'produce', current_inventory: 40, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 7, stockout_prob: 0.07, trend: 3 },
+  { id: '15', name: 'Fresh Spinach', category: 'produce', current_inventory: 22, unit: 'lbs', risk_level: 'URGENT', days_of_cover: 3, stockout_prob: 0.28, trend: -10 },
+  { id: '16', name: 'Lemons', category: 'produce', current_inventory: 55, unit: 'units', risk_level: 'SAFE', days_of_cover: 8, stockout_prob: 0.05, trend: 4 },
+  // Grains & Legumes
+  { id: '17', name: 'Orzo Pasta', category: 'dry', current_inventory: 80, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 15, stockout_prob: 0.01, trend: 0 },
+  { id: '18', name: 'Arborio Rice', category: 'dry', current_inventory: 65, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 12, stockout_prob: 0.02, trend: 0 },
+  { id: '19', name: 'Phyllo Dough', category: 'dry', current_inventory: 18, unit: 'lbs', risk_level: 'MONITOR', days_of_cover: 4, stockout_prob: 0.19, trend: -7 },
+  { id: '20', name: 'Chickpeas (Dried)', category: 'dry', current_inventory: 50, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 20, stockout_prob: 0.01, trend: 2 },
+  // Oils & Condiments
+  { id: '21', name: 'Olive Oil (Extra Virgin)', category: 'dry', current_inventory: 12, unit: 'liters', risk_level: 'CRITICAL', days_of_cover: 2, stockout_prob: 0.55, trend: -18 },
+  { id: '22', name: 'Tahini', category: 'dry', current_inventory: 8, unit: 'lbs', risk_level: 'URGENT', days_of_cover: 3, stockout_prob: 0.35, trend: -10 },
+  // Fresh Herbs
+  { id: '23', name: 'Fresh Oregano', category: 'produce', current_inventory: 5, unit: 'lbs', risk_level: 'MONITOR', days_of_cover: 4, stockout_prob: 0.20, trend: 0 },
+  { id: '24', name: 'Fresh Dill', category: 'produce', current_inventory: 4, unit: 'lbs', risk_level: 'MONITOR', days_of_cover: 3, stockout_prob: 0.25, trend: -5 },
+  { id: '25', name: 'Fresh Mint', category: 'produce', current_inventory: 6, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 5, stockout_prob: 0.12, trend: 2 },
+  // Bar Ingredients
+  { id: '26', name: 'Ouzo', category: 'dry', current_inventory: 8, unit: 'bottles', risk_level: 'SAFE', days_of_cover: 10, stockout_prob: 0.04, trend: 5 },
+  { id: '27', name: 'Metaxa', category: 'dry', current_inventory: 5, unit: 'bottles', risk_level: 'MONITOR', days_of_cover: 5, stockout_prob: 0.15, trend: 0 },
+  { id: '28', name: 'Prosecco', category: 'dry', current_inventory: 18, unit: 'bottles', risk_level: 'SAFE', days_of_cover: 7, stockout_prob: 0.08, trend: 8 },
+  { id: '29', name: 'Pomegranate Juice', category: 'dry', current_inventory: 10, unit: 'liters', risk_level: 'SAFE', days_of_cover: 6, stockout_prob: 0.10, trend: 3 },
+  { id: '30', name: 'Honey', category: 'dry', current_inventory: 12, unit: 'lbs', risk_level: 'SAFE', days_of_cover: 14, stockout_prob: 0.02, trend: 0 },
 ]
 
 const weeklyDemand = [
-  { day: 'Mon', actual: 145, forecast: 150 },
-  { day: 'Tue', actual: 162, forecast: 158 },
-  { day: 'Wed', actual: 155, forecast: 160 },
-  { day: 'Thu', actual: 178, forecast: 172 },
-  { day: 'Fri', actual: 210, forecast: 195 },
-  { day: 'Sat', actual: 245, forecast: 230 },
-  { day: 'Sun', actual: null, forecast: 185 },
+  { day: 'Mon', actual: 2850, forecast: 2900 },
+  { day: 'Tue', actual: 3120, forecast: 3050 },
+  { day: 'Wed', actual: 3280, forecast: 3200 },
+  { day: 'Thu', actual: 3650, forecast: 3500 },
+  { day: 'Fri', actual: 4890, forecast: 4700 },
+  { day: 'Sat', actual: 5420, forecast: 5200 },
+  { day: 'Sun', actual: null, forecast: 3800 },
 ]
 
-// Demand heatmap data - intensity by day and ingredient category
+// Demand heatmap data - intensity by day and ingredient category (Mediterranean patterns)
 const heatmapData = [
-  { category: 'Meat', Mon: 0.7, Tue: 0.75, Wed: 0.8, Thu: 0.85, Fri: 0.95, Sat: 1.0, Sun: 0.6 },
-  { category: 'Produce', Mon: 0.6, Tue: 0.7, Wed: 0.75, Thu: 0.8, Fri: 0.9, Sat: 0.95, Sun: 0.55 },
-  { category: 'Dairy', Mon: 0.5, Tue: 0.55, Wed: 0.6, Thu: 0.7, Fri: 0.8, Sat: 0.85, Sun: 0.5 },
-  { category: 'Dry Goods', Mon: 0.4, Tue: 0.45, Wed: 0.5, Thu: 0.55, Fri: 0.6, Sat: 0.65, Sun: 0.35 },
+  { category: 'Proteins', Mon: 0.65, Tue: 0.72, Wed: 0.78, Thu: 0.85, Fri: 0.95, Sat: 1.0, Sun: 0.70 },
+  { category: 'Produce', Mon: 0.58, Tue: 0.68, Wed: 0.75, Thu: 0.82, Fri: 0.92, Sat: 0.98, Sun: 0.62 },
+  { category: 'Dairy', Mon: 0.55, Tue: 0.60, Wed: 0.68, Thu: 0.75, Fri: 0.85, Sat: 0.90, Sun: 0.58 },
+  { category: 'Dry Goods', Mon: 0.45, Tue: 0.50, Wed: 0.55, Thu: 0.62, Fri: 0.70, Sat: 0.75, Sun: 0.42 },
 ]
 
 // Get heatmap cell color based on intensity (0-1)
@@ -167,19 +196,20 @@ export default function Dashboard() {
         fetchDailySummary()
         fetchActiveEvents()
       } else {
-        // Demo summary
-        setDailySummary(`Good morning! Here's your inventory briefing for today:
+        // Demo summary - Mykonos Mediterranean Restaurant
+        setDailySummary(`Kalimera! Here's your inventory briefing for Mykonos Mediterranean:
 
 **Priority Items:**
-- **Salmon Fillet** is at CRITICAL risk with only 1 day of cover. Recommend ordering immediately.
-- **Chicken Breast** shows URGENT risk. Weekend demand surge expected.
+- **Branzino (Sea Bass)** is at CRITICAL risk with only 1 day of cover. Order from Mediterranean Seafood Co. immediately.
+- **Olive Oil (Extra Virgin)** is running low - essential for tonight's service. Contact Aegean Imports.
+- **Lamb Chops** and **Halloumi Cheese** show URGENT risk. Weekend dinner reservations are 40% above average.
 
 **Today's Outlook:**
-- 2 items need immediate attention
-- 5 items are stable with adequate stock
-- Overall stockout risk: Moderate
+- 4 items need immediate attention
+- Friday evening: Expecting 180+ covers (Grilled Branzino, Lamb Souvlaki popular)
+- Mezze platters trending up 25% this week
 
-**Recommendation:** Place orders for Salmon and Chicken before 2 PM for next-day delivery.`)
+**Recommendation:** Place urgent orders before 2 PM for same-day delivery. Consider featuring Shrimp Saganaki and Moussaka to reduce lamb dependency tonight.`)
       }
     }
     checkConnection()
@@ -271,10 +301,10 @@ export default function Dashboard() {
   const totalValue = ingredients.reduce((sum, i) => sum + i.current_inventory * 5, 0)
 
   const categoryData = [
-    { name: 'Meat', value: ingredients.filter(i => i.category === 'meat').reduce((s, i) => s + i.current_inventory, 0) },
+    { name: 'Proteins', value: ingredients.filter(i => i.category === 'meat' || i.category === 'protein').reduce((s, i) => s + i.current_inventory, 0) },
     { name: 'Produce', value: ingredients.filter(i => i.category === 'produce').reduce((s, i) => s + i.current_inventory, 0) },
     { name: 'Dairy', value: ingredients.filter(i => i.category === 'dairy').reduce((s, i) => s + i.current_inventory, 0) },
-    { name: 'Dry', value: ingredients.filter(i => i.category === 'dry' || i.category === 'dry_goods').reduce((s, i) => s + i.current_inventory, 0) },
+    { name: 'Pantry', value: ingredients.filter(i => i.category === 'dry' || i.category === 'dry_goods' || i.category === 'grains').reduce((s, i) => s + i.current_inventory, 0) },
   ]
 
   const handleExportCSV = () => {
@@ -606,10 +636,10 @@ export default function Dashboard() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { platform: 'DoorDash', icon: '🚗', status: 'Preparing', customer: 'John D.', total: 58.75, color: 'from-red-500 to-red-600' },
-            { platform: 'Uber Eats', icon: '🥡', status: 'Confirmed', customer: 'Sarah M.', total: 56.74, color: 'from-green-500 to-emerald-600' },
-            { platform: 'Grubhub', icon: '🍔', status: 'Out for Delivery', customer: 'Alex K.', total: 72.91, color: 'from-orange-500 to-red-500' },
-            { platform: 'DoorDash', icon: '🚗', status: 'Pending', customer: 'Emma W.', total: 56.73, color: 'from-red-500 to-red-600' },
+            { platform: 'DoorDash', icon: '🚗', status: 'Preparing', customer: 'Maria K.', total: 86.50, items: 'Lamb Souvlaki, Greek Salad', color: 'from-red-500 to-red-600' },
+            { platform: 'Uber Eats', icon: '🥡', status: 'Confirmed', customer: 'Nikos P.', total: 124.75, items: 'Mezze Platter, Grilled Branzino', color: 'from-green-500 to-emerald-600' },
+            { platform: 'Grubhub', icon: '🍔', status: 'Out for Delivery', customer: 'Elena S.', total: 78.90, items: 'Moussaka, Baklava x2', color: 'from-orange-500 to-red-500' },
+            { platform: 'DoorDash', icon: '🚗', status: 'Pending', customer: 'Dimitri T.', total: 145.25, items: 'Seafood Paella, Wine', color: 'from-red-500 to-red-600' },
           ].map((order, i) => (
             <div key={i} className="bg-white dark:bg-neutral-800 rounded-xl p-4 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all hover:scale-[1.02]">
               <div className="flex items-center justify-between mb-3">

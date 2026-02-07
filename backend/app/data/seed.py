@@ -42,6 +42,7 @@ async def seed_database(force: bool = False):
             name="Demo User"
         )
         session.add(demo_user)
+        await session.flush()  # Flush user first
 
         # Create restaurant
         restaurant = Restaurant(
@@ -51,6 +52,7 @@ async def seed_database(force: bool = False):
             location=data['restaurant']['location']
         )
         session.add(restaurant)
+        await session.flush()  # Flush restaurant before adding related entities
 
         # Create suppliers
         supplier_ids = []
@@ -66,6 +68,9 @@ async def seed_database(force: bool = False):
             )
             session.add(supplier)
             supplier_ids.append(supplier.id)
+
+        # Flush suppliers before creating ingredient links
+        await session.flush()
 
         # Create ingredients with inventory and usage history
         ingredient_ids = []
@@ -112,6 +117,9 @@ async def seed_database(force: bool = False):
                 priority=1
             )
             session.add(supplier_link)
+
+        # Flush all ingredients before creating dishes with recipes
+        await session.flush()
 
         # Mykonos Mediterranean Menu - Dishes with recipes
         dishes_data = [

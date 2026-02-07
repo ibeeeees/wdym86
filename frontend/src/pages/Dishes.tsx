@@ -2,22 +2,36 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, ChevronDown, Wifi, WifiOff, UtensilsCrossed, DollarSign, ChefHat, Sparkles, Package } from 'lucide-react'
 import { getDishes, getIngredients, checkApiHealth } from '../services/api'
 
-// Category emoji mapping
+// Category emoji mapping - Mediterranean themed
 const categoryEmojis: Record<string, string> = {
-  'Appetizer': '🥗',
+  'Appetizer': '🫒',
+  'Salad': '🥗',
+  'Soup': '🍲',
+  'Entree - Seafood': '🐟',
+  'Entree - Meat': '🥩',
+  'Entree - Vegetarian': '🥬',
   'Main': '🍽️',
-  'Side': '🍟',
-  'Dessert': '🍰',
-  'Beverage': '🥤',
+  'Seafood': '🦐',
+  'Vegetarian': '🥙',
+  'Dessert': '🍯',
+  'Cocktail': '🍸',
+  'Beverage': '☕',
 }
 
 // Category gradient mapping
 const categoryGradients: Record<string, string> = {
   'Appetizer': 'from-green-400 to-emerald-500',
+  'Salad': 'from-lime-400 to-green-500',
+  'Soup': 'from-amber-400 to-yellow-500',
+  'Entree - Seafood': 'from-cyan-400 to-blue-500',
+  'Entree - Meat': 'from-red-400 to-rose-500',
+  'Entree - Vegetarian': 'from-green-400 to-teal-500',
   'Main': 'from-orange-400 to-red-500',
-  'Side': 'from-yellow-400 to-amber-500',
+  'Seafood': 'from-blue-400 to-cyan-500',
+  'Vegetarian': 'from-emerald-400 to-green-500',
   'Dessert': 'from-pink-400 to-rose-500',
-  'Beverage': 'from-blue-400 to-cyan-500',
+  'Cocktail': 'from-purple-400 to-pink-500',
+  'Beverage': 'from-amber-400 to-orange-500',
 }
 
 interface RecipeIngredient {
@@ -43,71 +57,202 @@ interface AvailableIngredient {
   unit: string
 }
 
+// Mykonos Mediterranean Restaurant ingredients
 const demoIngredients: AvailableIngredient[] = [
-  { id: '1', name: 'Chicken Breast', unit: 'lbs' },
-  { id: '2', name: 'Ground Beef', unit: 'lbs' },
-  { id: '3', name: 'Romaine Lettuce', unit: 'oz' },
-  { id: '4', name: 'Tomatoes', unit: 'oz' },
-  { id: '5', name: 'Salmon Fillet', unit: 'lbs' },
-  { id: '6', name: 'Cheese Blend', unit: 'oz' },
-  { id: '7', name: 'Avocados', unit: 'units' },
-  { id: '8', name: 'Flour', unit: 'oz' },
-  { id: '9', name: 'Rice', unit: 'oz' },
-  { id: '10', name: 'Olive Oil', unit: 'tbsp' },
+  { id: '1', name: 'Lamb Shoulder', unit: 'lbs' },
+  { id: '2', name: 'Lamb Chops', unit: 'lbs' },
+  { id: '3', name: 'Ground Lamb', unit: 'lbs' },
+  { id: '4', name: 'Chicken Thighs', unit: 'lbs' },
+  { id: '5', name: 'Branzino', unit: 'lbs' },
+  { id: '6', name: 'Shrimp (Jumbo)', unit: 'lbs' },
+  { id: '7', name: 'Octopus', unit: 'lbs' },
+  { id: '8', name: 'Feta Cheese', unit: 'lbs' },
+  { id: '9', name: 'Greek Yogurt', unit: 'lbs' },
+  { id: '10', name: 'Halloumi', unit: 'lbs' },
+  { id: '11', name: 'Tomatoes (Roma)', unit: 'lbs' },
+  { id: '12', name: 'Cucumbers', unit: 'lbs' },
+  { id: '13', name: 'Eggplant', unit: 'lbs' },
+  { id: '14', name: 'Fresh Spinach', unit: 'lbs' },
+  { id: '15', name: 'Phyllo Dough', unit: 'lbs' },
+  { id: '16', name: 'Chickpeas', unit: 'lbs' },
+  { id: '17', name: 'Tahini', unit: 'lbs' },
+  { id: '18', name: 'Olive Oil (EV)', unit: 'liters' },
+  { id: '19', name: 'Lemons', unit: 'units' },
+  { id: '20', name: 'Fresh Oregano', unit: 'lbs' },
+  { id: '21', name: 'Fresh Dill', unit: 'lbs' },
+  { id: '22', name: 'Fresh Mint', unit: 'lbs' },
+  { id: '23', name: 'Orzo Pasta', unit: 'lbs' },
+  { id: '24', name: 'Honey', unit: 'lbs' },
+  { id: '25', name: 'Walnuts', unit: 'lbs' },
+  { id: '26', name: 'Pistachios', unit: 'lbs' },
+  { id: '27', name: 'Red Onions', unit: 'lbs' },
+  { id: '28', name: 'Garlic', unit: 'lbs' },
+  { id: '29', name: 'Kalamata Olives', unit: 'lbs' },
+  { id: '30', name: 'Pine Nuts', unit: 'lbs' },
 ]
 
+// Mykonos Mediterranean Restaurant menu
 const demoDishes: Dish[] = [
+  // Appetizers (Meze)
   {
     id: '1',
-    name: 'Grilled Chicken Salad',
-    category: 'Main',
-    price: 14.99,
+    name: 'Classic Hummus',
+    category: 'Appetizer',
+    price: 12.00,
     is_active: true,
     recipe: [
-      { id: '1', ingredient_id: '1', ingredient_name: 'Chicken Breast', quantity: 0.5, unit: 'lbs' },
-      { id: '2', ingredient_id: '3', ingredient_name: 'Romaine Lettuce', quantity: 4, unit: 'oz' },
-      { id: '3', ingredient_id: '4', ingredient_name: 'Tomatoes', quantity: 2, unit: 'oz' },
-      { id: '4', ingredient_id: '6', ingredient_name: 'Cheese Blend', quantity: 1, unit: 'oz' },
+      { id: '1', ingredient_id: '16', ingredient_name: 'Chickpeas', quantity: 1.0, unit: 'lbs' },
+      { id: '2', ingredient_id: '17', ingredient_name: 'Tahini', quantity: 0.25, unit: 'lbs' },
+      { id: '3', ingredient_id: '28', ingredient_name: 'Garlic', quantity: 0.125, unit: 'lbs' },
+      { id: '4', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.125, unit: 'liters' },
     ]
   },
   {
     id: '2',
-    name: 'Beef Tacos',
-    category: 'Main',
-    price: 12.99,
+    name: 'Spanakopita',
+    category: 'Appetizer',
+    price: 14.00,
     is_active: true,
     recipe: [
-      { id: '5', ingredient_id: '2', ingredient_name: 'Ground Beef', quantity: 0.33, unit: 'lbs' },
-      { id: '6', ingredient_id: '6', ingredient_name: 'Cheese Blend', quantity: 2, unit: 'oz' },
-      { id: '7', ingredient_id: '4', ingredient_name: 'Tomatoes', quantity: 1.5, unit: 'oz' },
+      { id: '5', ingredient_id: '14', ingredient_name: 'Fresh Spinach', quantity: 1.5, unit: 'lbs' },
+      { id: '6', ingredient_id: '8', ingredient_name: 'Feta Cheese', quantity: 0.5, unit: 'lbs' },
+      { id: '7', ingredient_id: '15', ingredient_name: 'Phyllo Dough', quantity: 0.75, unit: 'lbs' },
+      { id: '8', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.2, unit: 'liters' },
     ]
   },
   {
     id: '3',
-    name: 'Salmon Bowl',
-    category: 'Main',
-    price: 18.99,
+    name: 'Saganaki',
+    category: 'Appetizer',
+    price: 16.00,
     is_active: true,
     recipe: [
-      { id: '8', ingredient_id: '5', ingredient_name: 'Salmon Fillet', quantity: 0.4, unit: 'lbs' },
-      { id: '9', ingredient_id: '9', ingredient_name: 'Rice', quantity: 6, unit: 'oz' },
-      { id: '10', ingredient_id: '7', ingredient_name: 'Avocados', quantity: 0.5, unit: 'units' },
+      { id: '9', ingredient_id: '10', ingredient_name: 'Halloumi', quantity: 0.5, unit: 'lbs' },
+      { id: '10', ingredient_id: '19', ingredient_name: 'Lemons', quantity: 2, unit: 'units' },
     ]
   },
   {
     id: '4',
-    name: 'Guacamole & Chips',
+    name: 'Grilled Octopus',
     category: 'Appetizer',
-    price: 8.99,
+    price: 22.00,
     is_active: true,
     recipe: [
-      { id: '11', ingredient_id: '7', ingredient_name: 'Avocados', quantity: 1.5, unit: 'units' },
-      { id: '12', ingredient_id: '4', ingredient_name: 'Tomatoes', quantity: 1, unit: 'oz' },
+      { id: '11', ingredient_id: '7', ingredient_name: 'Octopus', quantity: 0.75, unit: 'lbs' },
+      { id: '12', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.1, unit: 'liters' },
+      { id: '13', ingredient_id: '20', ingredient_name: 'Fresh Oregano', quantity: 0.05, unit: 'lbs' },
+    ]
+  },
+  // Salads
+  {
+    id: '5',
+    name: 'Greek Salad (Horiatiki)',
+    category: 'Salad',
+    price: 14.00,
+    is_active: true,
+    recipe: [
+      { id: '14', ingredient_id: '11', ingredient_name: 'Tomatoes (Roma)', quantity: 0.4, unit: 'lbs' },
+      { id: '15', ingredient_id: '12', ingredient_name: 'Cucumbers', quantity: 0.3, unit: 'lbs' },
+      { id: '16', ingredient_id: '27', ingredient_name: 'Red Onions', quantity: 0.15, unit: 'lbs' },
+      { id: '17', ingredient_id: '8', ingredient_name: 'Feta Cheese', quantity: 0.25, unit: 'lbs' },
+      { id: '18', ingredient_id: '29', ingredient_name: 'Kalamata Olives', quantity: 0.1, unit: 'lbs' },
+    ]
+  },
+  // Seafood Entrees
+  {
+    id: '6',
+    name: 'Grilled Branzino',
+    category: 'Entree - Seafood',
+    price: 34.00,
+    is_active: true,
+    recipe: [
+      { id: '19', ingredient_id: '5', ingredient_name: 'Branzino', quantity: 1.5, unit: 'lbs' },
+      { id: '20', ingredient_id: '19', ingredient_name: 'Lemons', quantity: 2, unit: 'units' },
+      { id: '21', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.1, unit: 'liters' },
+      { id: '22', ingredient_id: '20', ingredient_name: 'Fresh Oregano', quantity: 0.05, unit: 'lbs' },
+      { id: '23', ingredient_id: '21', ingredient_name: 'Fresh Dill', quantity: 0.05, unit: 'lbs' },
+    ]
+  },
+  {
+    id: '7',
+    name: 'Shrimp Saganaki',
+    category: 'Entree - Seafood',
+    price: 32.00,
+    is_active: true,
+    recipe: [
+      { id: '24', ingredient_id: '6', ingredient_name: 'Shrimp (Jumbo)', quantity: 0.5, unit: 'lbs' },
+      { id: '25', ingredient_id: '11', ingredient_name: 'Tomatoes (Roma)', quantity: 0.3, unit: 'lbs' },
+      { id: '26', ingredient_id: '8', ingredient_name: 'Feta Cheese', quantity: 0.2, unit: 'lbs' },
+    ]
+  },
+  // Meat Entrees
+  {
+    id: '8',
+    name: 'Lamb Souvlaki',
+    category: 'Entree - Meat',
+    price: 28.00,
+    is_active: true,
+    recipe: [
+      { id: '27', ingredient_id: '2', ingredient_name: 'Lamb Chops', quantity: 1.25, unit: 'lbs' },
+      { id: '28', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.15, unit: 'liters' },
+      { id: '29', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.5, unit: 'lbs' },
+      { id: '30', ingredient_id: '20', ingredient_name: 'Fresh Oregano', quantity: 0.05, unit: 'lbs' },
+    ]
+  },
+  {
+    id: '9',
+    name: 'Moussaka',
+    category: 'Entree - Meat',
+    price: 26.00,
+    is_active: true,
+    recipe: [
+      { id: '31', ingredient_id: '13', ingredient_name: 'Eggplant', quantity: 2.0, unit: 'lbs' },
+      { id: '32', ingredient_id: '3', ingredient_name: 'Ground Lamb', quantity: 1.0, unit: 'lbs' },
+      { id: '33', ingredient_id: '11', ingredient_name: 'Tomatoes (Roma)', quantity: 0.5, unit: 'lbs' },
+      { id: '34', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.25, unit: 'lbs' },
+    ]
+  },
+  {
+    id: '10',
+    name: 'Chicken Souvlaki',
+    category: 'Entree - Meat',
+    price: 23.00,
+    is_active: true,
+    recipe: [
+      { id: '35', ingredient_id: '4', ingredient_name: 'Chicken Thighs', quantity: 1.0, unit: 'lbs' },
+      { id: '36', ingredient_id: '18', ingredient_name: 'Olive Oil (EV)', quantity: 0.1, unit: 'liters' },
+      { id: '37', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.3, unit: 'lbs' },
+    ]
+  },
+  // Desserts
+  {
+    id: '11',
+    name: 'Baklava',
+    category: 'Dessert',
+    price: 10.00,
+    is_active: true,
+    recipe: [
+      { id: '38', ingredient_id: '15', ingredient_name: 'Phyllo Dough', quantity: 1.0, unit: 'lbs' },
+      { id: '39', ingredient_id: '25', ingredient_name: 'Walnuts', quantity: 0.5, unit: 'lbs' },
+      { id: '40', ingredient_id: '26', ingredient_name: 'Pistachios', quantity: 0.25, unit: 'lbs' },
+      { id: '41', ingredient_id: '24', ingredient_name: 'Honey', quantity: 0.75, unit: 'lbs' },
+    ]
+  },
+  {
+    id: '12',
+    name: 'Greek Yogurt with Honey',
+    category: 'Dessert',
+    price: 9.00,
+    is_active: true,
+    recipe: [
+      { id: '42', ingredient_id: '9', ingredient_name: 'Greek Yogurt', quantity: 0.5, unit: 'lbs' },
+      { id: '43', ingredient_id: '24', ingredient_name: 'Honey', quantity: 0.1, unit: 'lbs' },
+      { id: '44', ingredient_id: '25', ingredient_name: 'Walnuts', quantity: 0.1, unit: 'lbs' },
     ]
   },
 ]
 
-const categories = ['Appetizer', 'Main', 'Side', 'Dessert', 'Beverage']
+const categories = ['Appetizer', 'Salad', 'Soup', 'Entree - Seafood', 'Entree - Meat', 'Entree - Vegetarian', 'Dessert', 'Cocktail']
 
 export default function Dishes() {
   const [dishes, setDishes] = useState<Dish[]>([])
@@ -487,8 +632,8 @@ export default function Dishes() {
             <h2 className="font-semibold text-black dark:text-white mb-2">How This Feeds the AI Model</h2>
             <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
               Recipe quantities are multiplied by predicted dish sales to forecast ingredient demand.
-              For example, if we predict <span className="font-semibold text-red-600 dark:text-red-400">50 Salmon Bowls</span> will be sold tomorrow, the model calculates:
-              <span className="font-mono text-black dark:text-white mx-1">50 × 0.4 lbs = 20 lbs</span> of Salmon needed.
+              For example, if we predict <span className="font-semibold text-red-600 dark:text-red-400">50 Lamb Souvlaki</span> will be sold tomorrow, the model calculates:
+              <span className="font-mono text-black dark:text-white mx-1">50 × 1.25 lbs = 62.5 lbs</span> of Lamb Chops needed.
             </p>
           </div>
         </div>

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { getCuisineTemplate } from '../data/cuisineTemplates'
 import {
   getWeeklySummary, getMonthlyTrends, getSeasonalAnalysis,
-  getDayOfWeekAnalysis, getKpiSummary
+  getDayOfWeekAnalysis, getKpiSummary, checkApiHealth
 } from '../services/api'
 import {
   BarChart3, TrendingUp, TrendingDown, Calendar, DollarSign,
-  ShoppingBag, Clock, RefreshCw, ArrowUpRight, ArrowDownRight, Minus
+  ShoppingBag, Clock, RefreshCw, ArrowUpRight, ArrowDownRight, Minus,
+  Wifi, WifiOff
 } from 'lucide-react'
 
 interface KpiData {
@@ -25,10 +27,113 @@ interface KpiData {
   food_cost_pct: number
 }
 
+// Generate demo analytics data from cuisine template
+function generateDemoKpi(template: ReturnType<typeof getCuisineTemplate>, period: number): KpiData {
+  const dailyRevenue = template.dishes.reduce((sum, d) => sum + (d.price * d.orders_today), 0)
+  const totalOrders = template.dishes.reduce((sum, d) => sum + d.orders_today, 0)
+  const avgOrderValue = totalOrders > 0 ? dailyRevenue / totalOrders : 0
+  return {
+    total_revenue: dailyRevenue * period,
+    avg_daily_revenue: dailyRevenue,
+    total_orders: totalOrders * period,
+    avg_daily_orders: totalOrders,
+    avg_order_value: avgOrderValue,
+    total_tips: dailyRevenue * period * 0.18,
+    tip_rate: 18.0,
+    total_refunds: dailyRevenue * period * 0.012,
+    refund_rate: 1.2,
+    labor_cost: dailyRevenue * period * 0.30,
+    labor_cost_pct: 30.0,
+    food_cost: dailyRevenue * period * 0.32,
+    food_cost_pct: 32.0,
+  }
+}
+
+function generateDemoWeekly(template: ReturnType<typeof getCuisineTemplate>): any[] {
+  const baseRevenue = template.dishes.reduce((sum, d) => sum + (d.price * d.orders_7d), 0)
+  const baseOrders = template.dishes.reduce((sum, d) => sum + d.orders_7d, 0)
+  const weeks = []
+  for (let i = 7; i >= 0; i--) {
+    const date = new Date()
+    date.setDate(date.getDate() - i * 7)
+    const weekStr = `Week of ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    const variance = 0.85 + Math.random() * 0.30
+    const revenue = baseRevenue * variance
+    const orders = Math.round(baseOrders * variance)
+    weeks.push({
+      week: weekStr,
+      revenue,
+      orders,
+      avg_daily_revenue: revenue / 7,
+      avg_order_value: orders > 0 ? revenue / orders : 0,
+      tips: revenue * 0.18,
+      days_recorded: 7,
+    })
+  }
+  return weeks
+}
+
+function generateDemoMonthly(template: ReturnType<typeof getCuisineTemplate>): any[] {
+  const baseRevenue = template.dishes.reduce((sum, d) => sum + (d.price * d.orders_7d), 0) * 4.3
+  const baseOrders = template.dishes.reduce((sum, d) => sum + d.orders_7d, 0) * 4.3
+  const months = []
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+  const seasonalMultipliers = [0.85, 0.88, 0.95, 1.05, 1.12, 1.18]
+  for (let i = 0; i < 6; i++) {
+    const revenue = baseRevenue * seasonalMultipliers[i]
+    const orders = Math.round(baseOrders * seasonalMultipliers[i])
+    const prevRevenue = i > 0 ? baseRevenue * seasonalMultipliers[i - 1] : revenue
+    const changePct = ((revenue - prevRevenue) / prevRevenue * 100)
+    months.push({
+      month: monthNames[i],
+      revenue,
+      orders,
+      avg_daily_revenue: revenue / 30,
+      labor_cost: revenue * 0.30,
+      food_cost: revenue * 0.32,
+      trend: i === 0 ? 'baseline' : changePct > 0 ? 'up' : changePct < 0 ? 'down' : 'flat',
+      revenue_change_pct: Math.round(changePct * 10) / 10,
+    })
+  }
+  return months
+}
+
+function generateDemoSeasonal(template: ReturnType<typeof getCuisineTemplate>): Record<string, any> {
+  const baseRevenue = template.dishes.reduce((sum, d) => sum + (d.price * d.orders_7d), 0) * 13
+  const baseOrders = template.dishes.reduce((sum, d) => sum + d.orders_7d, 0) * 13
+  return {
+    spring: { revenue: baseRevenue * 1.0, avg_daily_revenue: baseRevenue * 1.0 / 90, orders: Math.round(baseOrders * 1.0), avg_orders_per_day: Math.round(baseOrders * 1.0 / 90), days: 90 },
+    summer: { revenue: baseRevenue * 1.2, avg_daily_revenue: baseRevenue * 1.2 / 90, orders: Math.round(baseOrders * 1.2), avg_orders_per_day: Math.round(baseOrders * 1.2 / 90), days: 90 },
+    fall: { revenue: baseRevenue * 0.95, avg_daily_revenue: baseRevenue * 0.95 / 90, orders: Math.round(baseOrders * 0.95), avg_orders_per_day: Math.round(baseOrders * 0.95 / 90), days: 90 },
+    winter: { revenue: baseRevenue * 0.85, avg_daily_revenue: baseRevenue * 0.85 / 90, orders: Math.round(baseOrders * 0.85), avg_orders_per_day: Math.round(baseOrders * 0.85 / 90), days: 90 },
+  }
+}
+
+function generateDemoDow(template: ReturnType<typeof getCuisineTemplate>): any[] {
+  const baseRevenue = template.dishes.reduce((sum, d) => sum + (d.price * d.orders_today), 0)
+  const baseOrders = template.dishes.reduce((sum, d) => sum + d.orders_today, 0)
+  const dayMultipliers = [0.75, 0.80, 0.85, 0.95, 1.25, 1.40, 1.00]
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  return dayNames.map((day, i) => {
+    const revenue = baseRevenue * dayMultipliers[i] * 12
+    const orders = Math.round(baseOrders * dayMultipliers[i] * 12)
+    return {
+      day,
+      revenue,
+      avg_revenue: revenue / 12,
+      orders,
+      avg_orders: Math.round(orders / 12),
+      count: 12,
+    }
+  })
+}
+
 export default function TimelineAnalytics() {
-  const { restaurantId, restaurantName } = useAuth()
+  const { restaurantId, restaurantName, cuisineType } = useAuth()
+  const template = getCuisineTemplate(cuisineType)
   const [activeTab, setActiveTab] = useState<'kpi' | 'weekly' | 'monthly' | 'seasonal' | 'dow'>('kpi')
   const [loading, setLoading] = useState(true)
+  const [apiConnected, setApiConnected] = useState<boolean | null>(null)
   const [kpi, setKpi] = useState<KpiData | null>(null)
   const [hasData, setHasData] = useState(false)
   const [weekly, setWeekly] = useState<any[]>([])
@@ -38,44 +143,77 @@ export default function TimelineAnalytics() {
   const [period, setPeriod] = useState(30)
 
   useEffect(() => {
-    if (restaurantId) loadData()
+    loadData()
   }, [restaurantId, activeTab, period])
 
   const loadData = async () => {
     setLoading(true)
     try {
-      switch (activeTab) {
-        case 'kpi': {
-          const data = await getKpiSummary(restaurantId!, period)
-          setHasData(data.has_data)
-          setKpi(data.kpi || null)
-          break
+      const connected = await checkApiHealth()
+      setApiConnected(connected)
+
+      if (connected && restaurantId) {
+        try {
+          switch (activeTab) {
+            case 'kpi': {
+              const data = await getKpiSummary(restaurantId, period)
+              setHasData(data.has_data)
+              setKpi(data.kpi || null)
+              break
+            }
+            case 'weekly': {
+              const data = await getWeeklySummary(restaurantId, 8)
+              setWeekly(data.weekly || [])
+              break
+            }
+            case 'monthly': {
+              const data = await getMonthlyTrends(restaurantId, 6)
+              setMonthly(data.monthly || [])
+              break
+            }
+            case 'seasonal': {
+              const data = await getSeasonalAnalysis(restaurantId)
+              setSeasonal(data.seasons || {})
+              break
+            }
+            case 'dow': {
+              const data = await getDayOfWeekAnalysis(restaurantId, 12)
+              setDow(data.days || [])
+              break
+            }
+          }
+        } catch {
+          loadDemoData()
         }
-        case 'weekly': {
-          const data = await getWeeklySummary(restaurantId!, 8)
-          setWeekly(data.weekly || [])
-          break
-        }
-        case 'monthly': {
-          const data = await getMonthlyTrends(restaurantId!, 6)
-          setMonthly(data.monthly || [])
-          break
-        }
-        case 'seasonal': {
-          const data = await getSeasonalAnalysis(restaurantId!)
-          setSeasonal(data.seasons || {})
-          break
-        }
-        case 'dow': {
-          const data = await getDayOfWeekAnalysis(restaurantId!, 12)
-          setDow(data.days || [])
-          break
-        }
+      } else {
+        loadDemoData()
       }
-    } catch (err) {
-      console.error('Failed to load analytics:', err)
+    } catch {
+      loadDemoData()
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadDemoData = () => {
+    setApiConnected(false)
+    switch (activeTab) {
+      case 'kpi':
+        setKpi(generateDemoKpi(template, period))
+        setHasData(true)
+        break
+      case 'weekly':
+        setWeekly(generateDemoWeekly(template))
+        break
+      case 'monthly':
+        setMonthly(generateDemoMonthly(template))
+        break
+      case 'seasonal':
+        setSeasonal(generateDemoSeasonal(template))
+        break
+      case 'dow':
+        setDow(generateDemoDow(template))
+        break
     }
   }
 
@@ -93,14 +231,26 @@ export default function TimelineAnalytics() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <BarChart3 className="w-7 h-7 text-indigo-500" />
-          Timeline Analytics
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Performance tracking for {restaurantName}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <BarChart3 className="w-7 h-7 text-indigo-500" />
+            Timeline Analytics
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Performance tracking for {restaurantName}
+          </p>
+        </div>
+        {apiConnected !== null && (
+          <span className={`flex items-center space-x-1 text-xs px-2.5 py-1 rounded-full font-medium ${
+            apiConnected
+              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+              : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+          }`}>
+            {apiConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+            <span>{apiConnected ? 'Live' : 'Demo'}</span>
+          </span>
+        )}
       </div>
 
       {/* Tabs */}

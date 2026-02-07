@@ -161,9 +161,7 @@ export default function Login() {
 
         <div className="relative z-10">
           <div className="flex items-center space-x-3 mb-2">
-            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-black/20">
-              <span className="text-red-600 font-mono text-xl font-bold">W</span>
-            </div>
+            <img src="/wdym86.jpg" alt="wdym86" className="w-12 h-12 rounded-xl shadow-lg shadow-black/20 object-cover" />
             <div>
               <span className="text-white text-2xl font-bold">wdym86</span>
               <div className="flex items-center space-x-2 mt-0.5">
@@ -233,9 +231,7 @@ export default function Login() {
           {/* Mobile Logo */}
           <div className="text-center mb-8 lg:hidden">
             <div className="relative w-16 h-16 mx-auto mb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/30">
-                <span className="text-white font-mono text-2xl font-bold">W</span>
-              </div>
+              <img src="/wdym86.jpg" alt="wdym86" className="w-16 h-16 rounded-2xl shadow-lg shadow-red-500/30 object-cover" />
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-pulse" />
             </div>
             <h1 className="text-2xl font-bold text-black dark:text-white">wdym86</h1>

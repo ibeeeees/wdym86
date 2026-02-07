@@ -263,9 +263,7 @@ export default function Layout({ children }: LayoutProps) {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 group outline-none">
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:shadow-primary-500/40 group-hover:scale-105 transition-all duration-300">
-                  <span className="text-white font-display text-lg font-bold">W</span>
-                </div>
+                <img src="/wdym86.jpg" alt="wdym86" className="w-10 h-10 rounded-xl shadow-lg shadow-primary-500/20 group-hover:shadow-primary-500/40 group-hover:scale-105 transition-all duration-300 object-cover" />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full animate-pulse-glow box-shadow-glow" />
               </div>
               <div className="hidden sm:flex flex-col">

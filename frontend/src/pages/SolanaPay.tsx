@@ -147,17 +147,17 @@ export default function SolanaPay() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-black dark:text-white flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-white" />
-            </div>
-            <span>Solana Pay</span>
-          </h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-            Accept cryptocurrency payments with Solana Pay
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+            <Wallet className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-black dark:text-white">Crypto Pay</h1>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+              Accept Solana payments at Mykonos
+            </p>
+          </div>
         </div>
         <div className="flex items-center space-x-3">
           <div className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 px-4 py-2 rounded-xl">
@@ -173,25 +173,28 @@ export default function SolanaPay() {
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-2 border-b border-neutral-200 dark:border-neutral-700">
+      <div className="flex space-x-1 sm:space-x-2 border-b border-neutral-200 dark:border-neutral-700 overflow-x-auto">
         {[
-          { id: 'create', label: 'Create Payment', icon: QrCode },
-          { id: 'history', label: 'Payment History', icon: Clock },
-          { id: 'convert', label: 'Convert', icon: ArrowRightLeft }
+          { id: 'create', label: 'Create', fullLabel: 'Create Payment', icon: QrCode },
+          { id: 'history', label: 'History', fullLabel: 'Payment History', icon: Clock },
+          { id: 'convert', label: 'Convert', fullLabel: 'Convert', icon: ArrowRightLeft }
         ].map(tab => {
           const Icon = tab.icon
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex items-center space-x-2 px-4 py-3 border-b-2 transition-all ${
+              className={`flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-3 border-b-2 transition-all whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'border-red-500 text-red-600 dark:text-red-400'
+                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
                   : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
               }`}
             >
               <Icon className="w-4 h-4" />
-              <span className="font-medium">{tab.label}</span>
+              <span className="font-medium text-sm sm:text-base">
+                <span className="sm:hidden">{tab.label}</span>
+                <span className="hidden sm:inline">{tab.fullLabel}</span>
+              </span>
             </button>
           )
         })}
@@ -199,9 +202,9 @@ export default function SolanaPay() {
 
       {/* Create Payment Tab */}
       {activeTab === 'create' && (
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
           {/* Payment Form */}
-          <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-6">
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-5 sm:p-6">
             <h2 className="text-lg font-bold text-black dark:text-white mb-4">Create Payment Request</h2>
 
             <div className="space-y-4">
@@ -270,7 +273,7 @@ export default function SolanaPay() {
           </div>
 
           {/* QR Code Display */}
-          <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-6">
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-5 sm:p-6">
             {currentPayment ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -281,11 +284,11 @@ export default function SolanaPay() {
                 </div>
 
                 {/* Simulated QR Code */}
-                <div className="bg-white p-6 rounded-xl flex items-center justify-center">
-                  <div className="w-48 h-48 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-lg flex items-center justify-center border-4 border-purple-500">
+                <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-4 sm:p-6 rounded-xl flex items-center justify-center">
+                  <div className="w-40 h-40 sm:w-48 sm:h-48 bg-white dark:bg-neutral-800 rounded-xl flex items-center justify-center border-4 border-purple-500 shadow-lg shadow-purple-500/20">
                     <div className="text-center">
-                      <QrCode className="w-16 h-16 text-neutral-400 mx-auto mb-2" />
-                      <p className="text-xs text-neutral-500">Scan with Solana wallet</p>
+                      <QrCode className="w-12 h-12 sm:w-16 sm:h-16 text-purple-500 mx-auto mb-2" />
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Scan with Solana wallet</p>
                     </div>
                   </div>
                 </div>
@@ -330,14 +333,14 @@ export default function SolanaPay() {
                 </button>
               </div>
             ) : (
-              <div className="h-full flex items-center justify-center text-center py-12">
+              <div className="h-full flex items-center justify-center text-center py-8 sm:py-12">
                 <div>
-                  <div className="w-20 h-20 bg-neutral-100 dark:bg-neutral-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <QrCode className="w-10 h-10 text-neutral-400" />
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <QrCode className="w-8 h-8 sm:w-10 sm:h-10 text-purple-500" />
                   </div>
                   <h3 className="font-semibold text-black dark:text-white mb-2">No Payment Created</h3>
-                  <p className="text-sm text-neutral-500">
-                    Fill out the form to generate a Solana Pay QR code
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Fill out the form to generate a QR code
                   </p>
                 </div>
               </div>
@@ -349,13 +352,16 @@ export default function SolanaPay() {
       {/* History Tab */}
       {activeTab === 'history' && (
         <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
-          <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
+          <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-neutral-700">
             <h2 className="font-bold text-black dark:text-white">Payment History</h2>
           </div>
           {payments.length === 0 ? (
-            <div className="p-12 text-center">
-              <Clock className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
-              <p className="text-neutral-500">No payments yet</p>
+            <div className="p-8 sm:p-12 text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-8 h-8 text-purple-500" />
+              </div>
+              <p className="text-neutral-500 dark:text-neutral-400">No payments yet</p>
+              <p className="text-xs text-neutral-400 mt-1">Create a payment to get started</p>
             </div>
           ) : (
             <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
@@ -389,8 +395,13 @@ export default function SolanaPay() {
 
       {/* Convert Tab */}
       {activeTab === 'convert' && (
-        <div className="max-w-md mx-auto bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-6">
-          <h2 className="text-lg font-bold text-black dark:text-white mb-4 text-center">Currency Converter</h2>
+        <div className="max-w-md mx-auto bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-5 sm:p-6">
+          <div className="flex items-center justify-center space-x-2 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+              <ArrowRightLeft className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-lg font-bold text-black dark:text-white">Currency Converter</h2>
+          </div>
 
           <div className="space-y-4">
             <div>
@@ -421,11 +432,11 @@ export default function SolanaPay() {
               </button>
             </div>
 
-            <div className="text-center py-4">
-              <p className="text-sm text-neutral-500 mb-2">
+            <div className="text-center py-4 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl mb-4">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">
                 {convertDirection === 'usd_to_sol' ? 'USD → SOL' : 'SOL → USD'}
               </p>
-              <p className="text-3xl font-bold text-black dark:text-white">
+              <p className="text-3xl font-bold text-black dark:text-white font-mono">
                 {convertResult !== null ? (
                   <>
                     {convertDirection === 'usd_to_sol' ? (
@@ -438,15 +449,15 @@ export default function SolanaPay() {
                   '—'
                 )}
               </p>
-              <p className="text-sm text-neutral-500 mt-2">
-                1 SOL = ${solPrice.toFixed(2)}
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
+                1 SOL = ${solPrice.toFixed(2)} USD
               </p>
             </div>
 
             <button
               onClick={convertCurrency}
               disabled={!convertAmount}
-              className="w-full py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold rounded-xl transition-all disabled:opacity-50"
+              className="w-full py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/30 hover:scale-[1.02]"
             >
               Convert
             </button>

@@ -79,34 +79,34 @@ export default function Downloads() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Hero */}
-      <div className="text-center py-8">
-        <div className="relative w-20 h-20 mx-auto mb-6">
-          <div className="w-20 h-20 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-3xl flex items-center justify-center shadow-2xl shadow-red-500/30">
-            <Download className="w-10 h-10 text-white" />
+      <div className="text-center py-6 sm:py-8">
+        <div className="relative w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-2xl shadow-red-500/30">
+            <Download className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
           </div>
-          <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse">
-            <span className="text-white text-xs font-bold">M</span>
+          <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse">
+            <span className="text-white text-[10px] sm:text-xs font-bold">M</span>
           </div>
         </div>
-        <h1 className="text-3xl font-bold text-black dark:text-white mb-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-black dark:text-white mb-2 sm:mb-3">
           Download Mykonos
         </h1>
-        <p className="text-neutral-500 dark:text-neutral-400 max-w-xl mx-auto">
+        <p className="text-neutral-500 dark:text-neutral-400 max-w-xl mx-auto text-sm sm:text-base px-4">
           Get the full power of AI-driven inventory intelligence for your Mediterranean restaurant.
           Works offline with automatic cloud sync.
         </p>
       </div>
 
       {/* Download Options */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
         {downloadOptions.map((option) => {
           const Icon = option.icon
           return (
             <div
               key={option.platform}
-              className={`relative bg-white dark:bg-neutral-800 rounded-2xl border-2 p-6 transition-all ${
+              className={`relative bg-white dark:bg-neutral-800 rounded-2xl border-2 p-4 sm:p-6 transition-all ${
                 option.available
                   ? 'border-neutral-200 dark:border-neutral-700 hover:border-red-500 dark:hover:border-red-500 hover:shadow-xl hover:shadow-red-500/10'
                   : 'border-neutral-200 dark:border-neutral-700 opacity-75'

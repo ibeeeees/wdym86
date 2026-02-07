@@ -80,13 +80,16 @@ export default function Pricing() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-black dark:text-white">
+        <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/30">
+          <Crown className="w-7 h-7 text-white" />
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-black dark:text-white">
           Choose Your Plan
         </h1>
-        <p className="text-neutral-500 dark:text-neutral-400 mt-2 max-w-2xl mx-auto">
+        <p className="text-neutral-500 dark:text-neutral-400 mt-2 max-w-2xl mx-auto text-sm sm:text-base px-4">
           Scale your restaurant's inventory intelligence with the right features for your business
         </p>
 
@@ -117,7 +120,7 @@ export default function Pricing() {
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {tiers.map((tier) => {
           const Icon = tier.icon
           const price = billingCycle === 'monthly' ? tier.priceMonthly : Math.round(tier.priceYearly / 12)

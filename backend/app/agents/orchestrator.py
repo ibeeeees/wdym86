@@ -13,6 +13,8 @@ for the Gemini explanation layer.
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import json
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 from .inventory_risk import InventoryRiskAgent, RiskLevel
 from .reorder_opt import ReorderOptimizationAgent, ReorderUrgency
@@ -367,6 +369,169 @@ def run_demo_pipeline() -> Dict[str, Any]:
     )
 
     return results
+
+
+class ParallelAgentRunner:
+    """
+    Runs agent pipelines for multiple ingredients in parallel
+
+    Uses ThreadPoolExecutor for CPU-bound agent computations.
+    """
+
+    def __init__(self, max_workers: int = 4, service_level: float = 0.95):
+        self.max_workers = max_workers
+        self.service_level = service_level
+
+    def run_parallel(
+        self,
+        ingredients_data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Run pipelines for multiple ingredients in parallel
+
+        Args:
+            ingredients_data: List of dicts, each containing:
+                - ingredient: Dict with ingredient info
+                - forecasts: List of forecast dicts
+                - inventory: Current inventory
+                - supplier: Primary supplier
+                - alternative_suppliers: Optional list
+                - disruption_signals: Optional dict
+
+        Returns:
+            List of pipeline results for each ingredient
+        """
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            for data in ingredients_data:
+                future = executor.submit(self._run_single_pipeline, data)
+                futures.append(future)
+
+            results = []
+            for future in futures:
+                try:
+                    result = future.result(timeout=30)
+                    results.append(result)
+                except Exception as e:
+                    results.append({'error': str(e)})
+
+        return results
+
+    async def run_parallel_async(
+        self,
+        ingredients_data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Async version of parallel runner"""
+        loop = asyncio.get_event_loop()
+
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            tasks = [
+                loop.run_in_executor(executor, self._run_single_pipeline, data)
+                for data in ingredients_data
+            ]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Convert exceptions to error dicts
+        return [
+            r if not isinstance(r, Exception) else {'error': str(r)}
+            for r in results
+        ]
+
+    def _run_single_pipeline(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Run a single pipeline"""
+        orchestrator = AgentOrchestrator(service_level=self.service_level)
+
+        return orchestrator.run_pipeline(
+            ingredient=data.get('ingredient', {}),
+            forecasts=data.get('forecasts', []),
+            inventory=data.get('inventory', 0),
+            supplier=data.get('supplier', {}),
+            alternative_suppliers=data.get('alternative_suppliers', []),
+            disruption_signals=data.get('disruption_signals', {}),
+            storage_capacity=data.get('storage_capacity', float('inf')),
+            budget=data.get('budget', float('inf'))
+        )
+
+    def analyze_portfolio(
+        self,
+        results: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Analyze results across all ingredients
+
+        Provides portfolio-level insights:
+        - Overall risk distribution
+        - Total reorder recommendations
+        - Budget impact
+        - Priority ranking
+        """
+        total = len(results)
+        successful = [r for r in results if 'error' not in r]
+
+        risk_counts = {'CRITICAL': 0, 'URGENT': 0, 'MONITOR': 0, 'SAFE': 0}
+        total_reorder_cost = 0
+        reorder_items = []
+
+        for result in successful:
+            summary = result.get('summary', {})
+            risk_level = summary.get('risk_level', 'SAFE')
+            risk_counts[risk_level] = risk_counts.get(risk_level, 0) + 1
+
+            if summary.get('should_reorder'):
+                reorder_items.append({
+                    'ingredient': result.get('ingredient', {}).get('name'),
+                    'quantity': summary.get('reorder_quantity', 0),
+                    'urgency': summary.get('reorder_urgency', 'none')
+                })
+
+        # Priority ranking
+        priority_order = []
+        for result in successful:
+            summary = result.get('summary', {})
+            priority_score = self._compute_priority_score(summary)
+            priority_order.append({
+                'ingredient': result.get('ingredient', {}).get('name'),
+                'risk_level': summary.get('risk_level'),
+                'priority_score': priority_score,
+                'action_items': summary.get('action_items', [])
+            })
+
+        priority_order.sort(key=lambda x: x['priority_score'], reverse=True)
+
+        return {
+            'total_ingredients': total,
+            'analyzed': len(successful),
+            'errors': total - len(successful),
+            'risk_distribution': risk_counts,
+            'reorder_recommendations': len(reorder_items),
+            'reorder_items': reorder_items,
+            'priority_ranking': priority_order[:10],  # Top 10
+            'requires_immediate_action': risk_counts.get('CRITICAL', 0) + risk_counts.get('URGENT', 0)
+        }
+
+    def _compute_priority_score(self, summary: Dict[str, Any]) -> float:
+        """Compute priority score for ranking"""
+        score = 0.0
+
+        # Risk level contribution
+        risk_scores = {'CRITICAL': 100, 'URGENT': 75, 'MONITOR': 25, 'SAFE': 0}
+        score += risk_scores.get(summary.get('risk_level', 'SAFE'), 0)
+
+        # Stockout probability
+        score += summary.get('stockout_probability', 0) * 50
+
+        # Days of cover (lower = higher priority)
+        days = summary.get('days_of_cover', 30)
+        if days < 3:
+            score += 30
+        elif days < 7:
+            score += 10
+
+        # Reorder urgency
+        urgency_scores = {'critical': 40, 'high': 20, 'medium': 10, 'low': 0}
+        score += urgency_scores.get(summary.get('reorder_urgency', 'low'), 0)
+
+        return score
 
 
 if __name__ == '__main__':

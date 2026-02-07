@@ -29,6 +29,7 @@ async def run_agent_pipeline(
     weather_risk: float = Query(default=0, ge=0, le=1, description="Weather severity 0-1"),
     traffic_risk: float = Query(default=0, ge=0, le=1, description="Traffic congestion 0-1"),
     hazard_flag: bool = Query(default=False, description="Natural hazard alert"),
+    service_level: float = Query(default=0.95, ge=0.5, le=0.999, description="Target service level 0.5-0.999"),
     current_user: UserDB = Depends(get_current_user),
     db: AsyncSession = Depends(get_session)
 ):
@@ -109,8 +110,8 @@ async def run_agent_pipeline(
         'hazard_flag': hazard_flag
     }
 
-    # Run the agent pipeline
-    orchestrator = AgentOrchestrator()
+    # Run the agent pipeline with configured service level
+    orchestrator = AgentOrchestrator(service_level=service_level)
     pipeline_result = orchestrator.run_pipeline(
         ingredient=ingredient_dict,
         forecasts=forecasts,

@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 
 from .config import settings
 from .database import init_db
+from .data.seed import seed_database
 from .routers import (
     auth_router,
     restaurants_router,
@@ -18,7 +19,9 @@ from .routers import (
     inventory_router,
     forecasts_router,
     agents_router,
-    gemini_router
+    gemini_router,
+    dishes_router,
+    events_router
 )
 
 
@@ -27,6 +30,8 @@ async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
     await init_db()
+    # Seed demo data if database is empty
+    await seed_database(force=False)
     yield
     # Shutdown
     pass
@@ -70,6 +75,8 @@ app.include_router(inventory_router, prefix="/inventory", tags=["Inventory"])
 app.include_router(forecasts_router, prefix="/forecasts", tags=["Forecasts"])
 app.include_router(agents_router, prefix="/agents", tags=["AI Agents"])
 app.include_router(gemini_router, prefix="/gemini", tags=["Gemini"])
+app.include_router(dishes_router, prefix="/dishes", tags=["Dishes"])
+app.include_router(events_router, prefix="/events", tags=["Events & Disruptions"])
 
 
 @app.get("/")

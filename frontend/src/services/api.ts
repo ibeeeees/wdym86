@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const API_BASE = '/api'
+// Use environment variable or default to localhost for development
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -84,10 +85,11 @@ export const getForecasts = async (ingredientId: string) => {
 // Agents
 export const runAgentPipeline = async (
   ingredientId: string,
-  disruption?: { weather_risk?: number; traffic_risk?: number; hazard_flag?: boolean }
+  disruption?: { weather_risk?: number; traffic_risk?: number; hazard_flag?: boolean },
+  serviceLevel?: number
 ) => {
   const response = await api.post(`/agents/${ingredientId}/run`, null, {
-    params: disruption
+    params: { ...disruption, service_level: serviceLevel }
   })
   return response.data
 }
@@ -128,6 +130,100 @@ export const getDailySummary = async (restaurantId: string) => {
     params: { restaurant_id: restaurantId }
   })
   return response.data
+}
+
+// Suppliers
+export const getSuppliers = async (restaurantId: string) => {
+  const response = await api.get('/suppliers', {
+    params: { restaurant_id: restaurantId }
+  })
+  return response.data
+}
+
+export const getSupplier = async (supplierId: string) => {
+  const response = await api.get(`/suppliers/${supplierId}`)
+  return response.data
+}
+
+// Dishes
+export const getDishes = async (restaurantId: string) => {
+  const response = await api.get('/dishes', {
+    params: { restaurant_id: restaurantId }
+  })
+  return response.data
+}
+
+export const createDish = async (dish: {
+  restaurant_id: string
+  name: string
+  category: string
+  price: number
+}) => {
+  const response = await api.post('/dishes', dish)
+  return response.data
+}
+
+// Inventory
+export const updateInventory = async (ingredientId: string, quantity: number) => {
+  const response = await api.post(`/inventory/${ingredientId}`, null, {
+    params: { quantity }
+  })
+  return response.data
+}
+
+export const getInventoryHistory = async (ingredientId: string, days: number = 30) => {
+  const response = await api.get(`/inventory/${ingredientId}/history`, {
+    params: { days }
+  })
+  return response.data
+}
+
+// Events & Disruptions
+export const getActiveEvents = async () => {
+  const response = await api.get('/events/active')
+  return response.data
+}
+
+export const simulateEvents = async (numEvents: number = 2) => {
+  const response = await api.post('/events/simulate', { num_events: numEvents })
+  return response.data
+}
+
+export const getDisruptionSignals = async () => {
+  const response = await api.get('/events/disruption-signals')
+  return response.data
+}
+
+export const clearEvents = async () => {
+  const response = await api.delete('/events/clear')
+  return response.data
+}
+
+export const getEventScenarios = async () => {
+  const response = await api.get('/events/scenarios')
+  return response.data
+}
+
+export const createRestaurantEvent = async (event: {
+  name: string
+  event_type: string
+  start_date: string
+  duration_days: number
+  expected_demand_impact: number
+  notes?: string
+}) => {
+  const response = await api.post('/events/restaurant-event', event)
+  return response.data
+}
+
+// Helper to check if API is available (for demo mode fallback)
+export const checkApiHealth = async (): Promise<boolean> => {
+  try {
+    await api.get('/health')
+    return true
+  } catch {
+    return false
+  }
 }
 
 export default api

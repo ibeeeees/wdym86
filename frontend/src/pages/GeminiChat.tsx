@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, RotateCcw } from 'lucide-react'
+import { Send, RotateCcw, Wifi, WifiOff, AlertTriangle, TrendingDown } from 'lucide-react'
+import { chatWithAdvisor, checkApiHealth, getIngredients } from '../services/api'
 
 interface Message {
   id: string
@@ -15,6 +16,7 @@ const suggestedQuestions = [
   "How do dish recipes affect demand?",
 ]
 
+// Fallback responses when API is unavailable
 const demoResponses: Record<string, string> = {
   "Why is Chicken Breast showing urgent risk?": `Chicken Breast is showing urgent risk due to several factors:
 
@@ -99,6 +101,12 @@ This "build-up" approach is more accurate than forecasting ingredients directly 
 You can manage recipes in the Dishes tab.`
 }
 
+interface InventoryContext {
+  name: string
+  risk_level: string
+  days_of_cover: number
+}
+
 export default function GeminiChat() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -109,7 +117,42 @@ export default function GeminiChat() {
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [apiConnected, setApiConnected] = useState<boolean | null>(null)
+  const [sessionId] = useState(() => `session-${Date.now()}`)
+  const [inventoryContext, setInventoryContext] = useState<InventoryContext[]>([])
+  const [showContext, setShowContext] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const init = async () => {
+      const connected = await checkApiHealth()
+      setApiConnected(connected)
+
+      // Fetch current inventory context
+      try {
+        const data = await getIngredients('demo-restaurant-id')
+        if (data) {
+          setInventoryContext(
+            data
+              .filter((i: any) => i.risk_level === 'CRITICAL' || i.risk_level === 'URGENT')
+              .slice(0, 4)
+              .map((i: any) => ({
+                name: i.name,
+                risk_level: i.risk_level,
+                days_of_cover: i.days_of_cover || 0
+              }))
+          )
+        }
+      } catch {
+        // Demo fallback
+        setInventoryContext([
+          { name: 'Salmon Fillet', risk_level: 'CRITICAL', days_of_cover: 1 },
+          { name: 'Chicken Breast', risk_level: 'URGENT', days_of_cover: 2 },
+        ])
+      }
+    }
+    init()
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -132,19 +175,35 @@ export default function GeminiChat() {
     setInput('')
     setLoading(true)
 
-    setTimeout(() => {
+    try {
+      // Try to call the API first
+      const result = await chatWithAdvisor(text, sessionId)
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: result.response || result.message || 'I understand your question. Let me analyze the current inventory data and agent decisions to provide you with a helpful response.',
+      }
+      setMessages(prev => [...prev, assistantMessage])
+    } catch {
+      // Fallback to demo responses
       const response = demoResponses[text] ||
-        `I understand you're asking about "${text}". Based on the current agent analysis, I can help you with this. The forecasting model shows stable demand patterns, and the autonomous agents are monitoring all risk factors. Would you like me to explain any specific aspect?`
+        `I understand you're asking about "${text}". Based on the current agent analysis:
+
+• The forecasting model is continuously monitoring demand patterns
+• Risk agents are evaluating stockout probabilities for all ingredients
+• Reorder agents are calculating optimal order quantities
+
+Would you like me to explain any specific aspect of the inventory analysis?`
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response,
       }
-
       setMessages(prev => [...prev, assistantMessage])
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -159,7 +218,19 @@ export default function GeminiChat() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-black dark:text-white">AI Advisor</h1>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-2xl font-semibold text-black dark:text-white">AI Advisor</h1>
+            {apiConnected !== null && (
+              <span className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${
+                apiConnected
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+              }`}>
+                {apiConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                <span>{apiConnected ? 'Gemini' : 'Demo'}</span>
+              </span>
+            )}
+          </div>
           <p className="text-neutral-500 dark:text-neutral-400 text-sm">Powered by Google Gemini</p>
         </div>
         <button
@@ -170,6 +241,41 @@ export default function GeminiChat() {
           <span>Clear</span>
         </button>
       </div>
+
+      {/* Context Panel */}
+      {showContext && inventoryContext.length > 0 && (
+        <div className="mb-4 p-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span className="text-xs font-medium text-amber-800 dark:text-amber-300">Current Inventory Alerts</span>
+            </div>
+            <button
+              onClick={() => setShowContext(false)}
+              className="text-xs text-amber-600 dark:text-amber-400 hover:underline"
+            >
+              Hide
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {inventoryContext.map((item, i) => (
+              <button
+                key={i}
+                onClick={() => handleSend(`Why is ${item.name} at ${item.risk_level} risk?`)}
+                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  item.risk_level === 'CRITICAL'
+                    ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900'
+                    : 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900'
+                }`}
+              >
+                <TrendingDown className="w-3 h-3" />
+                <span>{item.name}</span>
+                <span className="opacity-70">({item.days_of_cover}d)</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 space-y-4 bg-white dark:bg-neutral-800">
@@ -208,7 +314,7 @@ export default function GeminiChat() {
       {/* Suggestions */}
       {messages.length <= 2 && (
         <div className="mt-4">
-          <p className="text-xs text-neutral-400 mb-2">Suggested</p>
+          <p className="text-xs text-neutral-400 mb-2">Suggested questions</p>
           <div className="flex flex-wrap gap-2">
             {suggestedQuestions.map((question, i) => (
               <button

@@ -161,7 +161,7 @@ export default function GeminiChat() {
   // Call Gemini directly from frontend when backend is unavailable
   const callGeminiFrontend = async (userMessage: string): Promise<string> => {
     if (!geminiClient) {
-      return "I'm having trouble connecting to the AI service. Please check your configuration and try again."
+      return "Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your .env file and restart the dev server."
     }
 
     try {
@@ -194,7 +194,7 @@ export default function GeminiChat() {
     } catch (error: any) {
       // If chat session errored, reset it for next attempt
       geminiChatRef.current = null
-      return `I'm having trouble connecting right now. Please try again in a moment. (${error?.message || 'Connection error'})`
+      return `Gemini API error: ${error?.message || 'Connection failed'}. Check that your VITE_GEMINI_API_KEY is valid.`
     }
   }
 

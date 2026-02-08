@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 
 import { getSuppliers, checkApiHealth } from '../services/api'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
 import { useAuth } from '../context/AuthContext'
+import AiInsightCard from '../components/AiInsightCard'
 
 const getSupplierGradient = (score: number) => {
   if (score >= 0.95) return 'from-emerald-400 to-green-500'
@@ -303,6 +304,9 @@ export default function Suppliers() {
               <p className="text-3xl font-bold text-black dark:text-white font-mono"><span className="text-xl">$</span>{(suppliers.reduce((sum, s) => sum + s.shipping_cost, 0) / suppliers.length || 0).toFixed(0)}</p>
             </div>
           </div>
+
+          {/* Procurement AI */}
+          <AiInsightCard type="procurement" />
 
           {/* Charts */}
           <div className="grid grid-cols-2 gap-4">

@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '../components/Layout'
+import AiInsightCard from '../components/AiInsightCard'
 
 interface Ingredient {
   id: string
@@ -506,6 +507,9 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* AI Insights */}
+      <AiInsightCard type="dashboard" />
 
       {/* Disruption Intelligence */}
       {disruptionForecast && disruptionForecast.disruptions.length > 0 && (

@@ -4,6 +4,7 @@ import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 import { getDishes, getIngredients, checkApiHealth } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
+import AiInsightCard from '../components/AiInsightCard'
 
 // Category icon mapping - Mediterranean themed (Lucide icons)
 const categoryIcons: Record<string, typeof Leaf> = {
@@ -392,6 +393,9 @@ export default function Dishes() {
           <p className="text-3xl font-bold text-black dark:text-white font-mono">${totalRevenue7d.toLocaleString()}</p>
         </div>
       </div>
+
+      {/* Menu Intelligence */}
+      <AiInsightCard type="menu" />
 
       {/* Top Sellers Leaderboard */}
       <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 border border-neutral-200 dark:border-neutral-700">

@@ -1,8 +1,8 @@
 # WDYM86 - AI-Powered Restaurant Intelligence Platform
 
-> **Ground-Up NumPy TCN** | **Google Gemini 3.0 AI Agents** | **NCR Voyix BSP Integration** | **Check-First POS + BOHPOS**
+> **Ground-Up NumPy TCN** | **Google Gemini 2.5 AI Agents** | **NCR Voyix BSP Integration** | **Check-First POS + BOHPOS**
 
-A full-stack AI-powered restaurant management platform with **probabilistic demand forecasting** (pure NumPy TCN + Negative Binomial), **3 autonomous AI agents**, **Google Gemini 3.0-powered business intelligence**, **check-first POS workflow** with 7 payment methods and kitchen display (BOHPOS), **daily projections dashboard**, **NCR Voyix BSP integration**, **Stripe payments**, **Solana Pay**, and **25 frontend pages** backed by **28 API routers** and **130+ endpoints**.
+A full-stack AI-powered restaurant management platform with **probabilistic demand forecasting** (pure NumPy TCN + Negative Binomial), **3 autonomous AI agents**, **Google Gemini 2.5 Flash with function calling, vision, code execution, and Google Search grounding**, **AI Insight Cards** on Dashboard/Menu/Procurement, **check-first POS workflow** with 7 payment methods and kitchen display (BOHPOS), **daily projections dashboard**, **NCR Voyix BSP integration**, **Stripe payments**, **Solana Pay**, and **25 frontend pages** backed by **28 API routers** and **130+ endpoints**.
 
 **6 Demo Restaurants across the USA:**
 | Restaurant | Cuisine | Location |
@@ -22,7 +22,13 @@ A full-stack AI-powered restaurant management platform with **probabilistic dema
 - **Ground-up TCN Model** - Temporal Convolutional Network in pure NumPy (no PyTorch/TensorFlow)
 - **Negative Binomial Forecasting** - Probabilistic demand prediction with uncertainty quantification
 - **3 Autonomous AI Agents** - Risk assessment, reorder optimization, supplier strategy
-- **Google Gemini 3.0 Flash** - All AI responses grounded in YOUR restaurant data (name, cuisine, ingredients, orders)
+- **Google Gemini 2.5 Flash** - All AI responses grounded in YOUR restaurant data (name, cuisine, ingredients, orders)
+- **Function Calling** - 6 restaurant tools (check_inventory, search_menu, get_supplier_info, get_daily_stats, get_low_stock_alerts, create_reorder_suggestion) — Gemini queries your live data automatically
+- **Vision Analysis** - Upload food photos, invoices, or shelf images for AI analysis (dish pricing, ingredient extraction, inventory assessment)
+- **Code Execution** - Gemini writes and runs Python code for charts, calculations, and data analysis in the chat
+- **Google Search Grounding** - Real-time market prices, industry trends, and external data with clickable source citations
+- **AI Insight Cards** - Auto-generated structured insights on Dashboard (risks/opportunities), Dishes (menu engineering), and Suppliers (procurement recommendations) powered by Gemini structured output
+- **Tool Usage Badges** - Visual indicators showing which tools Gemini used (function calls, code execution, web search)
 
 ### POS & Kitchen Operations
 - **Check-First POS Workflow** - Order type selection, check management, menu ordering, payment processing, tip input, receipt display
@@ -128,7 +134,7 @@ A full-stack AI-powered restaurant management platform with **probabilistic dema
 - **FastAPI** - Async Python web framework with 28 routers
 - **SQLAlchemy** - Async ORM with PostgreSQL/SQLite (35+ models)
 - **NumPy** - Ground-up ML implementation (TCN + Negative Binomial)
-- **Google Gemini 3.0 Flash** - Business-specific AI explanations and chat
+- **Google Gemini 2.5 Flash** - Business-specific AI explanations and chat
 - **Stripe** - Payment processing and subscription management
 - **Boto3** - AWS SDK (RDS, S3, Cognito, Secrets Manager)
 - **Alembic** - Database migrations
@@ -436,6 +442,7 @@ wdym86/
 │       │   └── IngredientDetail.tsx # Ingredient deep dive
 │       ├── components/
 │       │   ├── Layout.tsx         # App shell with role-based nav
+│       │   ├── AiInsightCard.tsx   # Gemini-powered AI insight cards
 │       │   ├── EnterpriseFooter.tsx # Professional footer with branding
 │       │   ├── CheckList.tsx      # POS check list
 │       │   ├── CheckModal.tsx     # Check detail modal
@@ -450,6 +457,7 @@ wdym86/
 │       │   └── POSContext.tsx      # Shared POS state (operating date, daily stats, BOHPOS bridge)
 │       ├── services/
 │       │   ├── api.ts             # Axios API client (60+ functions)
+│       │   ├── geminiTools.ts     # Gemini function calling tools + structured output
 │       │   ├── checks.ts          # Check management API
 │       │   ├── bohpos.ts          # BOHPOS kitchen API
 │       │   ├── payroll.ts         # Payroll API
@@ -575,7 +583,7 @@ TESTING=1 pytest --tb=short -q
 9. **BOHPOS Kitchen** - See orders arrive from POS in real-time (all 3 order types), bump completed orders, track by operating date
 10. **NCR Aloha** - View live NCR catalog, transaction logs, orders synced from BSP API
 11. **Timeline Analytics** - Switch between KPIs, weekly, monthly, seasonal, day-of-week tabs
-12. **Gemini Chat** - Ask the Gemini 3.0 AI advisor about your restaurant's inventory and operations
+12. **Gemini Chat** - Ask "Am I running low on anything?" (function calling), upload a food photo (vision), ask "Show me a chart of my top dishes" (code execution), ask "What's the market price for olive oil?" (Google Search with citations)
 13. **Inventory** - Track non-food items, filter by category, view low stock alerts
 14. **Floor Plan** - Drag and drop tables, assign servers, manage zones
 15. **Payroll** - View employees, generate pay runs, import/export via S3
@@ -585,7 +593,7 @@ TESTING=1 pytest --tb=short -q
 Built for:
 - **Ground-Up Model Track** - TCN + NB in pure NumPy (no ML frameworks)
 - **Best Overall Track** - Full-stack restaurant platform with NCR Voyix + Gemini + Check-First POS
-- **MLH Best Use of Google Gemini API** - Business-specific conversational AI advisor + disruption simulation
+- **MLH Best Use of Google Gemini API** - Function calling, vision, code execution, Google Search grounding, structured output, and business-specific conversational AI advisor + disruption simulation
 
 ## License
 

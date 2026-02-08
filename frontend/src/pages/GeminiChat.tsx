@@ -1,61 +1,76 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Send, RotateCcw, Wifi, WifiOff, AlertTriangle, TrendingDown, Sparkles, Bot, User, MessageCircle, Lightbulb, Zap } from 'lucide-react'
+import {
+  Send, RotateCcw, Wifi, WifiOff, AlertTriangle, TrendingDown,
+  Sparkles, Bot, User, Lightbulb, Zap, ImagePlus,
+  X, Code, Globe, ChevronDown, ChevronUp,
+} from 'lucide-react'
 import { chatWithAdvisor, checkApiHealth, getIngredients } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import {
+  GoogleGenerativeAI,
+  FunctionCallingMode,
+} from '@google/generative-ai'
+import {
+  restaurantToolDeclarations,
+  executeToolCall,
+  buildRestaurantContext,
+} from '../services/geminiTools'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
   timestamp?: Date
+  imageUrl?: string
+  toolsUsed?: string[]
+  codeExecution?: { code: string; output: string }
+  groundingSources?: { title: string; uri: string }[]
 }
+
+interface InventoryContext {
+  name: string
+  risk_level: string
+  days_of_cover: number
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
 const suggestedQuestions = [
-  { text: "What's my inventory status?", icon: AlertTriangle, color: 'from-red-400 to-orange-500' },
-  { text: "How do the AI agents work?", icon: Zap, color: 'from-purple-400 to-pink-500' },
-  { text: "Show me today's orders", icon: MessageCircle, color: 'from-blue-400 to-cyan-500' },
+  { text: "Am I running low on anything?", icon: AlertTriangle, color: 'from-red-400 to-orange-500' },
+  { text: "Show me a chart of my top dishes by revenue", icon: Code, color: 'from-purple-400 to-pink-500' },
+  { text: "What's the current market price for olive oil?", icon: Globe, color: 'from-blue-400 to-cyan-500' },
   { text: "Which suppliers are most reliable?", icon: TrendingDown, color: 'from-green-400 to-emerald-500' },
-  { text: "Tell me about Solana Pay", icon: Lightbulb, color: 'from-amber-400 to-yellow-500' },
+  { text: "What should I reorder today?", icon: Lightbulb, color: 'from-amber-400 to-yellow-500' },
 ]
 
-// Build restaurant context from cuisine template for Gemini
-function buildRestaurantContext(template: ReturnType<typeof getCuisineTemplate>): string {
-  const topIngredients = template.ingredients.slice(0, 15).map(i =>
-    `- ${i.name} (${i.category}): ${i.current_inventory} ${i.unit}, risk=${i.risk_level}, days_of_cover=${i.days_of_cover}`
-  ).join('\n')
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCReWypVPXjOBTGRWzfe-5ROT1Dp_ZWNIM'
+const geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY)
 
-  const topDishes = template.dishes.slice(0, 8).map(d =>
-    `- ${d.name} ($${d.price}): ${d.orders_today} orders today, ${d.orders_7d} this week`
-  ).join('\n')
+const MAX_TOOL_ROUNDS = 5
 
-  const supplierInfo = template.suppliers.map(s =>
-    `- ${s.name}: ${s.lead_time_days}d lead time, ${(s.reliability_score * 100).toFixed(0)}% reliable, $${s.shipping_cost} shipping`
-  ).join('\n')
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-  return `RESTAURANT: ${template.restaurantName} (${template.label} cuisine, ${template.country})
-
-CURRENT INVENTORY (top items):
-${topIngredients}
-
-MENU HIGHLIGHTS:
-${topDishes}
-
-SUPPLIERS:
-${supplierInfo}
-
-DAILY BRIEFING: ${template.dailyBriefing}`
-}
-
-// Build system prompt for frontend Gemini calls
-function buildFrontendSystemPrompt(restaurantName: string, cuisineType: string, restaurantContext: string): string {
-  return `You are an AI-powered assistant for ${restaurantName}, a ${cuisineType} restaurant using the WDYM86 platform.
+function buildSystemPrompt(restaurantName: string, cuisineLabel: string, restaurantContext: string): string {
+  return `You are an AI-powered assistant for ${restaurantName}, a ${cuisineLabel} restaurant using the WDYM86 platform.
 
 You help with ALL aspects of restaurant operations: inventory management, menu planning, supplier strategy, order analytics, staffing, delivery platforms, payments (including Solana Pay crypto), and business optimization.
 
 CURRENT RESTAURANT DATA:
 ${restaurantContext}
+
+TOOLS AVAILABLE:
+You have restaurant-specific function calling tools (check_inventory, search_menu, get_supplier_info, get_daily_stats, get_low_stock_alerts, create_reorder_suggestion). USE THEM whenever the user asks about inventory, menu items, suppliers, stats, or reorders. Always call a tool first rather than guessing from your training data.
+
+You also have Google Search and code execution (Python). Use code execution to create charts, calculations, or data analysis when the user asks for visualizations or comparisons. Use Google Search when the user asks about market prices, industry trends, or external information.
 
 PLATFORM FEATURES you can discuss:
 - AI forecasting with NumPy TCN model (Negative Binomial output)
@@ -78,26 +93,26 @@ Always be:
 - Clear about what the AI agents handle vs what you explain`
 }
 
-interface InventoryContext {
-  name: string
-  risk_level: string
-  days_of_cover: number
+/** Convert a File to a base64 data URL */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }
 
-// Gemini API key — baked in for all users
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCReWypVPXjOBTGRWzfe-5ROT1Dp_ZWNIM'
-const geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY)
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 export default function GeminiChat() {
   const { cuisineType, restaurantName } = useAuth()
   const template = useMemo(() => getCuisineTemplate(cuisineType || 'mediterranean'), [cuisineType])
 
   const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: template.initialChatMessage
-    }
+    { id: '1', role: 'assistant', content: template.initialChatMessage },
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -105,22 +120,24 @@ export default function GeminiChat() {
   const [sessionId] = useState(() => `session-${Date.now()}`)
   const [inventoryContext, setInventoryContext] = useState<InventoryContext[]>([])
   const [showContext, setShowContext] = useState(true)
+  const [pendingImage, setPendingImage] = useState<{ file: File; preview: string } | null>(null)
+  const [expandedCode, setExpandedCode] = useState<Record<string, boolean>>({})
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const geminiChatRef = useRef<any>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Build context once from template
   const restaurantContext = useMemo(() => buildRestaurantContext(template), [template])
   const systemPrompt = useMemo(
-    () => buildFrontendSystemPrompt(restaurantName, template.label, restaurantContext),
-    [restaurantName, template.label, restaurantContext]
+    () => buildSystemPrompt(restaurantName, template.label, restaurantContext),
+    [restaurantName, template.label, restaurantContext],
   )
 
+  // ---- Init ----
   useEffect(() => {
     const init = async () => {
       const connected = await checkApiHealth()
       setApiConnected(connected)
-
-      // Fetch current inventory context
       try {
         const data = await getIngredients('demo-restaurant-id')
         if (data) {
@@ -128,15 +145,10 @@ export default function GeminiChat() {
             data
               .filter((i: any) => i.risk_level === 'CRITICAL' || i.risk_level === 'URGENT')
               .slice(0, 4)
-              .map((i: any) => ({
-                name: i.name,
-                risk_level: i.risk_level,
-                days_of_cover: i.days_of_cover || 0
-              }))
+              .map((i: any) => ({ name: i.name, risk_level: i.risk_level, days_of_cover: i.days_of_cover || 0 })),
           )
         }
       } catch {
-        // Demo fallback using cuisine template ingredients
         const criticalItems = template.ingredients
           .filter(i => i.risk_level === 'CRITICAL' || i.risk_level === 'URGENT' || i.risk_level === 'MONITOR')
           .slice(0, 3)
@@ -147,88 +159,196 @@ export default function GeminiChat() {
     init()
   }, [template])
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   useEffect(() => {
-    scrollToBottom()
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Call Gemini directly from frontend when backend is unavailable
-  const callGeminiFrontend = async (userMessage: string): Promise<string> => {
+  // ---- Gemini Frontend (with tools) ----
+  const callGeminiFrontend = async (
+    userMessage: string,
+    imageData?: { base64: string; mimeType: string },
+  ): Promise<Omit<Message, 'id' | 'role'>> => {
     try {
-      const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' })
+      // Build parts for the user message
+      const userParts: any[] = []
+
+      // Add image if present
+      if (imageData) {
+        userParts.push({
+          inlineData: {
+            data: imageData.base64,
+            mimeType: imageData.mimeType,
+          },
+        })
+        // Add contextual prompt for images
+        const imagePrompt = userMessage.trim()
+          ? userMessage
+          : 'Analyze this image in the context of restaurant operations. If it\'s a food photo, describe the dish, suggest a menu price, and estimate ingredient costs. If it\'s an invoice or receipt, extract line items and totals. If it\'s a shelf or storage photo, assess inventory levels and organization.'
+        userParts.push({ text: imagePrompt })
+      } else {
+        userParts.push({ text: userMessage })
+      }
+
+      // Create model with all tools enabled
+      const model = geminiClient.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        systemInstruction: systemPrompt,
+        tools: [
+          { functionDeclarations: restaurantToolDeclarations },
+          { codeExecution: {} } as any,
+          { googleSearchRetrieval: {} } as any,
+        ],
+        toolConfig: {
+          functionCallingConfig: { mode: FunctionCallingMode.AUTO },
+        },
+      })
 
       // Start or reuse chat session
       if (!geminiChatRef.current) {
         geminiChatRef.current = model.startChat({
-          history: [
-            {
-              role: 'user',
-              parts: [{ text: `[System Instructions]\n${systemPrompt}` }],
-            },
-            {
-              role: 'model',
-              parts: [{ text: `I understand. I'm the AI assistant for ${restaurantName}. I'll help with inventory, menu, suppliers, orders, and all restaurant operations using the actual data provided. I'll redirect off-topic questions back to restaurant management.` }],
-            },
-          ],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 1024,
+            maxOutputTokens: 2048,
             topP: 0.95,
           },
         })
       }
 
-      const result = await geminiChatRef.current.sendMessage(userMessage)
-      const response = await result.response
-      return response.text()
+      // Send message and handle function calling loop
+      let result = await geminiChatRef.current.sendMessage(userParts)
+      let response = result.response
+      const toolsUsed: string[] = []
+      let codeExecution: { code: string; output: string } | undefined
+      let groundingSources: { title: string; uri: string }[] = []
+
+      // Function calling loop
+      let rounds = 0
+      while (rounds < MAX_TOOL_ROUNDS) {
+        const functionCalls = response.functionCalls?.()
+        if (!functionCalls || functionCalls.length === 0) break
+
+        // Execute each function call locally
+        const functionResponses = functionCalls.map((fc: any) => {
+          toolsUsed.push(fc.name)
+          const fnResult = executeToolCall(fc.name, fc.args || {}, template)
+          return {
+            functionResponse: {
+              name: fc.name,
+              response: fnResult,
+            },
+          }
+        })
+
+        // Send function results back to Gemini
+        result = await geminiChatRef.current.sendMessage(functionResponses)
+        response = result.response
+        rounds++
+      }
+
+      // Extract code execution parts
+      const candidate = response.candidates?.[0]
+      if (candidate?.content?.parts) {
+        for (const part of candidate.content.parts) {
+          if ((part as any).executableCode) {
+            const execCode = (part as any).executableCode
+            codeExecution = {
+              code: execCode.code || '',
+              output: '',
+            }
+          }
+          if ((part as any).codeExecutionResult) {
+            const execResult = (part as any).codeExecutionResult
+            if (codeExecution) {
+              codeExecution.output = execResult.output || ''
+            } else {
+              codeExecution = { code: '', output: execResult.output || '' }
+            }
+            if (!toolsUsed.includes('code_execution')) toolsUsed.push('code_execution')
+          }
+        }
+      }
+
+      // Extract grounding metadata (Google Search citations)
+      const grounding = candidate?.groundingMetadata as any
+      if (grounding?.groundingChunks) {
+        groundingSources = grounding.groundingChunks
+          .filter((c: any) => c.web)
+          .map((c: any) => ({
+            title: c.web.title || 'Source',
+            uri: c.web.uri || '#',
+          }))
+        if (groundingSources.length > 0 && !toolsUsed.includes('google_search')) {
+          toolsUsed.push('google_search')
+        }
+      }
+
+      const textContent = response.text()
+
+      return {
+        content: textContent,
+        toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined,
+        codeExecution,
+        groundingSources: groundingSources.length > 0 ? groundingSources : undefined,
+      }
     } catch (error: any) {
-      // If chat session errored, reset it for next attempt
       geminiChatRef.current = null
-      return `Gemini API error: ${error?.message || 'Connection failed'}. Check that your VITE_GEMINI_API_KEY is valid.`
+      return {
+        content: `Gemini API error: ${error?.message || 'Connection failed'}. Check that your VITE_GEMINI_API_KEY is valid.`,
+      }
     }
   }
 
+  // ---- Send message ----
   const handleSend = async (text: string = input) => {
-    if (!text.trim()) return
+    if (!text.trim() && !pendingImage) return
 
+    const imagePreview = pendingImage?.preview
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: text,
+      content: text || '(Sent an image)',
+      imageUrl: imagePreview,
     }
 
     setMessages(prev => [...prev, userMessage])
     setInput('')
     setLoading(true)
 
-    try {
-      let responseContent: string
+    // Prepare image data for Gemini
+    let imageData: { base64: string; mimeType: string } | undefined
+    if (pendingImage) {
+      const dataUrl = await fileToBase64(pendingImage.file)
+      const base64 = dataUrl.split(',')[1]
+      imageData = { base64, mimeType: pendingImage.file.type }
+      setPendingImage(null)
+    }
 
-      if (apiConnected) {
-        // Use backend API when connected
+    try {
+      let assistantData: Omit<Message, 'id' | 'role'>
+
+      if (apiConnected && !imageData) {
+        // Use backend API when connected (no image)
         const result = await chatWithAdvisor(text, sessionId)
-        responseContent = result.response || result.message || 'I understand your question. Let me analyze the current inventory data and agent decisions to provide you with a helpful response.'
+        assistantData = {
+          content: result.response || result.message || 'Let me analyze that for you.',
+        }
       } else {
-        // Skip backend entirely in demo mode — go straight to Gemini
-        responseContent = await callGeminiFrontend(text)
+        // Use Gemini directly (demo mode or image upload)
+        assistantData = await callGeminiFrontend(text, imageData)
       }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: responseContent,
+        ...assistantData,
       }
       setMessages(prev => [...prev, assistantMessage])
     } catch {
-      // Fallback to Gemini frontend if backend call fails unexpectedly
-      const response = await callGeminiFrontend(text)
+      const fallback = await callGeminiFrontend(text, imageData)
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response,
+        ...fallback,
       }
       setMessages(prev => [...prev, assistantMessage])
     } finally {
@@ -243,12 +363,41 @@ export default function GeminiChat() {
     }
   }
 
-  // Reset chat session when starting new chat
   const handleNewChat = () => {
     setMessages([messages[0]])
     geminiChatRef.current = null
+    setPendingImage(null)
   }
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const preview = URL.createObjectURL(file)
+    setPendingImage({ file, preview })
+    e.target.value = ''
+  }
+
+  const toolLabel = (tool: string) => {
+    switch (tool) {
+      case 'check_inventory': return 'Checked inventory'
+      case 'search_menu': return 'Searched menu'
+      case 'get_supplier_info': return 'Checked suppliers'
+      case 'get_daily_stats': return 'Pulled daily stats'
+      case 'get_low_stock_alerts': return 'Checked stock alerts'
+      case 'create_reorder_suggestion': return 'Created reorder suggestion'
+      case 'code_execution': return 'Ran Python code'
+      case 'google_search': return 'Searched the web'
+      default: return tool
+    }
+  }
+
+  const toolIcon = (tool: string) => {
+    if (tool === 'code_execution') return Code
+    if (tool === 'google_search') return Globe
+    return Zap
+  }
+
+  // ---- Render ----
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)]">
       {/* Header */}
@@ -271,7 +420,7 @@ export default function GeminiChat() {
                 </span>
               )}
             </div>
-            <p className="text-neutral-500 dark:text-neutral-400 text-sm">Powered by Google Gemini 2.5</p>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">Powered by Google Gemini 2.5 &middot; Vision &middot; Tools &middot; Search</p>
           </div>
         </div>
         <button
@@ -293,10 +442,7 @@ export default function GeminiChat() {
               </div>
               <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">Inventory Alerts</span>
             </div>
-            <button
-              onClick={() => setShowContext(false)}
-              className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium"
-            >
+            <button onClick={() => setShowContext(false)} className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium">
               Dismiss
             </button>
           </div>
@@ -338,6 +484,17 @@ export default function GeminiChat() {
 
             {/* Message */}
             <div className={`max-w-[75%] ${message.role === 'user' ? 'text-right' : ''}`}>
+              {/* User image */}
+              {message.imageUrl && (
+                <div className={`mb-2 ${message.role === 'user' ? 'flex justify-end' : ''}`}>
+                  <img
+                    src={message.imageUrl}
+                    alt="Uploaded"
+                    className="max-w-[200px] max-h-[200px] rounded-xl border border-neutral-200 dark:border-neutral-600 object-cover"
+                  />
+                </div>
+              )}
+
               <div className={`rounded-2xl px-4 py-3 ${
                 message.role === 'user'
                   ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/20'
@@ -345,6 +502,74 @@ export default function GeminiChat() {
               }`}>
                 <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
               </div>
+
+              {/* Tool usage badges */}
+              {message.toolsUsed && message.toolsUsed.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2 ml-1">
+                  {message.toolsUsed.map((tool, i) => {
+                    const Icon = toolIcon(tool)
+                    return (
+                      <span
+                        key={i}
+                        className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 dark:bg-neutral-600 text-neutral-600 dark:text-neutral-300"
+                      >
+                        <Icon className="w-2.5 h-2.5" />
+                        <span>{toolLabel(tool)}</span>
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Code execution display */}
+              {message.codeExecution && (
+                <div className="mt-2 border border-neutral-200 dark:border-neutral-600 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => setExpandedCode(prev => ({ ...prev, [message.id]: !prev[message.id] }))}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-neutral-100 dark:bg-neutral-700 text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-650 transition-colors"
+                  >
+                    <span className="flex items-center space-x-1.5">
+                      <Code className="w-3 h-3" />
+                      <span>Python Code</span>
+                    </span>
+                    {expandedCode[message.id] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+                  {expandedCode[message.id] && (
+                    <>
+                      {message.codeExecution.code && (
+                        <pre className="px-3 py-2 text-[11px] bg-neutral-900 text-green-400 overflow-x-auto leading-relaxed">
+                          <code>{message.codeExecution.code}</code>
+                        </pre>
+                      )}
+                      {message.codeExecution.output && (
+                        <div className="px-3 py-2 text-[11px] bg-neutral-800 text-neutral-200 border-t border-neutral-700">
+                          <span className="text-neutral-500 text-[10px]">Output:</span>
+                          <pre className="mt-1 overflow-x-auto">{message.codeExecution.output}</pre>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Google Search citations */}
+              {message.groundingSources && message.groundingSources.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2 ml-1">
+                  {message.groundingSources.map((source, i) => (
+                    <a
+                      key={i}
+                      href={source.uri}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors border border-blue-200 dark:border-blue-800"
+                    >
+                      <Globe className="w-2.5 h-2.5" />
+                      <span className="max-w-[150px] truncate">{source.title}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
+
               <p className={`text-[10px] text-neutral-400 mt-1 ${message.role === 'user' ? 'text-right mr-2' : 'ml-2'}`}>
                 {message.role === 'user' ? 'You' : 'Gemini'}
               </p>
@@ -373,7 +598,7 @@ export default function GeminiChat() {
       {/* Suggestions */}
       {messages.length <= 2 && (
         <div className="mt-4">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3 font-medium">Quick questions</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3 font-medium">Try these to see Gemini's tools in action</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
             {suggestedQuestions.map((q, i) => {
               const Icon = q.icon
@@ -394,21 +619,53 @@ export default function GeminiChat() {
         </div>
       )}
 
+      {/* Pending image preview */}
+      {pendingImage && (
+        <div className="mt-3 flex items-center space-x-2 px-2">
+          <div className="relative">
+            <img src={pendingImage.preview} alt="Pending" className="w-16 h-16 rounded-xl object-cover border border-neutral-200 dark:border-neutral-600" />
+            <button
+              onClick={() => { URL.revokeObjectURL(pendingImage.preview); setPendingImage(null) }}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">Image attached — Gemini will analyze it</span>
+        </div>
+      )}
+
       {/* Input */}
       <div className="mt-4 flex items-center space-x-3">
+        {/* Image upload button */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleImageSelect}
+          accept="image/*"
+          className="hidden"
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="p-3 border border-neutral-200 dark:border-neutral-700 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all hover:scale-105 text-neutral-500 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-400"
+          title="Upload image for analysis"
+        >
+          <ImagePlus className="w-5 h-5" />
+        </button>
+
         <div className="flex-1 relative">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask me anything about your inventory..."
+            placeholder={pendingImage ? 'Describe what to analyze, or send as-is...' : 'Ask about inventory, menu, suppliers, or upload a photo...'}
             className="w-full px-5 py-4 pr-14 border border-neutral-200 dark:border-neutral-700 rounded-2xl text-sm focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
             disabled={loading}
           />
           <button
             onClick={() => handleSend()}
-            disabled={!input.trim() || loading}
+            disabled={(!input.trim() && !pendingImage) || loading}
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white p-2.5 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:scale-105 shadow-lg shadow-red-500/30"
           >
             <Send className="w-4 h-4" />
@@ -418,7 +675,7 @@ export default function GeminiChat() {
 
       <p className="text-xs text-neutral-400 mt-3 text-center flex items-center justify-center space-x-1">
         <Sparkles className="w-3 h-3" />
-        <span>Gemini provides explanations. Forecasts and decisions are made by the ML model and agents.</span>
+        <span>Gemini 2.5 with function calling, vision, code execution, and web search.</span>
       </p>
     </div>
   )

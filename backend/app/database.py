@@ -443,11 +443,15 @@ class DisruptionLog(Base):
 
     id = Column(String, primary_key=True, default=generate_uuid)
     restaurant_id = Column(String, ForeignKey("restaurants.id"), nullable=False)
+    date = Column(String)  # ISO date string (YYYY-MM-DD)
     disruption_type = Column(String, nullable=False)  # weather, traffic, supply_chain, local_event, news
+    category = Column(String)  # disruption category
     source = Column(String)  # "weather_api", "news_api", "auto_simulation"
-    title = Column(String, nullable=False)
+    title = Column(String, default="")
     description = Column(Text)
     severity = Column(String, default="low")  # low, moderate, high, critical
+    affected_ingredients = Column(Text)  # stringified list of affected ingredient names
+    impact_score = Column(Float, default=0.0)
     impact_data = Column(JSON, default=dict)  # { weather_risk, traffic_risk, delivery_delay, cost_impact, affected_ingredients }
     location_context = Column(JSON, default=dict)  # { lat, lng, city, state, radius_miles }
     started_at = Column(DateTime, server_default=func.now())

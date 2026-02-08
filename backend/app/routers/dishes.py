@@ -49,6 +49,7 @@ class DishCreate(BaseModel):
 class RecipeCreate(BaseModel):
     ingredient_id: str
     quantity: float
+    unit: str = "each"
 
 
 @router.get("/", response_model=List[DishResponse])
@@ -278,7 +279,8 @@ async def add_recipe_item(
     recipe = RecipeDB(
         dish_id=dish_id,
         ingredient_id=recipe_data.ingredient_id,
-        quantity=recipe_data.quantity
+        quantity=recipe_data.quantity,
+        unit=recipe_data.unit,
     )
     db.add(recipe)
     await db.commit()

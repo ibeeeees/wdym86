@@ -64,7 +64,7 @@ async def _resolve_restaurant_id(user: UserDB, db: AsyncSession) -> str:
     """
     # Check if user owns a restaurant
     result = await db.execute(
-        select(RestaurantDB).where(RestaurantDB.owner_id == user.id).limit(1)
+        select(RestaurantDB).where(RestaurantDB.user_id == user.id).limit(1)
     )
     restaurant = result.scalar_one_or_none()
     if restaurant:

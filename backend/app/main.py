@@ -267,23 +267,29 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware
+# Middleware order matters — Starlette: last added = outermost (runs first).
+# Desired execution order per request:
+#   CORS -> Rate Limit -> Security Headers -> API Key Safety -> route handler
+# So we add them innermost-first:
+app.add_middleware(APIKeySafetyMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
+
+# CORS must be outermost so OPTIONS preflights are handled before rate limiting.
+# Added last = outermost in Starlette's middleware stack.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins.split(","),
+    allow_origins=[
+        "*",
+        "http://localhost:3000",
+        "http://localhost:4173",
+        "http://localhost:5173",
+        "http://localhost:8001",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Security middleware (order matters -- outermost middleware runs first)
-# Starlette adds middleware in reverse order: last added = outermost.
-# Desired execution order per request:
-#   Rate Limit -> Security Headers -> API Key Safety -> route handler
-# So we add them in reverse:
-app.add_middleware(APIKeySafetyMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(RateLimitMiddleware)
 
 # Global exception handler (catches anything not handled by route-level handlers)
 app.add_exception_handler(Exception, global_exception_handler)

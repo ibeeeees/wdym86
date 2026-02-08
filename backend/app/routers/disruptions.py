@@ -63,12 +63,13 @@ async def get_todays_disruptions(
             log = DisruptionLog(
                 restaurant_id=restaurant_id,
                 date=today.isoformat(),
-                disruption_type=d["type"],
-                category=d["category"],
+                disruption_type=d["disruption_type"],
+                category=d.get("disruption_type", ""),
+                title=d.get("title", ""),
                 severity=d["severity"],
-                description=d["description"],
+                description=d.get("description", ""),
                 affected_ingredients=str(d.get("affected_ingredients", [])),
-                impact_score=d["impact_score"],
+                impact_score=d.get("impact_data", {}).get("weather_risk", 0.0),
                 auto_generated=True,
             )
             db.add(log)

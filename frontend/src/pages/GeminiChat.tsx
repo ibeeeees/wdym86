@@ -191,7 +191,7 @@ export default function GeminiChat() {
 
       // Create model with all tools enabled
       const model = geminiClient.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-2.0-flash',
         systemInstruction: systemPrompt,
         tools: [
           { functionDeclarations: restaurantToolDeclarations },
@@ -420,7 +420,7 @@ export default function GeminiChat() {
                 </span>
               )}
             </div>
-            <p className="text-neutral-500 dark:text-neutral-400 text-sm">Powered by Google Gemini 2.5 &middot; Vision &middot; Tools &middot; Search</p>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">Powered by Google Gemini 2.0 &middot; Vision &middot; Tools &middot; Search</p>
           </div>
         </div>
         <button
@@ -675,7 +675,7 @@ export default function GeminiChat() {
 
       <p className="text-xs text-neutral-400 mt-3 text-center flex items-center justify-center space-x-1">
         <Sparkles className="w-3 h-3" />
-        <span>Gemini 2.5 with function calling, vision, code execution, and web search.</span>
+        <span>Gemini 2.0 with function calling, vision, code execution, and web search.</span>
       </p>
     </div>
   )

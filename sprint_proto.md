@@ -1,7 +1,6 @@
 ## WDYM86 — Sprint/Project Document (Technical Plan + Product Deliverables)
 
-**Program**: UGAHacks (Inventory Intelligence Platform)  
-**Course format**: Software Engineering Project (Hackathon-grade deliverable with production-grade structure)  
+**Program**: UGAHacks (Inventory Intelligence Platform)    
 **Date**: 2026-02-07  
 
 > This document is a **planning + execution** artifact: it defines sprint outcomes, acceptance criteria,

@@ -16,6 +16,7 @@ import SolanaPay from './pages/SolanaPay'
 import Downloads from './pages/Downloads'
 import Login from './pages/Login'
 import HowItWorks from './pages/HowItWorks'
+import ApiDocs from './pages/ApiDocs'
 import StaffLogin from './pages/StaffLogin'
 import Onboarding from './pages/Onboarding'
 import AdminDashboard from './pages/AdminDashboard'
@@ -38,6 +39,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/api-docs" element={<ApiDocs />} />
         <Route path="/staff/login" element={<StaffLogin />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="*" element={<Navigate to="/login" replace />} />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, ChefHat, Users, ShoppingCart, X, ChevronLeft, LogIn, Flame, DollarSign, UtensilsCrossed, Soup, HelpCircle, Monitor, Wallet } from 'lucide-react'
+import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, ChefHat, Users, ShoppingCart, X, ChevronLeft, LogIn, Flame, DollarSign, UtensilsCrossed, Soup, HelpCircle, Monitor, Wallet, FileText } from 'lucide-react'
 import { useAuth, UserRole } from '../context/AuthContext'
 import { CUISINE_OPTIONS } from '../data/cuisineTemplates'
 
@@ -397,13 +397,21 @@ export default function Login() {
               <span>How It Works</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <div className="flex items-center justify-center text-sm">
+            <div className="flex items-center justify-center space-x-4 text-sm">
               <Link
                 to="/staff/login"
                 className="text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors inline-flex items-center space-x-1"
               >
                 <span>Staff Login</span>
                 <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <span className="text-neutral-300 dark:text-neutral-600">|</span>
+              <Link
+                to="/api-docs"
+                className="text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors inline-flex items-center space-x-1"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>API Docs</span>
               </Link>
             </div>
           </div>

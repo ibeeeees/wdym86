@@ -50,7 +50,7 @@ const suggestedQuestions = [
   { text: "What should I reorder today?", icon: Lightbulb, color: 'from-amber-400 to-yellow-500' },
 ]
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCReWypVPXjOBTGRWzfe-5ROT1Dp_ZWNIM'
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
 const geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY)
 
 const MAX_TOOL_ROUNDS = 5

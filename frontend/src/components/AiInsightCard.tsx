@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
 import { generateStructuredInsights } from '../services/geminiTools'
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCReWypVPXjOBTGRWzfe-5ROT1Dp_ZWNIM'
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
 
 interface AiInsightCardProps {
   type: 'dashboard' | 'menu' | 'procurement'
@@ -66,6 +66,12 @@ export default function AiInsightCard({ type }: AiInsightCardProps) {
     const cached = sessionStorage.getItem(cacheKey)
     if (cached) {
       setData(JSON.parse(cached))
+      setLoading(false)
+      return
+    }
+
+    if (!GEMINI_API_KEY) {
+      setError(true)
       setLoading(false)
       return
     }

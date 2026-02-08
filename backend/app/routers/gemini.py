@@ -26,6 +26,7 @@ from ..models.forecast import (
 )
 from ..gemini import DecisionExplainer, GeminiClient
 from ..gemini.prompts import build_system_prompt
+from ..services.disruption_engine import AutomatedDisruptionEngine, infer_region
 from ..config import settings
 from .auth import get_current_user, oauth2_scheme
 
@@ -181,13 +182,55 @@ async def get_restaurant_context(db: AsyncSession, restaurant_id: str) -> Dict[s
             "created_at": order.created_at.isoformat() if order.created_at else None
         })
 
+    # Disruption data (auto-generated per location + date)
+    location = context["restaurant"].get("location", "Athens, GA")
+    region = infer_region(location)
+    engine = AutomatedDisruptionEngine(
+        restaurant_id=restaurant_id,
+        location=location,
+        region=region,
+    )
+    disruptions = engine.generate_disruptions()
+    aggregate_impact = engine.compute_aggregate_impact(disruptions)
+
+    # Per-ingredient risk from disruptions
+    ingredient_risk_list = [
+        {
+            "name": ing_data["name"],
+            "category": ing_data["category"],
+            "is_perishable": ing_data.get("is_perishable", False),
+            "days_of_cover": 7,
+        }
+        for ing_data in context["inventory"]
+    ]
+    ingredient_risks = engine.get_ingredient_risk_assessment(
+        ingredient_risk_list, disruptions
+    )
+
+    context["disruptions"] = {
+        "active": [
+            {
+                "title": d["title"],
+                "type": d["disruption_type"],
+                "severity": d["severity"],
+                "description": d["description"],
+            }
+            for d in disruptions
+        ],
+        "aggregate_impact": aggregate_impact,
+        "ingredient_risks": ingredient_risks,
+        "location": location,
+        "region": region,
+    }
+
     # Summary stats
     context["summary"] = {
         "total_ingredients": len(context["inventory"]),
         "total_dishes": len(context["dishes"]),
         "total_suppliers": len(context["suppliers"]),
         "recent_orders": len(context["orders"]),
-        "active_alerts": len(context["alerts"])
+        "active_alerts": len(context["alerts"]),
+        "active_disruptions": len(disruptions),
     }
 
     return context
@@ -406,24 +449,182 @@ async def get_daily_summary(
                 'should_reorder': context.get('should_reorder', False)
             })
 
-    # Generate summary (async to sync wrapper)
-    import asyncio
+    # Pull disruption data for real weather/traffic context
+    location = r_ctx.get("restaurant", {}).get("location", "Athens, GA")
+    region = infer_region(location)
+    engine = AutomatedDisruptionEngine(
+        restaurant_id=restaurant_id,
+        location=location,
+        region=region,
+    )
+    disruptions = engine.generate_disruptions()
+    impact = engine.compute_aggregate_impact(disruptions)
 
-    async def generate():
-        return await explainer.generate_daily_summary(
-            inventory_data=inventory_data,
-            weather_summary="Normal conditions",
-            traffic_summary="Normal traffic"
-        )
+    weather_events = [d for d in disruptions if d["disruption_type"] == "weather"]
+    weather_summary = (
+        "; ".join(d["title"] for d in weather_events)
+        if weather_events
+        else "Normal conditions"
+    )
+    traffic_risk = impact.get("traffic_risk", 0)
+    traffic_summary = (
+        f"Elevated traffic risk ({traffic_risk:.0%}) due to disruptions"
+        if traffic_risk > 0.2
+        else "Normal traffic"
+    )
 
-    summary = asyncio.get_event_loop().run_until_complete(generate())
+    disruption_alerts = [d["description"] for d in disruptions]
+
+    # Generate summary
+    summary = await explainer.generate_daily_summary(
+        inventory_data=inventory_data,
+        weather_summary=weather_summary,
+        traffic_summary=traffic_summary,
+        alerts=disruption_alerts or None,
+    )
 
     return {
         'restaurant_id': restaurant_id,
         'date': datetime.now().strftime("%Y-%m-%d"),
         'summary': summary,
         'item_count': len(inventory_data),
+        'disruptions_count': len(disruptions),
         'generated_at': datetime.now().isoformat()
+    }
+
+
+@router.get("/disruption-forecast", response_model=Dict[str, Any])
+async def get_disruption_forecast(
+    restaurant_id: str = Query(None, description="Restaurant ID (optional, auto-resolves)"),
+    db: AsyncSession = Depends(get_session),
+):
+    """
+    Get AI-powered disruption forecast with per-ingredient risk assessment.
+
+    Automatically generates location-aware disruptions using the restaurant's
+    geographic location, then assesses risk for every ingredient and produces
+    a Gemini narrative summarizing the impact.
+
+    Works without authentication for demo mode.
+    """
+    # Resolve restaurant
+    if restaurant_id:
+        result = await db.execute(
+            select(RestaurantDB).where(RestaurantDB.id == restaurant_id)
+        )
+        restaurant = result.scalar_one_or_none()
+    else:
+        result = await db.execute(select(RestaurantDB).limit(1))
+        restaurant = result.scalar_one_or_none()
+
+    if not restaurant:
+        # Return minimal demo response when no DB
+        return {
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "restaurant_id": None,
+            "location": "Athens, GA",
+            "region": "southeast_us",
+            "disruptions": [],
+            "aggregate_impact": {"overall_severity": "low", "active_disruptions": 0},
+            "ingredient_risks": [],
+            "narrative": "No disruption data available in offline mode.",
+            "auto_generated": True,
+        }
+
+    restaurant_id = restaurant.id
+    location = restaurant.location or "Athens, GA"
+    region = infer_region(location)
+
+    engine = AutomatedDisruptionEngine(
+        restaurant_id=restaurant_id,
+        location=location,
+        region=region,
+    )
+
+    # Generate today's disruptions
+    disruptions = engine.generate_disruptions()
+    aggregate_impact = engine.compute_aggregate_impact(disruptions)
+
+    # Get ingredients for risk assessment
+    result = await db.execute(
+        select(IngredientDB).where(IngredientDB.restaurant_id == restaurant_id)
+    )
+    ingredients = result.scalars().all()
+
+    ingredient_list = []
+    for ing in ingredients:
+        inv_result = await db.execute(
+            select(InventoryDB).where(InventoryDB.ingredient_id == ing.id)
+            .order_by(InventoryDB.recorded_at.desc()).limit(1)
+        )
+        inv = inv_result.scalar_one_or_none()
+        ingredient_list.append({
+            "id": ing.id,
+            "name": ing.name,
+            "category": ing.category,
+            "is_perishable": ing.is_perishable,
+            "days_of_cover": 7,
+            "current_stock": inv.quantity if inv else 0,
+        })
+
+    # Per-ingredient risk
+    ingredient_risks = engine.get_ingredient_risk_assessment(ingredient_list, disruptions)
+
+    # Gemini narrative
+    r_name = restaurant.name or "Your Restaurant"
+    explainer = get_explainer(restaurant_name=r_name)
+
+    disruption_summary = (
+        "; ".join(d["title"] for d in disruptions) if disruptions else "No active disruptions"
+    )
+    high_risk_items = [r for r in ingredient_risks if r["risk_level"] in ("HIGH", "CRITICAL")]
+    high_risk_text = (
+        ", ".join(r["ingredient"] for r in high_risk_items[:5])
+        if high_risk_items
+        else "none"
+    )
+
+    narrative = explainer.answer_question_sync(
+        question=(
+            f"Today's disruption forecast for {r_name} in {location}: "
+            f"Active disruptions: {disruption_summary}. "
+            f"High-risk ingredients: {high_risk_text}. "
+            f"Overall severity: {aggregate_impact.get('overall_severity', 'low')}. "
+            f"Provide a concise 3-4 sentence briefing on how these disruptions affect "
+            f"the restaurant's ingredients and what the manager should prioritize today."
+        ),
+        context={
+            "disruptions": [
+                {"title": d["title"], "type": d["disruption_type"], "severity": d["severity"]}
+                for d in disruptions
+            ],
+            "impact": aggregate_impact,
+            "at_risk_ingredients": high_risk_items[:5],
+            "location": location,
+        },
+        session_id="disruption-forecast",
+    )
+
+    return {
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "restaurant_id": restaurant_id,
+        "location": location,
+        "region": region,
+        "disruptions": [
+            {
+                "id": d["id"],
+                "title": d["title"],
+                "type": d["disruption_type"],
+                "severity": d["severity"],
+                "description": d["description"],
+                "impact": d.get("impact_data", {}),
+            }
+            for d in disruptions
+        ],
+        "aggregate_impact": aggregate_impact,
+        "ingredient_risks": ingredient_risks,
+        "narrative": narrative,
+        "auto_generated": True,
     }
 
 

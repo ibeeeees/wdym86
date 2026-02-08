@@ -140,6 +140,13 @@ export const getDailySummary = async (restaurantId: string) => {
   return response.data
 }
 
+export const getDisruptionForecast = async (restaurantId?: string) => {
+  const response = await api.get('/gemini/disruption-forecast', {
+    params: restaurantId ? { restaurant_id: restaurantId } : {}
+  })
+  return response.data
+}
+
 // Suppliers
 export const getSuppliers = async (restaurantId: string) => {
   const response = await api.get('/suppliers', {

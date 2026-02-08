@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, RefreshCw, TrendingUp, TrendingDown, Package, AlertTriangle, Wifi, WifiOff, Sparkles, ChevronDown, Calendar, Download, Zap, X, Brain, BarChart3, CheckCircle, Crown, Flame, Search } from 'lucide-react'
+import { ArrowRight, RefreshCw, TrendingUp, TrendingDown, Package, AlertTriangle, Wifi, WifiOff, Sparkles, ChevronDown, Calendar, Download, Zap, X, Brain, BarChart3, CheckCircle, Crown, Flame, Search, CloudLightning, Shield, MapPin } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts'
-import { getIngredients, runAgentPipeline, checkApiHealth, getDailySummary, getActiveEvents } from '../services/api'
+import { getIngredients, runAgentPipeline, checkApiHealth, getDailySummary, getActiveEvents, getDisruptionForecast } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -18,6 +18,47 @@ interface Ingredient {
   days_of_cover: number
   stockout_prob: number
   trend: number
+}
+
+interface DisruptionEvent {
+  id: string
+  title: string
+  type: string
+  severity: string
+  description: string
+}
+
+interface IngredientRisk {
+  ingredient: string
+  ingredient_id?: string
+  category: string
+  risk_level: string
+  risk_score: number
+  risk_factors: string[]
+  delivery_delay_hrs: number
+  cost_impact_pct: number
+}
+
+interface DisruptionForecast {
+  date: string
+  location: string
+  region: string
+  disruptions: DisruptionEvent[]
+  aggregate_impact: {
+    weather_risk: number
+    traffic_risk: number
+    hazard_flag: boolean
+    demand_modifier: number
+    delivery_delay_hrs: number
+    cost_modifier: number
+    spoilage_risk: number
+    overall_severity: string
+    active_disruptions: number
+    disruption_titles: string[]
+  }
+  ingredient_risks: IngredientRisk[]
+  narrative: string
+  auto_generated: boolean
 }
 
 // Demo data fallback - Mykonos Mediterranean Restaurant ingredients
@@ -122,6 +163,58 @@ const InventoryGauge = ({ inventory, daysOfCover, unit }: { inventory: number; d
   )
 }
 
+// Demo disruption forecast data for offline/demo mode
+function getDemoDisruptionForecast(): DisruptionForecast {
+  const today = new Date().toISOString().split('T')[0]
+  const month = new Date().getMonth() + 1
+  const isWinter = [12, 1, 2].includes(month)
+  const isSummer = [6, 7, 8].includes(month)
+
+  const disruptions: DisruptionEvent[] = []
+  if (isWinter) {
+    disruptions.push(
+      { id: 'demo-w1', title: 'Cold Snap', type: 'weather', severity: 'moderate', description: 'Winter weather disruption: cold snap detected for Athens, GA (Classic City). Delivery delays estimated at 4+ hours.' },
+    )
+  } else if (isSummer) {
+    disruptions.push(
+      { id: 'demo-w1', title: 'Heat Wave', type: 'weather', severity: 'moderate', description: 'Summer weather disruption: heat wave detected for Athens, GA (Classic City). Elevated spoilage risk for perishable items.' },
+    )
+  }
+  disruptions.push(
+    { id: 'demo-s1', title: 'Fuel Price Spike', type: 'supply_chain', severity: 'moderate', description: 'Supply chain disruption: fuel price spike. Affects: all. Estimated +12% delivery cost increase.' },
+  )
+
+  const ingredientRisks: IngredientRisk[] = [
+    { ingredient: 'Branzino (Sea Bass)', category: 'meat', risk_level: 'HIGH', risk_score: 0.55, risk_factors: ['Supply chain disruption affecting seafood', 'Delivery delay exceeds half of coverage'], delivery_delay_hrs: 4, cost_impact_pct: 12 },
+    { ingredient: 'Octopus', category: 'meat', risk_level: 'MODERATE', risk_score: 0.3, risk_factors: ['Supply chain disruption affecting seafood'], delivery_delay_hrs: 4, cost_impact_pct: 12 },
+    { ingredient: 'Feta Cheese', category: 'dairy', risk_level: 'MODERATE', risk_score: 0.25, risk_factors: ['Spoilage risk elevated due to weather'], delivery_delay_hrs: 4, cost_impact_pct: 12 },
+    { ingredient: 'Halloumi Cheese', category: 'dairy', risk_level: 'MODERATE', risk_score: 0.22, risk_factors: ['Spoilage risk elevated due to weather'], delivery_delay_hrs: 4, cost_impact_pct: 12 },
+    { ingredient: 'Lamb Chops', category: 'meat', risk_level: 'LOW', risk_score: 0.1, risk_factors: ['Cost increase estimated at +12%'], delivery_delay_hrs: 4, cost_impact_pct: 12 },
+  ]
+
+  return {
+    date: today,
+    location: 'Athens, GA',
+    region: 'southeast_us',
+    disruptions,
+    aggregate_impact: {
+      weather_risk: isSummer ? 0.3 : isWinter ? 0.4 : 0.15,
+      traffic_risk: 0.2,
+      hazard_flag: false,
+      demand_modifier: 1.0,
+      delivery_delay_hrs: 4,
+      cost_modifier: 1.12,
+      spoilage_risk: isSummer ? 0.4 : 0.1,
+      overall_severity: disruptions.length > 1 ? 'moderate' : 'low',
+      active_disruptions: disruptions.length,
+      disruption_titles: disruptions.map(d => d.title),
+    },
+    ingredient_risks: ingredientRisks,
+    narrative: `**Disruption Alert for Athens, GA**: ${disruptions.length} active disruptions detected today. ${disruptions.map(d => d.title).join(' and ')} are impacting operations. **Branzino (Sea Bass)** is at highest risk due to supply chain delays — consider contacting your seafood supplier for an expedited order. Dairy items face elevated spoilage risk; rotate stock and check cooler temps. Overall impact is **${disruptions.length > 1 ? 'moderate' : 'low'}** — stay proactive on reorders for at-risk items.`,
+    auto_generated: true,
+  }
+}
+
 export default function Dashboard() {
   const { cuisineType } = useAuth()
   const template = getCuisineTemplate(cuisineType)
@@ -134,6 +227,8 @@ export default function Dashboard() {
   const [summaryExpanded, setSummaryExpanded] = useState(true)
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [activeEvents, setActiveEvents] = useState<string[]>([])
+  const [disruptionForecast, setDisruptionForecast] = useState<DisruptionForecast | null>(null)
+  const [disruptionLoading, setDisruptionLoading] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -155,8 +250,10 @@ export default function Dashboard() {
         await fetchIngredients()
         fetchDailySummary()
         fetchActiveEvents()
+        fetchDisruptionForecast()
       } else {
         setDailySummary(template.dailyBriefing)
+        setDisruptionForecast(getDemoDisruptionForecast())
       }
     }
     checkConnection()
@@ -184,6 +281,21 @@ export default function Dashboard() {
       }
     } catch {
       // No events in demo mode
+    }
+  }
+
+  const fetchDisruptionForecast = async () => {
+    setDisruptionLoading(true)
+    try {
+      const data = await getDisruptionForecast('demo-restaurant-id')
+      if (data) {
+        setDisruptionForecast(data)
+      }
+    } catch {
+      // Use demo disruption data when API unavailable
+      setDisruptionForecast(getDemoDisruptionForecast())
+    } finally {
+      setDisruptionLoading(false)
     }
   }
 
@@ -394,6 +506,131 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Disruption Intelligence */}
+      {disruptionForecast && disruptionForecast.disruptions.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-panel rounded-2xl overflow-hidden border border-amber-200 dark:border-amber-900/50 bg-gradient-to-r from-amber-50/60 to-orange-50/60 dark:from-amber-900/10 dark:to-orange-900/10"
+        >
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                  <CloudLightning className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-neutral-900 dark:text-white">Disruption Intelligence</h3>
+                  <div className="flex items-center space-x-2 mt-0.5">
+                    <MapPin className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                    <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">{disruptionForecast.location}</span>
+                    <span className="text-xs text-neutral-400">|</span>
+                    <span className={cn(
+                      "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide",
+                      disruptionForecast.aggregate_impact.overall_severity === 'critical' ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" :
+                      disruptionForecast.aggregate_impact.overall_severity === 'high' ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400" :
+                      disruptionForecast.aggregate_impact.overall_severity === 'moderate' ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" :
+                      "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                    )}>
+                      {disruptionForecast.aggregate_impact.overall_severity} risk
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <span className="text-[10px] text-neutral-400 font-mono">{disruptionForecast.date}</span>
+            </div>
+
+            {/* Active Disruptions */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {disruptionForecast.disruptions.map((d) => (
+                <span key={d.id} className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center space-x-1.5",
+                  d.severity === 'critical' ? "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/30" :
+                  d.severity === 'high' ? "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-900/30" :
+                  "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/30"
+                )}>
+                  {d.type === 'weather' ? <CloudLightning className="w-3 h-3" /> :
+                   d.type === 'supply_chain' ? <Package className="w-3 h-3" /> :
+                   <Calendar className="w-3 h-3" />}
+                  <span>{d.title}</span>
+                  <span className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    d.severity === 'critical' ? "bg-red-500" :
+                    d.severity === 'high' ? "bg-orange-500" :
+                    "bg-amber-500"
+                  )} />
+                </span>
+              ))}
+            </div>
+
+            {/* Gemini Narrative */}
+            {disruptionForecast.narrative && (
+              <div className="bg-white/60 dark:bg-neutral-900/60 rounded-xl p-4 border border-amber-100/50 dark:border-amber-900/30 backdrop-blur-sm mb-4">
+                <div className="flex items-start space-x-2">
+                  <Brain className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                    {disruptionForecast.narrative.split('**').map((part, i) =>
+                      i % 2 === 1 ? <span key={i} className="font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-1 rounded">{part}</span> : part
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Per-Ingredient Risk */}
+            {disruptionForecast.ingredient_risks.length > 0 && (
+              <div>
+                <div className="flex items-center space-x-2 mb-3">
+                  <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">Ingredient Risk Assessment</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {disruptionForecast.ingredient_risks
+                    .filter(r => r.risk_level !== 'LOW')
+                    .slice(0, 6)
+                    .map((risk) => (
+                    <div key={risk.ingredient} className="bg-white dark:bg-neutral-900 rounded-xl p-3 border border-neutral-100 dark:border-neutral-800 shadow-sm">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate mr-2">{risk.ingredient}</span>
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase flex-shrink-0",
+                          risk.risk_level === 'CRITICAL' ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400" :
+                          risk.risk_level === 'HIGH' ? "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400" :
+                          "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                        )}>
+                          {risk.risk_level}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        {risk.risk_factors.slice(0, 2).map((factor, i) => (
+                          <p key={i} className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-tight">{factor}</p>
+                        ))}
+                      </div>
+                      {risk.cost_impact_pct > 0 && (
+                        <div className="mt-2 flex items-center space-x-3 text-[10px] text-neutral-400">
+                          {risk.delivery_delay_hrs > 0 && <span>Delay: {risk.delivery_delay_hrs}h</span>}
+                          <span>Cost: +{risk.cost_impact_pct.toFixed(0)}%</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Disruption Loading State */}
+      {disruptionLoading && (
+        <div className="glass-panel rounded-2xl p-6 border border-amber-200/50 dark:border-amber-900/30">
+          <div className="flex items-center space-x-3 text-neutral-500">
+            <RefreshCw className="w-5 h-5 animate-spin text-amber-500" />
+            <span className="text-sm font-medium">Analyzing disruption patterns for your location...</span>
+          </div>
+        </div>
+      )}
 
       {/* Key Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">

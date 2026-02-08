@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { POSProvider } from './context/POSContext'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import IngredientDetail from './pages/IngredientDetail'
@@ -165,7 +166,9 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AppRoutes />
+        <POSProvider>
+          <AppRoutes />
+        </POSProvider>
       </AuthProvider>
     </ThemeProvider>
   )

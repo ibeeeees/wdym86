@@ -1,12 +1,14 @@
 /**
  * BOHPOS Page - Back of House POS (Kitchen Display)
- * 
+ *
  * Kitchen display system showing active orders and allowing order bumping.
- * Implements 26.md BOHPOS specification with auto-refresh.
+ * Integrates with POSContext for demo mode and shared operating date.
  */
 
-import { useEffect, useState } from 'react'
-import { ChefHat, Clock, CheckCircle, AlertCircle } from 'lucide-react'
+import { useEffect, useState, useCallback } from 'react'
+import { ChefHat, Clock, CheckCircle, AlertCircle, Calendar } from 'lucide-react'
+import { usePOS } from '../context/POSContext'
+import { checkApiHealth } from '../services/api'
 import {
   SentOrder,
   getActiveOrders,
@@ -21,64 +23,93 @@ export default function BOHPOS() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
-  
-  // TODO: Get from auth context
+  const [isOnline, setIsOnline] = useState<boolean | null>(null)
+
+  const posContext = usePOS()
   const restaurantId = localStorage.getItem('restaurant_id') || 'demo_restaurant'
   const userId = localStorage.getItem('user_id') || 'kitchen_staff_1'
 
-  // Load orders on mount and set up auto-refresh
+  const isDemoMode = useCallback(() => {
+    return isOnline === false || localStorage.getItem('token')?.startsWith('demo-token-')
+  }, [isOnline])
+
+  // Check backend on mount
+  useEffect(() => {
+    checkApiHealth().then(ok => setIsOnline(ok)).catch(() => setIsOnline(false))
+  }, [])
+
+  // Load orders — from POSContext in demo mode, API otherwise
+  const loadOrders = useCallback(() => {
+    if (isDemoMode()) {
+      // Demo mode: read from POSContext
+      const active = posContext.demoSentOrders.filter(o => o.status !== 'completed')
+      const recent = posContext.demoSentOrders.filter(o => o.status === 'completed')
+      setActiveOrders(active as unknown as SentOrder[])
+      setRecentOrders(recent as unknown as SentOrder[])
+      setLoading(false)
+      setError(null)
+    } else {
+      // API mode
+      setError(null)
+      Promise.all([
+        getActiveOrders(restaurantId),
+        getRecentOrders(restaurantId, 10),
+      ])
+        .then(([active, recent]) => {
+          setActiveOrders(active)
+          setRecentOrders(recent)
+        })
+        .catch(err => {
+          console.error('Failed to load orders:', err)
+          // Fallback to demo mode
+          const active = posContext.demoSentOrders.filter(o => o.status !== 'completed')
+          const recent = posContext.demoSentOrders.filter(o => o.status === 'completed')
+          setActiveOrders(active as unknown as SentOrder[])
+          setRecentOrders(recent as unknown as SentOrder[])
+        })
+        .finally(() => setLoading(false))
+    }
+  }, [isDemoMode, restaurantId, posContext.demoSentOrders])
+
+  // Load on mount + auto-refresh
   useEffect(() => {
     loadOrders()
 
     if (autoRefresh) {
-      const interval = setInterval(() => {
-        if (!loading) {
-          loadOrders()
-        }
-      }, 8000) // Refresh every 8 seconds (reduced from 5)
+      const interval = setInterval(loadOrders, 8000)
       return () => clearInterval(interval)
     }
-  }, [autoRefresh, restaurantId])
-
-  const loadOrders = async () => {
-    try {
-      setError(null)
-      const [active, recent] = await Promise.all([
-        getActiveOrders(restaurantId),
-        getRecentOrders(restaurantId, 10),
-      ])
-      setActiveOrders(active)
-      setRecentOrders(recent)
-    } catch (err) {
-      console.error('Failed to load orders:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load orders')
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [autoRefresh, loadOrders])
 
   const handleBumpOrder = async (sentOrderId: string) => {
+    if (isDemoMode()) {
+      posContext.bumpDemoOrder(sentOrderId)
+      return
+    }
     try {
       await bumpOrder(sentOrderId, userId)
-      await loadOrders()
-      // Play sound or show notification
+      loadOrders()
     } catch (err) {
       console.error('Failed to bump order:', err)
-      alert(err instanceof Error ? err.message : 'Failed to bump order')
+      // Fallback to demo
+      posContext.bumpDemoOrder(sentOrderId)
     }
   }
 
   const handleStatusChange = async (sentOrderId: string, status: 'pending' | 'in_progress') => {
+    if (isDemoMode()) {
+      posContext.updateDemoOrderStatus(sentOrderId, status)
+      return
+    }
     try {
       await updateOrderStatus(sentOrderId, status)
-      await loadOrders()
+      loadOrders()
     } catch (err) {
       console.error('Failed to update status:', err)
-      alert(err instanceof Error ? err.message : 'Failed to update status')
+      posContext.updateDemoOrderStatus(sentOrderId, status)
     }
   }
 
-  // Get badge color for order type
   const getOrderTypeBadge = (orderType: string) => {
     const badges = {
       dine_in: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
@@ -88,22 +119,17 @@ export default function BOHPOS() {
     return badges[orderType as keyof typeof badges] || badges.dine_in
   }
 
-  // Format time ago
   const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
+    const diffMs = Date.now() - new Date(dateString).getTime()
     const diffMins = Math.floor(diffMs / 60000)
-
     if (diffMins < 1) return 'Just now'
     if (diffMins < 60) return `${diffMins}m`
     const diffHours = Math.floor(diffMins / 60)
     return `${diffHours}h ${diffMins % 60}m`
   }
 
-  // Get urgency color based on time
   const getUrgencyColor = (sentAt: string) => {
-    const diffMins = Math.floor((new Date().getTime() - new Date(sentAt).getTime()) / 60000)
+    const diffMins = Math.floor((Date.now() - new Date(sentAt).getTime()) / 60000)
     if (diffMins > 20) return 'border-red-500 bg-red-50 dark:bg-red-900/20'
     if (diffMins > 10) return 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
     return 'border-green-500 bg-green-50 dark:bg-green-900/20'
@@ -120,13 +146,25 @@ export default function BOHPOS() {
               <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
                 Kitchen Display
               </h1>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                BOHPOS • Active Orders: {activeOrders.length}
-              </p>
+              <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
+                <span>BOHPOS</span>
+                <span className="text-neutral-300 dark:text-neutral-600">|</span>
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {posContext.operatingDateDisplay}
+                </span>
+                <span className="text-neutral-300 dark:text-neutral-600">|</span>
+                <span>Active: {activeOrders.length}</span>
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
+            {isDemoMode() && (
+              <span className="px-3 py-1 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 rounded-full">
+                Demo Mode
+              </span>
+            )}
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -135,7 +173,7 @@ export default function BOHPOS() {
                 className="w-4 h-4 text-red-600 rounded"
               />
               <span className="text-sm text-neutral-700 dark:text-neutral-300">
-                Auto-refresh (5s)
+                Auto-refresh (8s)
               </span>
             </label>
 
@@ -147,6 +185,15 @@ export default function BOHPOS() {
             </button>
           </div>
         </div>
+
+        {/* Closed day banner */}
+        {!posContext.isOperatingDayOpen && (
+          <div className="mb-4 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+              Operating day is closed. No new orders will appear until the POS starts a new day.
+            </p>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
@@ -171,7 +218,7 @@ export default function BOHPOS() {
               <div className="text-center py-12 bg-white dark:bg-neutral-800 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-600">
                 <CheckCircle className="w-12 h-12 mx-auto text-green-500 mb-3" />
                 <p className="text-neutral-600 dark:text-neutral-400">
-                  No active orders - All caught up! 🎉
+                  No active orders — All caught up!
                 </p>
               </div>
             ) : (
@@ -282,7 +329,7 @@ export default function BOHPOS() {
                       <div className="text-sm font-semibold">{order.check_name}</div>
                     </div>
                     <div className="text-xs text-neutral-600 dark:text-neutral-400">
-                      {order.item_count} items • {formatTimeAgo(order.completed_at || order.sent_at)}
+                      {order.item_count} items {order.completed_at ? `\u2022 ${formatTimeAgo(order.completed_at)}` : ''}
                     </div>
                   </div>
                 ))}

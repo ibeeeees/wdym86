@@ -99,7 +99,13 @@ export default function Login() {
         navigate(getRoleRedirect(savedRole || 'restaurant_admin'))
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'An error occurred')
+      if (err.code === 'ECONNABORTED') {
+        setError('Request timed out. Please check that the server is running and try again.')
+      } else if (!err.response) {
+        setError('Cannot reach the server. Please make sure the backend is running.')
+      } else {
+        setError(err.response?.data?.detail || 'An error occurred')
+      }
     } finally {
       setLoading(false)
     }

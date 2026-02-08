@@ -13,10 +13,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Users, Receipt, Truck, ChevronRight, Plus, ArrowLeft,
-  X, Send, DollarSign, XCircle, Clock, ChevronDown, Download
+  X, Send, DollarSign, XCircle, Clock, Download,
+  CreditCard, Banknote, Smartphone, Zap, Wallet, Moon, Calendar
 } from 'lucide-react'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
 import { checkApiHealth } from '../services/api'
+import { usePOS, type DemoSentOrder } from '../context/POSContext'
 import {
   createCheck as apiCreateCheck,
   getCheckList as apiGetCheckList,
@@ -75,9 +77,28 @@ export default function POS() {
   const [creating, setCreating] = useState(false)
 
   // Payment state
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'cash'>('credit_card')
+  type PaymentMethodType = 'credit_card' | 'cash' | 'klarna' | 'cash_app' | 'venmo' | 'stripe' | 'apple_pay'
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('credit_card')
   const [tipAmount, setTipAmount] = useState<string>('')
   const [paymentComplete, setPaymentComplete] = useState(false)
+
+  // Payment method config
+  const paymentMethods: { id: PaymentMethodType; label: string; icon: typeof CreditCard; color: string }[] = [
+    { id: 'credit_card', label: 'Credit Card', icon: CreditCard, color: 'from-blue-500 to-blue-600' },
+    { id: 'cash', label: 'Cash', icon: Banknote, color: 'from-green-500 to-emerald-600' },
+    { id: 'apple_pay', label: 'Apple Pay', icon: Smartphone, color: 'from-neutral-700 to-black' },
+    { id: 'stripe', label: 'Stripe', icon: Zap, color: 'from-indigo-500 to-purple-600' },
+    { id: 'klarna', label: 'Klarna', icon: Wallet, color: 'from-pink-500 to-rose-600' },
+    { id: 'cash_app', label: 'Cash App', icon: DollarSign, color: 'from-green-400 to-lime-500' },
+    { id: 'venmo', label: 'Venmo', icon: Send, color: 'from-blue-400 to-cyan-500' },
+  ]
+
+  const getPaymentMethodLabel = (id: string): string => {
+    return paymentMethods.find(m => m.id === id)?.label || id.replace('_', ' ').toUpperCase()
+  }
+
+  // POS Context
+  const posContext = usePOS()
 
   // Get restaurant info
   const restaurantId = localStorage.getItem('restaurant_id') || 'demo_restaurant'
@@ -171,6 +192,28 @@ export default function POS() {
     if (!check) return
     check.items.forEach(i => { i.sent_to_bohpos = true })
     check.status = 'sent'
+
+    // Bridge to BOHPOS via POSContext
+    const sentOrder: DemoSentOrder = {
+      sent_order_id: `demo-sent-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      check_id: checkId,
+      check_name: check.check_name,
+      check_number: check.check_number,
+      order_type: check.order_type,
+      items: check.items.map(i => ({
+        id: i.id,
+        name: i.name,
+        quantity: i.quantity,
+        price: i.price,
+        modifiers: i.modifiers ? (Array.isArray(i.modifiers) ? i.modifiers : [String(i.modifiers)]) : [],
+        special_instructions: i.special_instructions,
+      })),
+      item_count: check.items.reduce((sum, i) => sum + i.quantity, 0),
+      sent_at: new Date().toISOString(),
+      status: 'pending',
+      completed_at: null,
+    }
+    posContext.addDemoSentOrder(sentOrder)
   }
 
   const demoVoidCheck = (checkId: string): void => {
@@ -319,7 +362,29 @@ export default function POS() {
       } else {
         await apiSendOrder(currentCheck.check_id)
       }
-      // Refresh check data
+      // Go back to check list after sending
+      setCurrentCheck(null)
+      setCurrentCheckItems([])
+      setView('check_list')
+      if (selectedOrderType) loadChecks(selectedOrderType)
+    } catch (err) {
+      console.error('Failed to send order:', err)
+    } finally {
+      setSendingOrder(false)
+    }
+  }
+
+  const handleSendAndStay = async () => {
+    if (!currentCheck) return
+
+    try {
+      setSendingOrder(true)
+      if (isDemoMode()) {
+        demoSendOrder(currentCheck.check_id)
+      } else {
+        await apiSendOrder(currentCheck.check_id)
+      }
+      // Refresh check data but STAY on check_detail view
       if (isDemoMode()) {
         const updated = demoGetCheck(currentCheck.check_id)
         if (updated) setCurrentCheck(updated)
@@ -352,6 +417,7 @@ export default function POS() {
         demoVoidCheck(currentCheck.check_id)
       }
     }
+    posContext.recordVoid()
     setView('check_list')
     if (selectedOrderType) loadChecks(selectedOrderType)
   }
@@ -374,6 +440,7 @@ export default function POS() {
   const handleFinalizeWithTip = async () => {
     if (!currentCheck) return
     const tip = parseFloat(tipAmount) || 0
+    const finalAmount = Math.round((currentCheck.total + tip) * 100) / 100
 
     if (!isDemoMode()) {
       try {
@@ -382,6 +449,9 @@ export default function POS() {
         // demo fallback
       }
     }
+
+    // Record sale in POSContext
+    posContext.recordSale(finalAmount, currentCheck.order_type as 'dine_in' | 'takeout' | 'delivery', paymentMethod)
 
     // Reset everything and go back
     setPaymentComplete(false)
@@ -424,7 +494,7 @@ export default function POS() {
     lines.push(''.padEnd(40, '='))
     lines.push(`TOTAL:     $${finalTotal.toFixed(2)}`)
     lines.push('')
-    lines.push(`PAID: ${paymentMethod === 'credit_card' ? 'CREDIT CARD' : 'CASH'}`)
+    lines.push(`PAID: ${getPaymentMethodLabel(paymentMethod).toUpperCase()}`)
     lines.push('')
     lines.push('Thank you for your business!')
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
@@ -472,13 +542,22 @@ export default function POS() {
             <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">
               Point of Sale
             </h1>
-            <p className="text-neutral-600 dark:text-neutral-400">
+            <div className="flex items-center justify-center gap-2 text-neutral-600 dark:text-neutral-400 mb-1">
+              <Calendar className="w-4 h-4" />
+              <span className="font-medium">{posContext.operatingDateDisplay}</span>
+            </div>
+            <p className="text-neutral-500 dark:text-neutral-500 text-sm">
               Select an order type to get started
             </p>
             {isOnline === false && (
               <span className="inline-block mt-2 px-3 py-1 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 rounded-full">
                 Demo Mode
               </span>
+            )}
+            {!posContext.isOperatingDayOpen && (
+              <div className="mt-3 inline-block px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Operating day is closed. Click "Start New Day" to resume.</p>
+              </div>
             )}
           </div>
 
@@ -531,7 +610,158 @@ export default function POS() {
               </div>
             </button>
           </div>
+
+          {/* End of Day / New Day */}
+          <div className="mt-8 text-center">
+            {posContext.isOperatingDayOpen ? (
+              <button
+                onClick={() => {
+                  if (!confirm('Close the operating day? This will generate a daily sales report and reset the POS.')) return
+                  posContext.endOfDay()
+                  posContext.setShowEndOfDayModal(true)
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-900 dark:bg-white dark:text-neutral-900 text-white rounded-xl font-semibold hover:scale-105 transition-all"
+              >
+                <Moon className="w-5 h-5" />
+                End of Day Checkout
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  posContext.resetDay()
+                  demoChecks.clear()
+                  demoCheckCounter = 0
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold hover:scale-105 transition-all"
+              >
+                <Calendar className="w-5 h-5" />
+                Start New Day
+              </button>
+            )}
+          </div>
+
+          {/* Daily Stats Summary */}
+          {posContext.dailyStats.totalOrders > 0 && (
+            <div className="mt-6 max-w-md mx-auto bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-4">
+              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3">Today's Activity</p>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-neutral-900 dark:text-white font-mono">{posContext.dailyStats.totalOrders}</p>
+                  <p className="text-xs text-neutral-500">Orders</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-green-600 font-mono">${posContext.dailyStats.totalSales.toFixed(0)}</p>
+                  <p className="text-xs text-neutral-500">Revenue</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-neutral-900 dark:text-white font-mono">{posContext.dailyStats.checksVoided}</p>
+                  <p className="text-xs text-neutral-500">Voided</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* End of Day Report Modal */}
+        {posContext.showEndOfDayModal && posContext.endOfDayReport && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto">
+              <div className="p-6 text-center border-b border-neutral-200 dark:border-neutral-700">
+                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">Daily Sales Report</h2>
+                <p className="text-neutral-500 dark:text-neutral-400 mt-1">{posContext.endOfDayReport.operatingDateDisplay}</p>
+              </div>
+              <div className="p-6 font-mono text-sm space-y-4 text-neutral-700 dark:text-neutral-300">
+                <div>
+                  <div className="font-bold mb-2 text-neutral-900 dark:text-white">Orders by Type</div>
+                  <div className="flex justify-between"><span>Dine-In:</span><span>{posContext.endOfDayReport.stats.ordersByType.dine_in.count} orders (${posContext.endOfDayReport.stats.ordersByType.dine_in.revenue.toFixed(2)})</span></div>
+                  <div className="flex justify-between"><span>Takeout:</span><span>{posContext.endOfDayReport.stats.ordersByType.takeout.count} orders (${posContext.endOfDayReport.stats.ordersByType.takeout.revenue.toFixed(2)})</span></div>
+                  <div className="flex justify-between"><span>Delivery:</span><span>{posContext.endOfDayReport.stats.ordersByType.delivery.count} orders (${posContext.endOfDayReport.stats.ordersByType.delivery.revenue.toFixed(2)})</span></div>
+                </div>
+                {Object.keys(posContext.endOfDayReport.stats.paymentMethodBreakdown).length > 0 && (
+                  <div>
+                    <div className="font-bold mb-2 text-neutral-900 dark:text-white">Payment Methods</div>
+                    {Object.entries(posContext.endOfDayReport.stats.paymentMethodBreakdown).map(([method, data]) => (
+                      <div key={method} className="flex justify-between">
+                        <span className="capitalize">{getPaymentMethodLabel(method)}:</span>
+                        <span>{data.count} txns (${data.total.toFixed(2)})</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="border-t pt-4 border-dashed border-neutral-300 dark:border-neutral-600">
+                  <div className="flex justify-between text-lg font-bold text-neutral-900 dark:text-white">
+                    <span>TOTAL REVENUE:</span>
+                    <span>${posContext.endOfDayReport.stats.totalSales.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-neutral-900 dark:text-white">
+                    <span>TOTAL ORDERS:</span>
+                    <span>{posContext.endOfDayReport.stats.totalOrders}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Finalized:</span>
+                    <span>{posContext.endOfDayReport.stats.checksFinalized}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Voided:</span>
+                    <span>{posContext.endOfDayReport.stats.checksVoided}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 border-t border-neutral-200 dark:border-neutral-700 space-y-3">
+                <button
+                  onClick={() => {
+                    if (!posContext.endOfDayReport) return
+                    const r = posContext.endOfDayReport
+                    const lines = [
+                      'DAILY SALES REPORT',
+                      r.operatingDateDisplay,
+                      ''.padEnd(40, '='),
+                      '',
+                      'ORDERS BY TYPE',
+                      `Dine-In:  ${r.stats.ordersByType.dine_in.count} orders  $${r.stats.ordersByType.dine_in.revenue.toFixed(2)}`,
+                      `Takeout:  ${r.stats.ordersByType.takeout.count} orders  $${r.stats.ordersByType.takeout.revenue.toFixed(2)}`,
+                      `Delivery: ${r.stats.ordersByType.delivery.count} orders  $${r.stats.ordersByType.delivery.revenue.toFixed(2)}`,
+                      '',
+                      'PAYMENT METHODS',
+                      ...Object.entries(r.stats.paymentMethodBreakdown).map(([m, d]) => `${getPaymentMethodLabel(m)}: ${d.count} txns  $${d.total.toFixed(2)}`),
+                      '',
+                      ''.padEnd(40, '='),
+                      `TOTAL REVENUE: $${r.stats.totalSales.toFixed(2)}`,
+                      `TOTAL ORDERS:  ${r.stats.totalOrders}`,
+                      `FINALIZED:     ${r.stats.checksFinalized}`,
+                      `VOIDED:        ${r.stats.checksVoided}`,
+                      '',
+                      `Report generated: ${new Date(r.generatedAt).toLocaleString()}`,
+                    ]
+                    const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = `daily-report-${r.operatingDate}.txt`
+                    document.body.appendChild(a)
+                    a.click()
+                    document.body.removeChild(a)
+                    URL.revokeObjectURL(url)
+                  }}
+                  className="w-full py-3 border-2 border-neutral-300 dark:border-neutral-600 rounded-xl font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Download className="w-5 h-5" />
+                  Download Report
+                </button>
+                <button
+                  onClick={() => {
+                    posContext.resetDay()
+                    demoChecks.clear()
+                    demoCheckCounter = 0
+                  }}
+                  className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-colors"
+                >
+                  Close & Start New Day
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -551,7 +781,7 @@ export default function POS() {
                 {selectedOrderType === 'delivery' && 'Delivery Orders'}
               </h1>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                Manage checks and orders
+                {posContext.operatingDateDisplay}
               </p>
             </div>
             <button
@@ -570,7 +800,7 @@ export default function POS() {
               {selectedOrderType === 'takeout' && <Receipt className="w-5 h-5 text-purple-600" />}
               {selectedOrderType === 'delivery' && <Truck className="w-5 h-5 text-orange-600" />}
               <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                Active Checks ({checks.length})
+                {selectedOrderType === 'delivery' ? `Active Deliveries (${checks.length})` : `Active Checks (${checks.length})`}
               </h2>
             </div>
             <button
@@ -578,11 +808,11 @@ export default function POS() {
               className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
             >
               <Plus className="w-5 h-5" />
-              New Check
+              {selectedOrderType === 'delivery' ? 'New Delivery Order' : 'New Check'}
             </button>
           </div>
 
-          {/* Check List Content */}
+          {/* Check / Delivery List Content */}
           {checksLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600" />
@@ -597,7 +827,111 @@ export default function POS() {
                 Try again
               </button>
             </div>
+          ) : selectedOrderType === 'delivery' ? (
+            /* ---- DELIVERY MODE: Active + Future sections ---- */
+            <div className="space-y-8">
+              {/* Active Deliveries */}
+              <div>
+                {checks.length === 0 ? (
+                  <div className="text-center py-12 bg-neutral-50 dark:bg-neutral-800 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-600">
+                    <Truck className="w-12 h-12 mx-auto text-neutral-400 mb-3" />
+                    <p className="text-neutral-600 dark:text-neutral-400 mb-2">No active deliveries</p>
+                    <p className="text-sm text-neutral-500 mb-4">Create a new delivery order to get started</p>
+                    <button
+                      onClick={handleNewCheck}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                    >
+                      <Plus className="w-5 h-5" />
+                      New Delivery Order
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {checks.map(check => (
+                      <button
+                        key={check.check_id}
+                        onClick={() => handleCheckClick(check)}
+                        className="group relative p-4 bg-white dark:bg-neutral-800 border-2 border-orange-200 dark:border-orange-900/40 rounded-lg hover:border-orange-400 dark:hover:border-orange-500 hover:shadow-lg transition-all text-left"
+                      >
+                        <div className="absolute top-3 right-3">
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                            check.status === 'active' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
+                            check.status === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                            'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                          }`}>
+                            {check.status === 'active' ? 'preparing' : check.status === 'sent' ? 'en route' : check.status}
+                          </span>
+                        </div>
+
+                        <div className="mb-3">
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">{check.check_number}</div>
+                          <div className="text-lg font-semibold text-neutral-900 dark:text-white pr-20">{check.check_name}</div>
+                        </div>
+
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-neutral-600 dark:text-neutral-400">Items:</span>
+                            <span className="font-medium text-neutral-900 dark:text-white">{check.item_count}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-neutral-600 dark:text-neutral-400">Total:</span>
+                            <span className="font-semibold text-neutral-900 dark:text-white">${check.total.toFixed(2)}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{formatTimeAgo(check.created_at)}</span>
+                          </div>
+                        </div>
+
+                        <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ChevronRight className="w-5 h-5 text-orange-600" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Future Deliveries (demo scheduled data) */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="w-5 h-5 text-neutral-500" />
+                  <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                    Upcoming Deliveries
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { name: 'Sarah M.', items: 3, total: 42.50, eta: '5:30 PM', address: '123 Elm St' },
+                    { name: 'Mike R.', items: 5, total: 67.80, eta: '6:00 PM', address: '456 Oak Ave' },
+                    { name: 'Lisa K.', items: 2, total: 28.90, eta: '6:15 PM', address: '789 Pine Rd' },
+                  ].map((future, idx) => (
+                    <div
+                      key={idx}
+                      className="p-4 bg-white dark:bg-neutral-800 border border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg opacity-75"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-sm font-semibold text-neutral-900 dark:text-white">{future.name}</div>
+                        <span className="text-xs px-2 py-1 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 font-medium">
+                          scheduled
+                        </span>
+                      </div>
+                      <div className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">{future.address}</div>
+                      <div className="flex items-center justify-between text-sm mt-2">
+                        <span className="text-neutral-600 dark:text-neutral-400">{future.items} items</span>
+                        <span className="font-semibold text-neutral-900 dark:text-white">${future.total.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-neutral-500 mt-2">
+                        <Clock className="w-3 h-3" />
+                        <span>ETA: {future.eta}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : checks.length === 0 ? (
+            /* ---- STANDARD MODE: Empty state ---- */
             <div className="text-center py-12 bg-neutral-50 dark:bg-neutral-800 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-600">
               <Receipt className="w-12 h-12 mx-auto text-neutral-400 mb-3" />
               <p className="text-neutral-600 dark:text-neutral-400 mb-2">No active checks</p>
@@ -611,6 +945,7 @@ export default function POS() {
               </button>
             </div>
           ) : (
+            /* ---- STANDARD MODE: Check grid ---- */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {checks.map(check => (
                 <button
@@ -718,9 +1053,18 @@ export default function POS() {
       <div className="min-h-[calc(100vh-8rem)] bg-neutral-100 dark:bg-neutral-900">
         <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">{currentCheck.check_name}</h2>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">{currentCheck.check_number} &middot; {currentCheck.status}</p>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleBackToCheckList}
+                className="flex items-center gap-2 px-3 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium">Back to Checks</span>
+              </button>
+              <div>
+                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">{currentCheck.check_name}</h2>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">{currentCheck.check_number} &middot; {currentCheck.status}</p>
+              </div>
             </div>
             <button
               onClick={handleBackToCheckList}
@@ -782,14 +1126,24 @@ export default function POS() {
 
             {/* Action Buttons */}
             <div className="mt-4 space-y-2">
-              <button
-                onClick={handleSendOrder}
-                disabled={sendingOrder || currentCheckItems.length === 0}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-              >
-                <Send className="w-5 h-5" />
-                {sendingOrder ? 'Sending...' : 'Send to Kitchen'}
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={handleSendOrder}
+                  disabled={sendingOrder || currentCheckItems.length === 0}
+                  className="flex items-center justify-center gap-2 px-3 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm"
+                >
+                  <Send className="w-4 h-4" />
+                  {sendingOrder ? 'Sending...' : 'Send'}
+                </button>
+                <button
+                  onClick={handleSendAndStay}
+                  disabled={sendingOrder || currentCheckItems.length === 0}
+                  className="flex items-center justify-center gap-2 px-3 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm"
+                >
+                  <Send className="w-4 h-4" />
+                  {sendingOrder ? '...' : 'Send & Stay'}
+                </button>
+              </div>
 
               <button
                 onClick={handleEnterPayment}
@@ -915,33 +1269,27 @@ export default function POS() {
             {/* Payment Method */}
             <div>
               <label className="block text-sm font-medium mb-3 text-neutral-700 dark:text-neutral-300">Payment Method:</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setPaymentMethod('credit_card')}
-                  className={`p-4 rounded-lg border-2 transition-all text-center ${
-                    paymentMethod === 'credit_card'
-                      ? 'border-red-600 bg-red-50 dark:bg-red-900/20'
-                      : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">
-                    <ChevronDown className="w-6 h-6 mx-auto text-neutral-600 dark:text-neutral-400" />
-                  </div>
-                  <div className="text-sm font-medium text-neutral-900 dark:text-white">Credit Card</div>
-                </button>
-                <button
-                  onClick={() => setPaymentMethod('cash')}
-                  className={`p-4 rounded-lg border-2 transition-all text-center ${
-                    paymentMethod === 'cash'
-                      ? 'border-red-600 bg-red-50 dark:bg-red-900/20'
-                      : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">
-                    <DollarSign className="w-6 h-6 mx-auto text-neutral-600 dark:text-neutral-400" />
-                  </div>
-                  <div className="text-sm font-medium text-neutral-900 dark:text-white">Cash</div>
-                </button>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {paymentMethods.map(method => {
+                  const Icon = method.icon
+                  const isSelected = paymentMethod === method.id
+                  return (
+                    <button
+                      key={method.id}
+                      onClick={() => setPaymentMethod(method.id)}
+                      className={`p-3 rounded-lg border-2 transition-all text-center ${
+                        isSelected
+                          ? 'border-red-600 bg-red-50 dark:bg-red-900/20 ring-1 ring-red-600/30'
+                          : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 mx-auto mb-1.5 rounded-lg bg-gradient-to-br ${method.color} flex items-center justify-center`}>
+                        <Icon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="text-xs font-medium text-neutral-900 dark:text-white leading-tight">{method.label}</div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -1111,7 +1459,7 @@ export default function POS() {
               </div>
 
               <div className="text-center mt-4 text-xs text-neutral-500 dark:text-neutral-400">
-                PAID: {paymentMethod === 'credit_card' ? 'CREDIT CARD' : 'CASH'}
+                PAID: {getPaymentMethodLabel(paymentMethod).toUpperCase()}
               </div>
             </div>
 

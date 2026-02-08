@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import clsx from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import EnterpriseFooter from './EnterpriseFooter'
 
 interface LayoutProps {
   children: ReactNode
@@ -110,7 +111,7 @@ export default function Layout({ children }: LayoutProps) {
   const getNavEntries = (): NavEntry[] => {
     if (role === 'pos_user') {
       return [
-        { path: '/', icon: ShoppingCart, label: 'POS' },
+        { path: '/pos', icon: ShoppingCart, label: 'POS' },
       ]
     }
 
@@ -178,7 +179,7 @@ export default function Layout({ children }: LayoutProps) {
   // Flat list for mobile nav
   const getMobileItems = (): NavItem[] => {
     if (role === 'pos_user') {
-      return [{ path: '/', icon: ShoppingCart, label: 'POS' }]
+      return [{ path: '/pos', icon: ShoppingCart, label: 'POS' }]
     }
 
     if (role === 'manager') {
@@ -257,10 +258,10 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Header */}
       <header className={cn(
-        "sticky top-0 z-50 transition-all duration-500 border-b overflow-visible",
+        "sticky top-0 z-50 transition-all duration-300 border-b overflow-visible h-16",
         scrolled
-          ? "glass-panel h-16"
-          : "bg-transparent border-transparent h-20"
+          ? "glass-panel"
+          : "bg-transparent border-transparent"
       )}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="flex justify-between items-center h-full">
@@ -422,6 +423,7 @@ export default function Layout({ children }: LayoutProps) {
         >
           {children}
         </motion.div>
+        <EnterpriseFooter />
       </main>
 
       {/* Mobile Navigation Overlay */}

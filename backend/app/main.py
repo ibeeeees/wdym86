@@ -56,7 +56,7 @@ logger = logging.getLogger("wdym86.security")
 # ---------------------------------------------------------------------------
 _SENSITIVE_PATTERNS = re.compile(
     r'("(?:api_key|apikey|api[-_]?secret|secret_key|secret[-_]?key|'
-    r'access_key|access[-_]?token|private_key|auth_token|'
+    r'access_key|private_key|auth_token|'
     r'aws_secret_access_key|aws_access_key_id|'
     r'gemini_api_key|ncr_bsp_secret_key|ncr_bsp_shared_key|'
     r'stripe_secret_key|stripe_publishable_key|stripe_webhook_secret|'

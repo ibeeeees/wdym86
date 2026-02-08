@@ -7,7 +7,6 @@ import {
 import { chatWithAdvisor, checkApiHealth, getIngredients } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import {
   buildRestaurantContext,
   buildMenuContext,
@@ -48,7 +47,7 @@ const suggestedQuestions = [
 ]
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
-const geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY)
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -124,7 +123,7 @@ export default function GeminiChat() {
   const [expandedCode, setExpandedCode] = useState<Record<string, boolean>>({})
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const geminiChatRef = useRef<any>(null)
+  const chatHistoryRef = useRef<{ role: string; parts: any[] }[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const restaurantContext = useMemo(() => buildRestaurantContext(template), [template])
@@ -165,7 +164,7 @@ export default function GeminiChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ---- Gemini Frontend (plain chat, all data in system prompt) ----
+  // ---- Gemini Frontend (REST API, all data in system prompt) ----
   const callGeminiFrontend = async (
     userMessage: string,
     imageData?: { base64: string; mimeType: string },
@@ -188,27 +187,40 @@ export default function GeminiChat() {
         userParts.push({ text: userMessage })
       }
 
-      const model = geminiClient.getGenerativeModel({
-        model: 'gemini-2.0-flash',
-        systemInstruction: systemPrompt,
-      })
+      // Append user turn to history
+      chatHistoryRef.current.push({ role: 'user', parts: userParts })
 
-      if (!geminiChatRef.current) {
-        geminiChatRef.current = model.startChat({
+      const response = await fetch(GEMINI_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: chatHistoryRef.current,
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 2048,
             topP: 0.95,
           },
-        })
+        }),
+      })
+
+      if (!response.ok) {
+        const errBody = await response.text()
+        throw new Error(`Gemini API ${response.status}: ${errBody}`)
       }
 
-      const result = await geminiChatRef.current.sendMessage(userParts)
-      const textContent = result.response.text()
+      const data = await response.json()
+      const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.'
+
+      // Append model turn to history
+      chatHistoryRef.current.push({ role: 'model', parts: [{ text: textContent }] })
 
       return { content: textContent }
     } catch (error: any) {
-      geminiChatRef.current = null
+      // Remove the failed user turn from history
+      if (chatHistoryRef.current.length > 0 && chatHistoryRef.current[chatHistoryRef.current.length - 1].role === 'user') {
+        chatHistoryRef.current.pop()
+      }
       return {
         content: `Gemini API error: ${error?.message || 'Connection failed'}. Check that your VITE_GEMINI_API_KEY is valid.`,
       }
@@ -282,7 +294,7 @@ export default function GeminiChat() {
 
   const handleNewChat = () => {
     setMessages([messages[0]])
-    geminiChatRef.current = null
+    chatHistoryRef.current = []
     setPendingImage(null)
   }
 

@@ -408,7 +408,7 @@ wdym86/
 │   │   │   ├── solana_pay.py      # Crypto payments
 │   │   │   ├── events.py          # Event simulation
 │   │   │   ├── restaurants.py     # Restaurant CRUD
-│   │   │   └── aws_status.py      # AWS health/status
+│   │   │   └── aws_status.py      # AWS health/statu
 │   │   ├── models/                # Pydantic schemas
 │   │   └── database.py            # SQLAlchemy models (35+ tables)
 │   ├── migrations/                # Alembic migrations
@@ -599,3 +599,6 @@ Built for:
 ## License
 
 MIT License - Built for hackathon demonstration
+
+
+built with love by Ibe Carter Shaw

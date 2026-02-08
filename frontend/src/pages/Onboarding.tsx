@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { register } from '../services/api'
 import { CUISINE_OPTIONS } from '../data/cuisineTemplates'
 import {
   Crown, Zap, Sparkles, Building2, ArrowRight, ArrowLeft,
   Check, Camera, MapPin, UtensilsCrossed, Bell,
-  Sun, Moon, Monitor, ChefHat, Upload, User
+  Sun, Moon, Monitor, ChefHat, Upload, User, Mail, Lock, UserPlus
 } from 'lucide-react'
 
-const STEPS = ['Plan', 'Restaurant', 'Settings', 'Profile']
+const STEPS = ['Plan', 'Restaurant', 'Settings', 'Profile', 'Account']
 
 const tiers = [
   {
@@ -70,23 +71,21 @@ const avatarGradients = [
 
 export default function Onboarding() {
   const navigate = useNavigate()
-  const { user, completeOnboarding } = useAuth()
+  const { user, isAuthenticated, login: authLogin, completeOnboarding } = useAuth()
   const { setTheme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   // Step 1: Tier
   const [selectedTier, setSelectedTier] = useState('free')
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
 
   // Step 2: Restaurant
-  const [restaurantName, setRestaurantName] = useState(() => {
-    const name = user?.name || ''
-    return name ? `${name}'s Restaurant` : ''
-  })
+  const [restaurantName, setRestaurantName] = useState('')
   const [selectedCuisine, setSelectedCuisine] = useState('mediterranean')
   const [location, setLocation] = useState('')
   const [menuItems, setMenuItems] = useState('')
@@ -102,6 +101,11 @@ export default function Onboarding() {
   // Step 4: Profile picture
   const [profilePicture, setProfilePicture] = useState<string | null>(null)
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null)
+
+  // Step 5: Account creation
+  const [accountName, setAccountName] = useState('')
+  const [accountEmail, setAccountEmail] = useState('')
+  const [accountPassword, setAccountPassword] = useState('')
 
   const goNext = () => {
     if (step < STEPS.length - 1) {
@@ -135,7 +139,14 @@ export default function Onboarding() {
 
   const handleFinish = async () => {
     setLoading(true)
+    setError('')
     try {
+      // If not already logged in, register and login first
+      if (!isAuthenticated) {
+        await register(accountEmail, accountPassword, accountName)
+        await authLogin(accountEmail, accountPassword)
+      }
+
       await completeOnboarding({
         subscriptionTier: selectedTier,
         restaurantName: restaurantName || 'My Restaurant',
@@ -148,6 +159,14 @@ export default function Onboarding() {
       })
       setTheme(themePreference)
       navigate('/admin')
+    } catch (err: any) {
+      if (err.code === 'ECONNABORTED') {
+        setError('Request timed out. Please check that the server is running and try again.')
+      } else if (!err.response) {
+        setError('Cannot reach the server. Please make sure the backend is running.')
+      } else {
+        setError(err.response?.data?.detail || 'An error occurred')
+      }
     } finally {
       setLoading(false)
     }
@@ -155,6 +174,11 @@ export default function Onboarding() {
 
   const canProceed = () => {
     if (step === 1 && !restaurantName.trim()) return false
+    // Account step: need all three fields (only when not already authenticated)
+    if (step === 4 && !isAuthenticated) {
+      if (!accountName.trim() || !accountEmail.trim() || !accountPassword.trim()) return false
+      if (accountPassword.length < 6) return false
+    }
     return true
   }
 
@@ -526,7 +550,7 @@ export default function Onboarding() {
                         ) : selectedAvatar !== null ? (
                           <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${avatarGradients[selectedAvatar]} flex items-center justify-center border-4 border-white dark:border-neutral-700 shadow-xl`}>
                             <span className="text-4xl font-bold text-white">
-                              {user?.name?.[0]?.toUpperCase() || 'U'}
+                              {(accountName || user?.name)?.[0]?.toUpperCase() || 'U'}
                             </span>
                           </div>
                         ) : (
@@ -577,13 +601,107 @@ export default function Onboarding() {
                             }`}
                           >
                             <span className="text-lg font-bold text-white">
-                              {user?.name?.[0]?.toUpperCase() || 'U'}
+                              {(accountName || user?.name)?.[0]?.toUpperCase() || 'U'}
                             </span>
                           </button>
                         ))}
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Step 5: Create Account */}
+              {step === 4 && (
+                <div>
+                  <div className="text-center mb-6">
+                    <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/30">
+                      <UserPlus className="w-7 h-7 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-black dark:text-white">Create Your Account</h2>
+                    <p className="text-neutral-500 dark:text-neutral-400 mt-1 text-sm">Almost done! Set up your login credentials</p>
+                  </div>
+
+                  {isAuthenticated ? (
+                    <div className="max-w-md mx-auto">
+                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-6 text-center">
+                        <Check className="w-10 h-10 text-green-500 mx-auto mb-3" />
+                        <h3 className="text-lg font-bold text-green-700 dark:text-green-400">You're already signed in</h3>
+                        <p className="text-sm text-green-600 dark:text-green-500 mt-1">Click "Get Started" to finish setup</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="max-w-md mx-auto space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-black dark:text-white mb-1.5">Full Name</label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                          <input
+                            type="text"
+                            value={accountName}
+                            onChange={(e) => setAccountName(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3.5 border border-neutral-200 dark:border-neutral-600 rounded-xl text-sm bg-white dark:bg-neutral-800 text-black dark:text-white focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                            placeholder="Your full name"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-black dark:text-white mb-1.5">Email Address</label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                          <input
+                            type="email"
+                            value={accountEmail}
+                            onChange={(e) => setAccountEmail(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3.5 border border-neutral-200 dark:border-neutral-600 rounded-xl text-sm bg-white dark:bg-neutral-800 text-black dark:text-white focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                            placeholder="you@example.com"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-black dark:text-white mb-1.5">Password</label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                          <input
+                            type="password"
+                            value={accountPassword}
+                            onChange={(e) => setAccountPassword(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3.5 border border-neutral-200 dark:border-neutral-600 rounded-xl text-sm bg-white dark:bg-neutral-800 text-black dark:text-white focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                            placeholder="At least 6 characters"
+                          />
+                        </div>
+                        {accountPassword.length > 0 && accountPassword.length < 6 && (
+                          <p className="text-xs text-amber-500 mt-1">Password must be at least 6 characters</p>
+                        )}
+                      </div>
+
+                      {error && (
+                        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                          <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                        </div>
+                      )}
+
+                      <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-4 border border-neutral-200 dark:border-neutral-700">
+                        <h4 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase mb-2">Your setup summary</h4>
+                        <div className="space-y-1.5 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-neutral-500 dark:text-neutral-400">Plan</span>
+                            <span className="font-medium text-black dark:text-white capitalize">{selectedTier}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-neutral-500 dark:text-neutral-400">Restaurant</span>
+                            <span className="font-medium text-black dark:text-white">{restaurantName || 'My Restaurant'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-neutral-500 dark:text-neutral-400">Cuisine</span>
+                            <span className="font-medium text-black dark:text-white capitalize">{selectedCuisine}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </motion.div>

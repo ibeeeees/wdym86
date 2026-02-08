@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Sun, Moon, Sparkles, Brain, BarChart3, Truck, Shield, ChefHat, Users, ShoppingCart, X, ChevronLeft, LogIn, Flame, DollarSign, UtensilsCrossed, Soup, HelpCircle, Monitor, Wallet } from 'lucide-react'
-import { register } from '../services/api'
 import { useAuth, UserRole } from '../context/AuthContext'
 import { CUISINE_OPTIONS } from '../data/cuisineTemplates'
 
@@ -46,10 +45,8 @@ export default function Login() {
     }
   }, [])
 
-  const [isRegister, setIsRegister] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showRolePicker, setShowRolePicker] = useState(false)
@@ -87,17 +84,9 @@ export default function Login() {
     setLoading(true)
 
     try {
-      if (isRegister) {
-        await register(email, password, name)
-      }
       await authLogin(email, password)
-      // After registration, go to onboarding. After login, go to role-based page.
-      if (isRegister) {
-        navigate('/onboarding')
-      } else {
-        const savedRole = localStorage.getItem('role') as UserRole | null
-        navigate(getRoleRedirect(savedRole || 'restaurant_admin'))
-      }
+      const savedRole = localStorage.getItem('role') as UserRole | null
+      navigate(getRoleRedirect(savedRole || 'restaurant_admin'))
     } catch (err: any) {
       if (err.code === 'ECONNABORTED') {
         setError('Request timed out. Please check that the server is running and try again.')
@@ -386,7 +375,7 @@ export default function Login() {
           {/* Sign Up & Log In */}
           <div className="space-y-3">
             <button
-              onClick={() => { setShowLoginModal(true); setIsRegister(true) }}
+              onClick={() => navigate('/onboarding')}
               className="w-full py-3.5 rounded-xl font-semibold text-sm border-2 border-red-600 dark:border-red-500 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all flex items-center justify-center space-x-2 hover:scale-[1.02]"
             >
               <Users className="w-4 h-4" />
@@ -394,7 +383,7 @@ export default function Login() {
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
-              onClick={() => { setShowLoginModal(true); setIsRegister(false) }}
+              onClick={() => setShowLoginModal(true)}
               className="w-full py-3.5 rounded-xl font-semibold text-sm bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-all flex items-center justify-center space-x-2 hover:scale-[1.02]"
             >
               <LogIn className="w-4 h-4" />
@@ -444,9 +433,7 @@ export default function Login() {
           />
           <div className="relative w-full max-w-sm bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-700 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-black dark:text-white">
-                {isRegister ? 'Create Account' : 'Sign In'}
-              </h2>
+              <h2 className="text-lg font-bold text-black dark:text-white">Sign In</h2>
               <button
                 onClick={() => { setShowLoginModal(false); setError('') }}
                 className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
@@ -456,15 +443,6 @@ export default function Login() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {isRegister && (
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3.5 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm bg-white dark:bg-neutral-800 text-black dark:text-white"
-                  placeholder="Full name"
-                />
-              )}
               <input
                 type="email"
                 value={email}
@@ -494,11 +472,11 @@ export default function Login() {
                 {loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>{isRegister ? 'Creating...' : 'Signing in...'}</span>
+                    <span>Signing in...</span>
                   </>
                 ) : (
                   <>
-                    <span>{isRegister ? 'Create Account' : 'Sign In'}</span>
+                    <span>Sign In</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -506,12 +484,12 @@ export default function Login() {
             </form>
 
             <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-5">
-              {isRegister ? 'Have an account?' : 'No account?'}{' '}
+              No account?{' '}
               <button
-                onClick={() => setIsRegister(!isRegister)}
+                onClick={() => { setShowLoginModal(false); navigate('/onboarding') }}
                 className="text-red-600 dark:text-red-400 font-semibold hover:underline"
               >
-                {isRegister ? 'Sign In' : 'Create one'}
+                Sign Up
               </button>
             </p>
           </div>

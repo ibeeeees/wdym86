@@ -388,7 +388,7 @@ export async function generateStructuredInsights(
       responseMimeType: 'application/json',
       responseSchema: schema,
       temperature: 0.5,
-      maxOutputTokens: 1024,
+      maxOutputTokens: 8192,
     },
   })
 

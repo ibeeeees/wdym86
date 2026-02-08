@@ -4,6 +4,7 @@ import {
   getInventoryItems, createInventoryItem, adjustInventory, deleteInventoryItem,
   getInventoryAlerts, getInventoryValueSummary, seedDefaultInventory, checkApiHealth
 } from '../services/api'
+import { getCuisineInventory } from '../data/inventoryDemoData'
 import {
   Package, AlertTriangle, Plus, Trash2, RefreshCw,
   Search, Filter, ArrowUp, Wifi, WifiOff,
@@ -50,24 +51,8 @@ const CATEGORIES: { id: string; label: string; icon: LucideIcon }[] = [
   { id: 'staff_supplies', label: 'Staff Supplies', icon: Shirt },
 ]
 
-const DEMO_ITEMS: InventoryItem[] = [
-  { id: '1', restaurant_id: 'demo', category: 'kitchen_equipment', name: "Chef's Knife Set (8pc)", quantity: 6, unit: 'sets', minimum_quantity: 4, cost_per_unit: 189.99, supplier_name: 'Restaurant Depot', location: 'Kitchen - Knife Rack', last_restocked: '2026-01-15', notes: null },
-  { id: '2', restaurant_id: 'demo', category: 'kitchen_equipment', name: 'Stainless Steel Sauté Pan 12"', quantity: 8, unit: 'units', minimum_quantity: 5, cost_per_unit: 64.99, supplier_name: 'WebstaurantStore', location: 'Kitchen - Shelf A1', last_restocked: '2026-01-20', notes: null },
-  { id: '3', restaurant_id: 'demo', category: 'kitchen_equipment', name: 'Cutting Boards (Color-Coded)', quantity: 12, unit: 'units', minimum_quantity: 8, cost_per_unit: 18.50, supplier_name: 'Sysco', location: 'Kitchen - Prep Station', last_restocked: '2026-01-25', notes: null },
-  { id: '4', restaurant_id: 'demo', category: 'kitchen_equipment', name: 'Sheet Pans (Full Size)', quantity: 15, unit: 'units', minimum_quantity: 10, cost_per_unit: 12.99, supplier_name: 'Restaurant Depot', location: 'Kitchen - Shelf B2', last_restocked: '2026-02-01', notes: null },
-  { id: '5', restaurant_id: 'demo', category: 'serviceware', name: 'Dinner Plates (White Ceramic)', quantity: 120, unit: 'units', minimum_quantity: 80, cost_per_unit: 4.99, supplier_name: 'US Foods', location: 'FOH - Plate Storage', last_restocked: '2026-01-10', notes: null },
-  { id: '6', restaurant_id: 'demo', category: 'serviceware', name: 'Wine Glasses (Crystal)', quantity: 48, unit: 'units', minimum_quantity: 36, cost_per_unit: 8.50, supplier_name: 'WebstaurantStore', location: 'Bar - Glass Rack', last_restocked: '2026-01-12', notes: null },
-  { id: '7', restaurant_id: 'demo', category: 'serviceware', name: 'Linen Napkins (White)', quantity: 200, unit: 'units', minimum_quantity: 150, cost_per_unit: 2.25, supplier_name: 'Cintas', location: 'FOH - Linen Closet', last_restocked: '2026-01-28', notes: null },
-  { id: '8', restaurant_id: 'demo', category: 'serviceware', name: 'Silverware Sets (Fork/Knife/Spoon)', quantity: 60, unit: 'sets', minimum_quantity: 80, cost_per_unit: 3.75, supplier_name: 'Sysco', location: 'FOH - Silverware Station', last_restocked: '2025-12-20', notes: 'Need to reorder' },
-  { id: '9', restaurant_id: 'demo', category: 'cleaning', name: 'Degreaser (Commercial)', quantity: 8, unit: 'gallons', minimum_quantity: 5, cost_per_unit: 24.99, supplier_name: 'Sysco', location: 'Storage Room', last_restocked: '2026-01-30', notes: null },
-  { id: '10', restaurant_id: 'demo', category: 'cleaning', name: 'Sanitizer Tablets', quantity: 3, unit: 'bottles', minimum_quantity: 6, cost_per_unit: 15.99, supplier_name: 'Restaurant Depot', location: 'Storage Room', last_restocked: '2025-12-15', notes: 'LOW - reorder immediately' },
-  { id: '11', restaurant_id: 'demo', category: 'cleaning', name: 'Trash Bags (55 gal)', quantity: 4, unit: 'cases', minimum_quantity: 3, cost_per_unit: 32.00, supplier_name: 'US Foods', location: 'Storage Room', last_restocked: '2026-01-22', notes: null },
-  { id: '12', restaurant_id: 'demo', category: 'beverages', name: 'Sparkling Water (Pellegrino)', quantity: 10, unit: 'cases', minimum_quantity: 8, cost_per_unit: 22.99, supplier_name: 'US Foods', location: 'Bar - Cooler', last_restocked: '2026-02-01', notes: null },
-  { id: '13', restaurant_id: 'demo', category: 'beverages', name: 'House Red Wine (Cabernet)', quantity: 18, unit: 'bottles', minimum_quantity: 12, cost_per_unit: 14.50, supplier_name: 'Wine Distributor', location: 'Bar - Wine Rack', last_restocked: '2026-01-18', notes: null },
-  { id: '14', restaurant_id: 'demo', category: 'beverages', name: 'Coffee Beans (Espresso Blend)', quantity: 5, unit: 'lbs', minimum_quantity: 10, cost_per_unit: 18.99, supplier_name: 'Local Roaster', location: 'Bar - Coffee Station', last_restocked: '2025-12-28', notes: 'Running low' },
-  { id: '15', restaurant_id: 'demo', category: 'staff_supplies', name: 'Aprons (Black)', quantity: 15, unit: 'units', minimum_quantity: 10, cost_per_unit: 12.99, supplier_name: 'Cintas', location: 'Staff Room', last_restocked: '2026-01-05', notes: null },
-  { id: '16', restaurant_id: 'demo', category: 'staff_supplies', name: 'Disposable Gloves (L)', quantity: 2, unit: 'cases', minimum_quantity: 4, cost_per_unit: 28.00, supplier_name: 'Sysco', location: 'Kitchen - Shelf C1', last_restocked: '2025-12-30', notes: 'Need to reorder' },
-]
+const getDemoItems = (cuisine?: string): InventoryItem[] =>
+  getCuisineInventory(cuisine) as InventoryItem[]
 
 function getDemoAlerts(items: InventoryItem[]): Alert[] {
   return items
@@ -94,7 +79,7 @@ function getDemoValueSummary(items: InventoryItem[]): ValueSummary {
 }
 
 export default function InventoryTracking() {
-  const { restaurantId } = useAuth()
+  const { restaurantId, cuisineType } = useAuth()
   const [items, setItems] = useState<InventoryItem[]>([])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [valueSummary, setValueSummary] = useState<ValueSummary | null>(null)
@@ -109,7 +94,7 @@ export default function InventoryTracking() {
 
   useEffect(() => {
     loadAll()
-  }, [restaurantId])
+  }, [restaurantId, cuisineType])
 
   useEffect(() => {
     if (apiConnected === null) return
@@ -140,12 +125,13 @@ export default function InventoryTracking() {
 
   const loadDemoData = () => {
     setApiConnected(false)
-    let demoItems = [...DEMO_ITEMS]
+    const allItems = getDemoItems(cuisineType)
+    let demoItems = [...allItems]
     if (activeCategory) demoItems = demoItems.filter(i => i.category === activeCategory)
     if (showLowOnly) demoItems = demoItems.filter(i => i.quantity < i.minimum_quantity)
     setItems(demoItems)
-    setAlerts(getDemoAlerts(DEMO_ITEMS))
-    setValueSummary(getDemoValueSummary(DEMO_ITEMS))
+    setAlerts(getDemoAlerts(allItems))
+    setValueSummary(getDemoValueSummary(allItems))
   }
 
   const loadItems = async () => {
@@ -177,9 +163,10 @@ export default function InventoryTracking() {
 
   const handleSeedDefaults = async () => {
     if (!apiConnected) {
-      setItems(DEMO_ITEMS)
-      setAlerts(getDemoAlerts(DEMO_ITEMS))
-      setValueSummary(getDemoValueSummary(DEMO_ITEMS))
+      const allItems = getDemoItems(cuisineType)
+      setItems(allItems)
+      setAlerts(getDemoAlerts(allItems))
+      setValueSummary(getDemoValueSummary(allItems))
       return
     }
     setSeeding(true)

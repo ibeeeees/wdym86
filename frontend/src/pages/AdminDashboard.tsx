@@ -141,8 +141,8 @@ function ArcGauge({ percentage, status }: { percentage: number; status: DailyPro
           className="transition-all duration-1000 ease-out"
         />
       </svg>
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center">
-        <span className="text-3xl font-bold text-neutral-900 dark:text-white font-mono">{percentage}%</span>
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 text-center">
+        <span className="text-2xl font-bold text-neutral-900 dark:text-white font-mono">{percentage}%</span>
       </div>
     </div>
   )

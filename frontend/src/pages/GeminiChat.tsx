@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Send, RotateCcw, Wifi, WifiOff, AlertTriangle, TrendingDown, Sparkles, Bot, User, MessageCircle, Lightbulb, Zap, Settings, Key } from 'lucide-react'
+import { Send, RotateCcw, Wifi, WifiOff, AlertTriangle, TrendingDown, Sparkles, Bot, User, MessageCircle, Lightbulb, Zap } from 'lucide-react'
 import { chatWithAdvisor, checkApiHealth, getIngredients } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
@@ -84,15 +84,9 @@ interface InventoryContext {
   days_of_cover: number
 }
 
-// Resolve Gemini API key: env var first, then localStorage fallback
-function getGeminiApiKey(): string {
-  return import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || ''
-}
-
-function getGeminiClient(): GoogleGenerativeAI | null {
-  const key = getGeminiApiKey()
-  return key ? new GoogleGenerativeAI(key) : null
-}
+// Gemini API key — baked in for all users
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCReWypVPXjOBTGRWzfe-5ROT1Dp_ZWNIM'
+const geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY)
 
 export default function GeminiChat() {
   const { cuisineType, restaurantName } = useAuth()
@@ -108,8 +102,6 @@ export default function GeminiChat() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [apiConnected, setApiConnected] = useState<boolean | null>(null)
-  const [showKeyInput, setShowKeyInput] = useState(false)
-  const [keyInput, setKeyInput] = useState(localStorage.getItem('gemini_api_key') || '')
   const [sessionId] = useState(() => `session-${Date.now()}`)
   const [inventoryContext, setInventoryContext] = useState<InventoryContext[]>([])
   const [showContext, setShowContext] = useState(true)
@@ -165,12 +157,8 @@ export default function GeminiChat() {
 
   // Call Gemini directly from frontend when backend is unavailable
   const callGeminiFrontend = async (userMessage: string): Promise<string> => {
-    const client = getGeminiClient()
-    if (!client) {
-      return 'Gemini API key not configured. Add your key in the chat settings below, or set VITE_GEMINI_API_KEY in frontend/.env.'
-    }
     try {
-      const model = client.getGenerativeModel({ model: 'gemini-3.0-flash' })
+      const model = geminiClient.getGenerativeModel({ model: 'gemini-3.0-flash' })
 
       // Start or reuse chat session
       if (!geminiChatRef.current) {
@@ -428,50 +416,10 @@ export default function GeminiChat() {
         </div>
       </div>
 
-      {/* API Key Config */}
-      {(!getGeminiApiKey() || showKeyInput) && (
-        <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <Key className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            <span className="text-sm font-medium text-amber-800 dark:text-amber-200">Gemini API Key</span>
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="password"
-              value={keyInput}
-              onChange={e => setKeyInput(e.target.value)}
-              placeholder="Paste your Gemini API key..."
-              className="flex-1 px-3 py-2 text-sm border border-amber-300 dark:border-amber-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-amber-500/20"
-            />
-            <button
-              onClick={() => {
-                if (keyInput.trim()) {
-                  localStorage.setItem('gemini_api_key', keyInput.trim())
-                  geminiChatRef.current = null
-                  setShowKeyInput(false)
-                }
-              }}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="mt-3 flex items-center justify-center gap-3">
-        <p className="text-xs text-neutral-400 flex items-center space-x-1">
-          <Sparkles className="w-3 h-3" />
-          <span>Gemini provides explanations. Forecasts and decisions are made by the ML model and agents.</span>
-        </p>
-        <button
-          onClick={() => setShowKeyInput(!showKeyInput)}
-          className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
-          title="Configure API Key"
-        >
-          <Settings className="w-3.5 h-3.5" />
-        </button>
-      </div>
+      <p className="text-xs text-neutral-400 mt-3 text-center flex items-center justify-center space-x-1">
+        <Sparkles className="w-3 h-3" />
+        <span>Gemini provides explanations. Forecasts and decisions are made by the ML model and agents.</span>
+      </p>
     </div>
   )
 }

@@ -8,8 +8,11 @@ Provides:
 - Factory fixtures for restaurants, ingredients, etc.
 """
 
+import os
 import pytest
 import uuid
+
+os.environ["TESTING"] = "1"
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import StaticPool

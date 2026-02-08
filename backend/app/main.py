@@ -4,6 +4,7 @@ WDYM86 - AI-Powered Restaurant Inventory Intelligence Platform
 FastAPI application entry point.
 """
 
+import os
 import re
 import time
 import logging
@@ -116,6 +117,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return hits[idx:]
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        # Skip rate limiting during tests
+        if os.environ.get("TESTING") == "1":
+            return await call_next(request)
+
         client_ip = request.client.host if request.client else "unknown"
         now = time.time()
         path = request.url.path

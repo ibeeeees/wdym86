@@ -388,7 +388,7 @@ export default function Login() {
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setShowLoginModal(true)}
+              onClick={() => { setShowLoginModal(true); setIsRegister(false) }}
               className="w-full py-3.5 rounded-xl font-semibold text-sm bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-all flex items-center justify-center space-x-2 hover:scale-[1.02]"
             >
               <LogIn className="w-4 h-4" />

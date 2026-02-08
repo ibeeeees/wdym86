@@ -442,11 +442,15 @@ export default function POS() {
     const tip = parseFloat(tipAmount) || 0
     const finalAmount = Math.round((currentCheck.total + tip) * 100) / 100
 
-    if (!isDemoMode()) {
+    if (isDemoMode()) {
+      const check = demoChecks.get(currentCheck.check_id)
+      if (check) check.status = 'finalized' as Check['status']
+    } else {
       try {
         await apiFinalizeCheck(currentCheck.check_id, tip)
       } catch {
-        // demo fallback
+        const check = demoChecks.get(currentCheck.check_id)
+        if (check) check.status = 'finalized' as Check['status']
       }
     }
 

@@ -46,10 +46,10 @@ Canonical source of truth for platform scope:
 ## 1.1 Team & Responsibilities
 
 Replace names as appropriate:
-- **[Name 1] — PM / Presenter**: scope control, demo narrative, acceptance criteria, sprint report.
-- **[Name 2] — Frontend**: React pages, POS UX, BOHPOS, dashboards, auth flows.
-- **[Name 3] — Backend / DevOps**: FastAPI routers/services, DB models, config, local + docker run.
-- **[Name 4] — ML / Decision Logic**: NumPy TCN, NB loss/gradients, agent pipeline, disruption model.
+- **[carter] — PM / Presenter**: scope control, demo narrative, acceptance criteria, sprint report.
+- **[ibe,carter,shaw] — Frontend**: React pages, POS UX, BOHPOS, dashboards, auth flows.
+- **[shaw/ibe] — Backend / DevOps**: FastAPI routers/services, DB models, config, local + docker run.
+- **[ibe] — ML / Decision Logic**: NumPy TCN, NB loss/gradients, agent pipeline, disruption model.
 
 ## 1.2 System Overview & Scope
 

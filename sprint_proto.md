@@ -45,7 +45,7 @@ Canonical source of truth for platform scope:
 
 ## 1.1 Team & Responsibilities
 
-Replace names as appropriate:
+
 - **[carter] — PM / Presenter**: scope control, demo narrative, acceptance criteria, sprint report.
 - **[ibe,carter,shaw] — Frontend**: React pages, POS UX, BOHPOS, dashboards, auth flows.
 - **[shaw/ibe] — Backend / DevOps**: FastAPI routers/services, DB models, config, local + docker run.

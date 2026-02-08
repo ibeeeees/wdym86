@@ -189,14 +189,14 @@ export default function GeminiChat() {
         userParts.push({ text: userMessage })
       }
 
-      // Create model with all tools enabled
+      // Create model with function calling + code execution
+      // Note: googleSearchRetrieval cannot be combined with other tools
       const model = geminiClient.getGenerativeModel({
         model: 'gemini-2.0-flash',
         systemInstruction: systemPrompt,
         tools: [
           { functionDeclarations: restaurantToolDeclarations },
           { codeExecution: {} } as any,
-          { googleSearchRetrieval: {} } as any,
         ],
         toolConfig: {
           functionCallingConfig: { mode: FunctionCallingMode.AUTO },

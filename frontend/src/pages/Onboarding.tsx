@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { register } from '../services/api'
-import { CUISINE_OPTIONS } from '../data/cuisineTemplates'
 import {
   Crown, Zap, Sparkles, Building2, ArrowRight, ArrowLeft,
   Check, Camera, MapPin, UtensilsCrossed, Bell,
@@ -86,7 +85,7 @@ export default function Onboarding() {
 
   // Step 2: Restaurant
   const [restaurantName, setRestaurantName] = useState('')
-  const [selectedCuisine, setSelectedCuisine] = useState('mediterranean')
+  const [selectedCuisine, setSelectedCuisine] = useState('')
   const [location, setLocation] = useState('')
   const [menuItems, setMenuItems] = useState('')
 
@@ -141,17 +140,32 @@ export default function Onboarding() {
     setLoading(true)
     setError('')
     try {
-      // If not already logged in, register and login first
+      // If not already logged in, try to register and login
       if (!isAuthenticated) {
-        await register(accountEmail, accountPassword, accountName)
-        await authLogin(accountEmail, accountPassword)
+        try {
+          await register(accountEmail, accountPassword, accountName)
+          await authLogin(accountEmail, accountPassword)
+        } catch (regErr: any) {
+          // If backend is unreachable, fall back to local-only demo mode
+          if (regErr.code === 'ECONNABORTED' || !regErr.response) {
+            // Store credentials locally and proceed in offline mode
+            const offlineToken = `offline-${Date.now()}`
+            localStorage.setItem('token', offlineToken)
+            localStorage.setItem('role', 'restaurant_admin')
+            localStorage.setItem('userName', accountName)
+            localStorage.setItem('userEmail', accountEmail)
+          } else {
+            // Backend returned an actual error (e.g. duplicate email)
+            throw regErr
+          }
+        }
       }
 
       await completeOnboarding({
         subscriptionTier: selectedTier,
         restaurantName: restaurantName || 'My Restaurant',
         restaurantLocation: location || undefined,
-        cuisineType: selectedCuisine,
+        cuisineType: selectedCuisine || undefined,
         menuItems: menuItems ? menuItems.split(',').map(s => s.trim()).filter(Boolean) : undefined,
         notificationsEnabled: notifications.lowStock || notifications.dailySummary,
         themePreference,
@@ -160,12 +174,10 @@ export default function Onboarding() {
       setTheme(themePreference)
       navigate('/admin')
     } catch (err: any) {
-      if (err.code === 'ECONNABORTED') {
-        setError('Request timed out. Please check that the server is running and try again.')
-      } else if (!err.response) {
-        setError('Cannot reach the server. Please make sure the backend is running.')
+      if (err.response?.data?.detail) {
+        setError(err.response.data.detail)
       } else {
-        setError(err.response?.data?.detail || 'An error occurred')
+        setError('An error occurred. Please try again.')
       }
     } finally {
       setLoading(false)
@@ -301,11 +313,9 @@ export default function Onboarding() {
                           }`}
                         >
                           {tier.popular && (
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                              <span className="px-3 py-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold rounded-full shadow-lg">
-                                Most Popular
-                              </span>
-                            </div>
+                            <span className="absolute top-3 right-3 text-xs font-bold text-red-500">
+                              Most Popular
+                            </span>
                           )}
 
                           <div className="flex items-center space-x-3 mb-3">
@@ -384,27 +394,17 @@ export default function Onboarding() {
                       <label className="block text-sm font-semibold text-black dark:text-white mb-1.5">
                         Cuisine Type
                       </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {CUISINE_OPTIONS.map((opt) => {
-                          const isSelected = selectedCuisine === opt.key
-                          return (
-                            <button
-                              key={opt.key}
-                              onClick={() => setSelectedCuisine(opt.key)}
-                              className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all text-center ${
-                                isSelected
-                                  ? 'border-red-500 bg-red-50 dark:bg-red-900/20 shadow-sm'
-                                  : 'border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-750'
-                              }`}
-                            >
-                              <span className="text-lg font-bold mb-0.5">{opt.flag}</span>
-                              <p className={`text-xs font-semibold ${isSelected ? 'text-red-700 dark:text-red-400' : 'text-black dark:text-white'}`}>
-                                {opt.label}
-                              </p>
-                            </button>
-                          )
-                        })}
+                      <div className="relative">
+                        <ChefHat className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                        <input
+                          type="text"
+                          value={selectedCuisine}
+                          onChange={(e) => setSelectedCuisine(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 border border-neutral-200 dark:border-neutral-600 rounded-xl text-sm bg-white dark:bg-neutral-800 text-black dark:text-white focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                          placeholder="e.g. Mediterranean, Japanese, Mexican, Thai, Korean..."
+                        />
                       </div>
+                      <p className="text-xs text-neutral-400 mt-1">Enter any cuisine type</p>
                     </div>
 
                     {/* Location */}

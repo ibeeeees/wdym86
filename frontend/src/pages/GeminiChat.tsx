@@ -158,7 +158,7 @@ export default function GeminiChat() {
   // Call Gemini directly from frontend when backend is unavailable
   const callGeminiFrontend = async (userMessage: string): Promise<string> => {
     try {
-      const model = geminiClient.getGenerativeModel({ model: 'gemini-3.0-flash' })
+      const model = geminiClient.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
       // Start or reuse chat session
       if (!geminiChatRef.current) {
@@ -271,7 +271,7 @@ export default function GeminiChat() {
                 </span>
               )}
             </div>
-            <p className="text-neutral-500 dark:text-neutral-400 text-sm">Powered by Google Gemini 3.0</p>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">Powered by Google Gemini 2.5</p>
           </div>
         </div>
         <button

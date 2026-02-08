@@ -85,8 +85,8 @@ interface InventoryContext {
 }
 
 // Initialize Gemini client for frontend direct calls
-const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyDH2iEKSAGL0Y9SgNd72sFJT_9tiR9ayIc'
-const geminiClient = new GoogleGenerativeAI(geminiApiKey)
+const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || ''
+const geminiClient = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null
 
 export default function GeminiChat() {
   const { cuisineType, restaurantName } = useAuth()
@@ -157,6 +157,9 @@ export default function GeminiChat() {
 
   // Call Gemini directly from frontend when backend is unavailable
   const callGeminiFrontend = async (userMessage: string): Promise<string> => {
+    if (!geminiClient) {
+      return 'Gemini API key not configured. Set VITE_GEMINI_API_KEY in frontend/.env to enable AI chat.'
+    }
     try {
       const model = geminiClient.getGenerativeModel({ model: 'gemini-2.0-flash' })
 

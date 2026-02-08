@@ -7,14 +7,11 @@ import {
 import { chatWithAdvisor, checkApiHealth, getIngredients } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import {
-  GoogleGenerativeAI,
-  FunctionCallingMode,
-} from '@google/generative-ai'
-import {
-  restaurantToolDeclarations,
-  executeToolCall,
   buildRestaurantContext,
+  buildMenuContext,
+  buildSupplierContext,
 } from '../services/geminiTools'
 
 // ---------------------------------------------------------------------------
@@ -53,13 +50,17 @@ const suggestedQuestions = [
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
 const geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY)
 
-const MAX_TOOL_ROUNDS = 5
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function buildSystemPrompt(restaurantName: string, cuisineLabel: string, restaurantContext: string): string {
+function buildSystemPrompt(
+  restaurantName: string,
+  cuisineLabel: string,
+  restaurantContext: string,
+  menuContext: string,
+  supplierContext: string,
+): string {
   return `You are an AI-powered assistant for ${restaurantName}, a ${cuisineLabel} restaurant using the WDYM86 platform.
 
 You help with ALL aspects of restaurant operations: inventory management, menu planning, supplier strategy, order analytics, staffing, delivery platforms, payments (including Solana Pay crypto), and business optimization.
@@ -67,10 +68,9 @@ You help with ALL aspects of restaurant operations: inventory management, menu p
 CURRENT RESTAURANT DATA:
 ${restaurantContext}
 
-TOOLS AVAILABLE:
-You have restaurant-specific function calling tools (check_inventory, search_menu, get_supplier_info, get_daily_stats, get_low_stock_alerts, create_reorder_suggestion). USE THEM whenever the user asks about inventory, menu items, suppliers, stats, or reorders. Always call a tool first rather than guessing from your training data.
+${menuContext}
 
-You also have Google Search and code execution (Python). Use code execution to create charts, calculations, or data analysis when the user asks for visualizations or comparisons. Use Google Search when the user asks about market prices, industry trends, or external information.
+${supplierContext}
 
 PLATFORM FEATURES you can discuss:
 - AI forecasting with NumPy TCN model (Negative Binomial output)
@@ -128,9 +128,11 @@ export default function GeminiChat() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const restaurantContext = useMemo(() => buildRestaurantContext(template), [template])
+  const menuContext = useMemo(() => buildMenuContext(template), [template])
+  const supplierContext = useMemo(() => buildSupplierContext(template), [template])
   const systemPrompt = useMemo(
-    () => buildSystemPrompt(restaurantName, template.label, restaurantContext),
-    [restaurantName, template.label, restaurantContext],
+    () => buildSystemPrompt(restaurantName, template.label, restaurantContext, menuContext, supplierContext),
+    [restaurantName, template.label, restaurantContext, menuContext, supplierContext],
   )
 
   // ---- Init ----
@@ -163,16 +165,14 @@ export default function GeminiChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ---- Gemini Frontend (with tools) ----
+  // ---- Gemini Frontend (plain chat, all data in system prompt) ----
   const callGeminiFrontend = async (
     userMessage: string,
     imageData?: { base64: string; mimeType: string },
   ): Promise<Omit<Message, 'id' | 'role'>> => {
     try {
-      // Build parts for the user message
       const userParts: any[] = []
 
-      // Add image if present
       if (imageData) {
         userParts.push({
           inlineData: {
@@ -180,7 +180,6 @@ export default function GeminiChat() {
             mimeType: imageData.mimeType,
           },
         })
-        // Add contextual prompt for images
         const imagePrompt = userMessage.trim()
           ? userMessage
           : 'Analyze this image in the context of restaurant operations. If it\'s a food photo, describe the dish, suggest a menu price, and estimate ingredient costs. If it\'s an invoice or receipt, extract line items and totals. If it\'s a shelf or storage photo, assess inventory levels and organization.'
@@ -189,21 +188,11 @@ export default function GeminiChat() {
         userParts.push({ text: userMessage })
       }
 
-      // Create model with function calling + code execution
-      // Note: googleSearchRetrieval cannot be combined with other tools
       const model = geminiClient.getGenerativeModel({
         model: 'gemini-2.0-flash',
         systemInstruction: systemPrompt,
-        tools: [
-          { functionDeclarations: restaurantToolDeclarations },
-          { codeExecution: {} } as any,
-        ],
-        toolConfig: {
-          functionCallingConfig: { mode: FunctionCallingMode.AUTO },
-        },
       })
 
-      // Start or reuse chat session
       if (!geminiChatRef.current) {
         geminiChatRef.current = model.startChat({
           generationConfig: {
@@ -214,82 +203,10 @@ export default function GeminiChat() {
         })
       }
 
-      // Send message and handle function calling loop
-      let result = await geminiChatRef.current.sendMessage(userParts)
-      let response = result.response
-      const toolsUsed: string[] = []
-      let codeExecution: { code: string; output: string } | undefined
-      let groundingSources: { title: string; uri: string }[] = []
+      const result = await geminiChatRef.current.sendMessage(userParts)
+      const textContent = result.response.text()
 
-      // Function calling loop
-      let rounds = 0
-      while (rounds < MAX_TOOL_ROUNDS) {
-        const functionCalls = response.functionCalls?.()
-        if (!functionCalls || functionCalls.length === 0) break
-
-        // Execute each function call locally
-        const functionResponses = functionCalls.map((fc: any) => {
-          toolsUsed.push(fc.name)
-          const fnResult = executeToolCall(fc.name, fc.args || {}, template)
-          return {
-            functionResponse: {
-              name: fc.name,
-              response: fnResult,
-            },
-          }
-        })
-
-        // Send function results back to Gemini
-        result = await geminiChatRef.current.sendMessage(functionResponses)
-        response = result.response
-        rounds++
-      }
-
-      // Extract code execution parts
-      const candidate = response.candidates?.[0]
-      if (candidate?.content?.parts) {
-        for (const part of candidate.content.parts) {
-          if ((part as any).executableCode) {
-            const execCode = (part as any).executableCode
-            codeExecution = {
-              code: execCode.code || '',
-              output: '',
-            }
-          }
-          if ((part as any).codeExecutionResult) {
-            const execResult = (part as any).codeExecutionResult
-            if (codeExecution) {
-              codeExecution.output = execResult.output || ''
-            } else {
-              codeExecution = { code: '', output: execResult.output || '' }
-            }
-            if (!toolsUsed.includes('code_execution')) toolsUsed.push('code_execution')
-          }
-        }
-      }
-
-      // Extract grounding metadata (Google Search citations)
-      const grounding = candidate?.groundingMetadata as any
-      if (grounding?.groundingChunks) {
-        groundingSources = grounding.groundingChunks
-          .filter((c: any) => c.web)
-          .map((c: any) => ({
-            title: c.web.title || 'Source',
-            uri: c.web.uri || '#',
-          }))
-        if (groundingSources.length > 0 && !toolsUsed.includes('google_search')) {
-          toolsUsed.push('google_search')
-        }
-      }
-
-      const textContent = response.text()
-
-      return {
-        content: textContent,
-        toolsUsed: toolsUsed.length > 0 ? toolsUsed : undefined,
-        codeExecution,
-        groundingSources: groundingSources.length > 0 ? groundingSources : undefined,
-      }
+      return { content: textContent }
     } catch (error: any) {
       geminiChatRef.current = null
       return {

@@ -54,24 +54,29 @@ export default function AiInsightCard({ type }: AiInsightCardProps) {
   const template = getCuisineTemplate(cuisineType || 'mediterranean')
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const cacheKey = `ai_insights_${type}_${cuisineType || 'mediterranean'}`
 
   const fetchInsights = async () => {
     setLoading(true)
-    setError(false)
+    setError(null)
 
     // Check sessionStorage cache
     const cached = sessionStorage.getItem(cacheKey)
     if (cached) {
-      setData(JSON.parse(cached))
-      setLoading(false)
-      return
+      try {
+        setData(JSON.parse(cached))
+        setLoading(false)
+        return
+      } catch {
+        sessionStorage.removeItem(cacheKey)
+      }
     }
 
     if (!GEMINI_API_KEY) {
-      setError(true)
+      console.error('[AiInsight] No GEMINI_API_KEY found in environment')
+      setError('API key not configured')
       setLoading(false)
       return
     }
@@ -80,8 +85,9 @@ export default function AiInsightCard({ type }: AiInsightCardProps) {
       const result = await generateStructuredInsights(GEMINI_API_KEY, type, template)
       setData(result)
       sessionStorage.setItem(cacheKey, JSON.stringify(result))
-    } catch {
-      setError(true)
+    } catch (err: any) {
+      console.error('[AiInsight] Failed to generate insights:', err)
+      setError(err?.message || 'Failed to generate')
     } finally {
       setLoading(false)
     }
@@ -144,24 +150,26 @@ export default function AiInsightCard({ type }: AiInsightCardProps) {
         {!loading && !error && data && type === 'dashboard' && (
           <div className="space-y-4">
             {(data.insights as DashboardInsight[])?.map((insight, i) => {
-              const Icon = typeIcon(insight.type)
+              const t = insight.type?.toLowerCase()
+              const sev = insight.severity?.toLowerCase()
+              const Icon = typeIcon(t)
               return (
                 <div key={i} className="flex items-start space-x-3">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    insight.type === 'risk' ? 'bg-red-100 dark:bg-red-900/30' :
-                    insight.type === 'opportunity' ? 'bg-green-100 dark:bg-green-900/30' :
+                    t === 'risk' ? 'bg-red-100 dark:bg-red-900/30' :
+                    t === 'opportunity' ? 'bg-green-100 dark:bg-green-900/30' :
                     'bg-blue-100 dark:bg-blue-900/30'
                   }`}>
                     <Icon className={`w-4 h-4 ${
-                      insight.type === 'risk' ? 'text-red-600 dark:text-red-400' :
-                      insight.type === 'opportunity' ? 'text-green-600 dark:text-green-400' :
+                      t === 'risk' ? 'text-red-600 dark:text-red-400' :
+                      t === 'opportunity' ? 'text-green-600 dark:text-green-400' :
                       'text-blue-600 dark:text-blue-400'
                     }`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
                       <p className="text-sm font-semibold text-black dark:text-white">{insight.title}</p>
-                      <span className={`w-2 h-2 rounded-full ${severityDot[insight.severity] || severityDot.low}`} />
+                      <span className={`w-2 h-2 rounded-full ${severityDot[sev] || severityDot.low}`} />
                     </div>
                     <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5 leading-relaxed">{insight.description}</p>
                   </div>
@@ -173,11 +181,13 @@ export default function AiInsightCard({ type }: AiInsightCardProps) {
 
         {!loading && !error && data && type === 'menu' && (
           <div className="space-y-4">
-            {(data.suggestions as MenuSuggestion[])?.map((s, i) => (
+            {(data.suggestions as MenuSuggestion[])?.map((s, i) => {
+              const action = s.action?.toLowerCase()
+              return (
               <div key={i} className="flex items-start space-x-3">
                 <div className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide flex-shrink-0 ${
-                  s.action === 'promote' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                  s.action === 'reprice' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' :
+                  action === 'promote' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                  action === 'reprice' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' :
                   'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                 }`}>
                   {s.action}
@@ -188,17 +198,20 @@ export default function AiInsightCard({ type }: AiInsightCardProps) {
                   <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-0.5 italic">{s.detail}</p>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
         {!loading && !error && data && type === 'procurement' && (
           <div className="space-y-4">
-            {(data.recommendations as ProcurementRec[])?.map((r, i) => (
+            {(data.recommendations as ProcurementRec[])?.map((r, i) => {
+              const priority = r.priority?.toLowerCase()
+              return (
               <div key={i} className="flex items-start space-x-3">
                 <div className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide flex-shrink-0 ${
-                  r.priority === 'high' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                  r.priority === 'medium' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' :
+                  priority === 'high' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                  priority === 'medium' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' :
                   'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                 }`}>
                   {r.priority}
@@ -209,7 +222,8 @@ export default function AiInsightCard({ type }: AiInsightCardProps) {
                   <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 font-medium">{r.savings_estimate}</p>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

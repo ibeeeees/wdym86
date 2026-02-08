@@ -6,7 +6,6 @@
  */
 
 import {
-  GoogleGenerativeAI,
   SchemaType,
   type FunctionDeclaration,
 } from '@google/generative-ai'
@@ -310,88 +309,39 @@ export async function generateStructuredInsights(
   type: 'dashboard' | 'menu' | 'procurement',
   template: CuisineTemplate,
 ): Promise<any> {
-  const client = new GoogleGenerativeAI(apiKey)
-
-  const configs: Record<string, { prompt: string; schema: any }> = {
-    dashboard: {
-      prompt: `Based on this restaurant data, generate exactly 3 key insights about today's risks and opportunities. Be specific using the actual ingredient names and numbers:\n\n${buildRestaurantContext(template)}`,
-      schema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          insights: {
-            type: SchemaType.ARRAY,
-            items: {
-              type: SchemaType.OBJECT,
-              properties: {
-                title: { type: SchemaType.STRING, description: 'Short insight title (5-8 words)' },
-                description: { type: SchemaType.STRING, description: '1-2 sentence actionable insight using specific data' },
-                severity: { type: SchemaType.STRING, description: 'low, medium, or high' },
-                type: { type: SchemaType.STRING, description: 'risk, opportunity, or info' },
-              },
-              required: ['title', 'description', 'severity', 'type'],
-            },
-          },
-        },
-        required: ['insights'],
-      },
-    },
-    menu: {
-      prompt: `Analyze this restaurant's menu performance and suggest exactly 3 actions (reprice, promote, or discontinue). Use actual dish names and order data:\n\n${buildMenuContext(template)}`,
-      schema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          suggestions: {
-            type: SchemaType.ARRAY,
-            items: {
-              type: SchemaType.OBJECT,
-              properties: {
-                dish_name: { type: SchemaType.STRING },
-                action: { type: SchemaType.STRING, description: 'reprice, promote, or discontinue' },
-                reason: { type: SchemaType.STRING, description: '1 sentence reason with data' },
-                detail: { type: SchemaType.STRING, description: 'Specific recommendation (e.g. new price)' },
-              },
-              required: ['dish_name', 'action', 'reason', 'detail'],
-            },
-          },
-        },
-        required: ['suggestions'],
-      },
-    },
-    procurement: {
-      prompt: `Analyze supplier data and give exactly 3 procurement recommendations. Reference actual supplier names and ingredient data:\n\n${buildSupplierContext(template)}`,
-      schema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          recommendations: {
-            type: SchemaType.ARRAY,
-            items: {
-              type: SchemaType.OBJECT,
-              properties: {
-                action: { type: SchemaType.STRING, description: 'Short action title' },
-                details: { type: SchemaType.STRING, description: '1-2 sentence details' },
-                savings_estimate: { type: SchemaType.STRING, description: 'Estimated savings or impact' },
-                priority: { type: SchemaType.STRING, description: 'high, medium, or low' },
-              },
-              required: ['action', 'details', 'savings_estimate', 'priority'],
-            },
-          },
-        },
-        required: ['recommendations'],
-      },
-    },
+  const prompts: Record<string, string> = {
+    dashboard: `Based on this restaurant data, generate exactly 3 key insights about today's risks and opportunities. Be specific using the actual ingredient names and numbers.\n\nRespond with JSON in this exact format: {"insights":[{"title":"short title","description":"1-2 sentence insight","severity":"low|medium|high","type":"risk|opportunity|info"}]}\n\n${buildRestaurantContext(template)}`,
+    menu: `Analyze this restaurant's menu performance and suggest exactly 3 actions (reprice, promote, or discontinue). Use actual dish names and order data.\n\nRespond with JSON in this exact format: {"suggestions":[{"dish_name":"name","action":"reprice|promote|discontinue","reason":"1 sentence reason","detail":"specific recommendation"}]}\n\n${buildMenuContext(template)}`,
+    procurement: `Analyze supplier data and give exactly 3 procurement recommendations. Reference actual supplier names and ingredient data.\n\nRespond with JSON in this exact format: {"recommendations":[{"action":"short title","details":"1-2 sentence details","savings_estimate":"estimated savings","priority":"high|medium|low"}]}\n\n${buildSupplierContext(template)}`,
   }
 
-  const { prompt, schema } = configs[type]
-  const model = client.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: schema,
-      temperature: 0.5,
-      maxOutputTokens: 8192,
-    },
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompts[type] }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.5,
+        maxOutputTokens: 8192,
+      },
+    }),
   })
 
-  const result = await model.generateContent(prompt)
-  return JSON.parse(result.response.text())
+  if (!response.ok) {
+    const errBody = await response.text()
+    console.error('[AiInsight] Gemini API error:', response.status, errBody)
+    throw new Error(`Gemini API ${response.status}: ${errBody}`)
+  }
+
+  const data = await response.json()
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+  if (!text) {
+    console.error('[AiInsight] No text in response:', JSON.stringify(data))
+    throw new Error('No text in Gemini response')
+  }
+
+  return JSON.parse(text)
 }

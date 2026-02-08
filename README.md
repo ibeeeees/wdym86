@@ -1,8 +1,8 @@
 # WDYM86 - AI-Powered Restaurant Intelligence Platform
 
-> **Ground-Up NumPy TCN** | **Google Gemini AI Agents** | **NCR Voyix BSP Integration** | **Check-First POS + BOHPOS**
+> **Ground-Up NumPy TCN** | **Google Gemini 3.0 AI Agents** | **NCR Voyix BSP Integration** | **Check-First POS + BOHPOS**
 
-A full-stack AI-powered restaurant management platform with **probabilistic demand forecasting** (pure NumPy TCN + Negative Binomial), **3 autonomous AI agents**, **Google Gemini-powered business intelligence**, **check-first POS workflow** with kitchen display (BOHPOS), **NCR Voyix BSP integration**, **Stripe payments**, **Solana Pay**, and **25 frontend pages** backed by **28 API routers** and **130+ endpoints**.
+A full-stack AI-powered restaurant management platform with **probabilistic demand forecasting** (pure NumPy TCN + Negative Binomial), **3 autonomous AI agents**, **Google Gemini 3.0-powered business intelligence**, **check-first POS workflow** with 7 payment methods and kitchen display (BOHPOS), **daily projections dashboard**, **NCR Voyix BSP integration**, **Stripe payments**, **Solana Pay**, and **25 frontend pages** backed by **28 API routers** and **130+ endpoints**.
 
 **6 Demo Restaurants across the USA:**
 | Restaurant | Cuisine | Location |
@@ -22,13 +22,19 @@ A full-stack AI-powered restaurant management platform with **probabilistic dema
 - **Ground-up TCN Model** - Temporal Convolutional Network in pure NumPy (no PyTorch/TensorFlow)
 - **Negative Binomial Forecasting** - Probabilistic demand prediction with uncertainty quantification
 - **3 Autonomous AI Agents** - Risk assessment, reorder optimization, supplier strategy
-- **Business-Specific Gemini AI** - All AI responses grounded in YOUR restaurant data (name, cuisine, ingredients, orders)
+- **Google Gemini 3.0 Flash** - All AI responses grounded in YOUR restaurant data (name, cuisine, ingredients, orders)
 
 ### POS & Kitchen Operations
 - **Check-First POS Workflow** - Order type selection, check management, menu ordering, payment processing, tip input, receipt display
-- **BOHPOS Kitchen Display** - Real-time kitchen order queue, status tracking, bump-to-complete, auto-refresh
+- **7 Payment Methods** - Credit Card, Cash, Apple Pay, Stripe, Klarna, Cash App, Venmo with touch-grid selection
+- **BOHPOS Kitchen Display** - Real-time kitchen order queue, status tracking, bump-to-complete, auto-refresh with POS bridge
+- **POS-BOHPOS Demo Bridge** - Shared POSContext lets POS send orders directly to BOHPOS kitchen in demo mode (all 3 order types)
+- **Delivery Mode Overhaul** - Active deliveries with status tracking + upcoming scheduled deliveries with ETA
+- **Operating Date Awareness** - POS and BOHPOS display the operating date; date-scoped order history
+- **End-of-Day Checkout** - Daily sales report with order type breakdown, payment method summary, receipt-style export
+- **Send & Stay** - Send order to kitchen and continue editing the same check, or send and go back to check list
 - **Demo Mode** - Full POS workflow works without backend using in-memory check storage
-- **Multi-Payment Support** - Credit card (Stripe), cash with change calculation, tip percentages (15/18/20/25%)
+- **Tip Percentages** - 15/18/20/25% with custom amount, change calculation for cash
 - **Receipt Download** - Text-file receipt generation with print support
 
 ### Restaurant Operations
@@ -39,11 +45,13 @@ A full-stack AI-powered restaurant management platform with **probabilistic dema
 - **Supplier Management** - Lead times, reliability scores, volatility risk, substitute suppliers
 
 ### Intelligence & Analytics
+- **Daily Projections Dashboard** - Projected vs actual sales/orders with SVG arc gauge, status badges (Exceeding/On Track/Below/Critical), top performing dishes
 - **Automated Disruption Engine** - Location-aware weather, supply chain, local events generated per-restaurant per-day
 - **Timeline Analytics** - Daily/weekly/monthly/seasonal KPIs with trend indicators
 - **Day-of-Week Analysis** - Busiest/slowest day identification from order data
 - **Ingredient Risk Assessment** - Disruption impact on specific ingredients and menu items
 - **Popular/Least Popular Dishes** - Order analytics with 7-day trend sparklines
+- **Enterprise Footer** - Professional branding with version badge across all dashboard pages
 
 ### Payments & Billing
 - **Stripe Integration** - Card payments, subscription management, webhook processing
@@ -120,7 +128,7 @@ A full-stack AI-powered restaurant management platform with **probabilistic dema
 - **FastAPI** - Async Python web framework with 28 routers
 - **SQLAlchemy** - Async ORM with PostgreSQL/SQLite (35+ models)
 - **NumPy** - Ground-up ML implementation (TCN + Negative Binomial)
-- **Google Gemini** - Business-specific AI explanations and chat
+- **Google Gemini 3.0 Flash** - Business-specific AI explanations and chat
 - **Stripe** - Payment processing and subscription management
 - **Boto3** - AWS SDK (RDS, S3, Cognito, Secrets Manager)
 - **Alembic** - Database migrations
@@ -428,6 +436,7 @@ wdym86/
 │       │   └── IngredientDetail.tsx # Ingredient deep dive
 │       ├── components/
 │       │   ├── Layout.tsx         # App shell with role-based nav
+│       │   ├── EnterpriseFooter.tsx # Professional footer with branding
 │       │   ├── CheckList.tsx      # POS check list
 │       │   ├── CheckModal.tsx     # Check detail modal
 │       │   ├── PaymentModal.tsx   # Stripe payment modal
@@ -437,7 +446,8 @@ wdym86/
 │       │   └── NavigationGuard.tsx # POS user route protection
 │       ├── context/
 │       │   ├── AuthContext.tsx     # Auth + role-based access
-│       │   └── ThemeContext.tsx    # Dark/light/system mode
+│       │   ├── ThemeContext.tsx    # Dark/light/system mode
+│       │   └── POSContext.tsx      # Shared POS state (operating date, daily stats, BOHPOS bridge)
 │       ├── services/
 │       │   ├── api.ts             # Axios API client (60+ functions)
 │       │   ├── checks.ts          # Check management API
@@ -523,7 +533,7 @@ Complete demo data for **6 restaurants** across the USA, each with 20+ ingredien
 
 ## Security
 
-- **Rate Limiting** - 100 req/min general, 10 req/min auth (sliding window, in-memory)
+- **Rate Limiting** - 100 req/min general, 10 req/min auth (sliding window, in-memory; auto-disabled in test env)
 - **Security Headers** - X-Content-Type-Options, X-Frame-Options, HSTS, XSS Protection, Referrer-Policy
 - **API Key Masking** - Automatic detection and masking of secrets in JSON response bodies
 - **Global Exception Handler** - Safe error responses in production, debug details in development
@@ -531,20 +541,44 @@ Complete demo data for **6 restaurants** across the USA, each with 20+ ingredien
 - **JWT Authentication** - Token-based auth with role claims
 - **Demo Mode Isolation** - Demo tokens never trigger auth redirects or data mutations
 
+## Testing
+
+**132 backend tests** covering all major API surfaces:
+
+```bash
+cd backend
+TESTING=1 pytest --tb=short -q
+```
+
+- **Health & Root** - Health check, security headers, rate-limit headers, API key masking passthrough
+- **POS Operations** - Orders (CRUD), menu items, table status, pagination, filtering
+- **Check Management** - Create, list, add items, send to kitchen, finalize with tip, void
+- **BOHPOS Kitchen** - Active/recent orders, bump-to-complete, status updates
+- **Auth** - Registration, login, JWT validation, onboarding
+- **Restaurants** - CRUD, ownership validation
+- **Ingredients** - CRUD, restaurant-scoped
+- **Suppliers** - CRUD, reliability scoring
+- **Inventory** - Stock levels, adjustments
+- **Dishes** - Menu CRUD
+- **Forecasts** - ML pipeline invocation
+
 ## Demo Script
 
 1. Visit the app and click **"Try Demo"** on the login page
 2. Select any of the 6 restaurant cuisines (Greek, Japanese, Mexican, Indian, Italian, BBQ)
 3. Choose a role (Admin has full access, Manager sees operational pages, POS sees only the register)
-4. **Forecasting Dashboard** - View AI risk assessments, ingredient gauges, demand forecast charts
-5. **POS** - Select order type (Dine In/Takeout/Delivery), create a check, add menu items, send to kitchen, process payment with tip
-6. **BOHPOS Kitchen** - See orders arrive in real-time, bump completed orders
-7. **NCR Aloha** - View live NCR catalog, transaction logs, orders synced from BSP API
-8. **Timeline Analytics** - Switch between KPIs, weekly, monthly, seasonal, day-of-week tabs
-9. **Gemini Chat** - Ask the AI advisor about your restaurant's inventory and operations
-10. **Inventory** - Track non-food items, filter by category, view low stock alerts
-11. **Floor Plan** - Drag and drop tables, assign servers, manage zones
-12. **Payroll** - View employees, generate pay runs, import/export via S3
+4. **Admin Dashboard** - View daily projections hero (projected vs actual sales with arc gauge), quick links, recent activity
+5. **Forecasting Dashboard** - View AI risk assessments, ingredient gauges, demand forecast charts
+6. **POS** - Select order type (Dine In/Takeout/Delivery), create a check, add menu items, "Send to Kitchen" or "Send & Stay", process payment with any of 7 methods (Credit Card, Cash, Apple Pay, Stripe, Klarna, Cash App, Venmo), add tip, view receipt
+7. **POS Delivery Mode** - View active deliveries with status badges and upcoming scheduled deliveries with ETAs
+8. **End of Day** - Run end-of-day checkout from POS to generate a daily sales report with order type and payment breakdown
+9. **BOHPOS Kitchen** - See orders arrive from POS in real-time (all 3 order types), bump completed orders, track by operating date
+10. **NCR Aloha** - View live NCR catalog, transaction logs, orders synced from BSP API
+11. **Timeline Analytics** - Switch between KPIs, weekly, monthly, seasonal, day-of-week tabs
+12. **Gemini Chat** - Ask the Gemini 3.0 AI advisor about your restaurant's inventory and operations
+13. **Inventory** - Track non-food items, filter by category, view low stock alerts
+14. **Floor Plan** - Drag and drop tables, assign servers, manage zones
+15. **Payroll** - View employees, generate pay runs, import/export via S3
 
 ## Hackathon Tracks
 

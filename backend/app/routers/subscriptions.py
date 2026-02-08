@@ -22,6 +22,7 @@ from ..models.subscription import (
 )
 from .auth import get_current_user
 from ..services.stripe_service import stripe_service
+from ..config import settings
 
 router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 
@@ -138,9 +139,8 @@ async def create_subscription(
     
     # Create Stripe Checkout Session
     try:
-        # TODO: Update these URLs to match your frontend
-        success_url = f"http://localhost:5173/dashboard?subscription=success&restaurant_id={restaurant_id}"
-        cancel_url = f"http://localhost:5173/pricing?subscription=cancelled"
+        success_url = f"{settings.frontend_url}/dashboard?subscription=success&restaurant_id={restaurant_id}"
+        cancel_url = f"{settings.frontend_url}/pricing?subscription=cancelled"
         
         checkout_session = await stripe_service.create_checkout_session(
             customer_id=stripe_customer_id,

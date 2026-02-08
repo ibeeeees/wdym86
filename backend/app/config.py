@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "*"
 
+    # Frontend
+    frontend_url: str = "http://localhost:3000"
+
     # AWS Configuration
     aws_region: str = "us-east-1"
     aws_access_key_id: Optional[str] = None

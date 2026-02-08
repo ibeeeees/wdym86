@@ -51,8 +51,45 @@ export default function ReceiptDisplay({
   }
 
   const handleDownload = () => {
-    // TODO: Implement PDF download
-    alert('PDF download coming soon!')
+    if (!receipt) return
+    const lines: string[] = []
+    if (receipt.restaurant_name) {
+      lines.push(receipt.restaurant_name)
+      if (receipt.restaurant_address) lines.push(receipt.restaurant_address)
+      lines.push(''.padEnd(40, '-'))
+    }
+    lines.push('RECEIPT')
+    lines.push(receipt.receipt_number)
+    lines.push('')
+    lines.push(`Check:  ${receipt.check_number}`)
+    lines.push(`Name:   ${receipt.check_name}`)
+    lines.push(`Type:   ${receipt.order_type.replace('_', ' ').toUpperCase()}`)
+    lines.push(`Date:   ${new Date(receipt.date).toLocaleString()}`)
+    lines.push(''.padEnd(40, '-'))
+    for (const item of receipt.items) {
+      lines.push(`${item.quantity}x ${item.name}  $${item.total.toFixed(2)}`)
+      if (item.modifiers?.length) lines.push(`    + ${item.modifiers.join(', ')}`)
+      if (item.special_instructions) lines.push(`    Note: ${item.special_instructions}`)
+    }
+    lines.push(''.padEnd(40, '-'))
+    lines.push(`Subtotal:  $${receipt.subtotal.toFixed(2)}`)
+    lines.push(`Tax:       $${receipt.tax.toFixed(2)}`)
+    if (receipt.tip !== null && receipt.tip > 0) lines.push(`Tip:       $${receipt.tip.toFixed(2)}`)
+    lines.push(''.padEnd(40, '='))
+    lines.push(`TOTAL:     $${receipt.final_total.toFixed(2)}`)
+    lines.push('')
+    lines.push(`PAID: ${receipt.payment_method.replace('_', ' ').toUpperCase()}`)
+    lines.push('')
+    lines.push('Thank you for your business!')
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `receipt-${receipt.receipt_number}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   return (

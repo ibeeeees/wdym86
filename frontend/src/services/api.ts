@@ -31,7 +31,7 @@ api.interceptors.response.use(
   (error) => {
     const token = localStorage.getItem('token')
     // Don't redirect if using demo token - let the app use fallback data
-    if (error.response?.status === 401 && token && token !== 'demo-token') {
+    if (error.response?.status === 401 && token && !token.startsWith('demo-token')) {
       localStorage.removeItem('token')
       window.location.href = '/login'
     }

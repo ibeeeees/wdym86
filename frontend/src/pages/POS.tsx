@@ -13,7 +13,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Users, Receipt, Truck, ChevronRight, Plus, ArrowLeft,
-  X, Send, DollarSign, XCircle, Clock, ChevronDown
+  X, Send, DollarSign, XCircle, Clock, ChevronDown, Download
 } from 'lucide-react'
 import { getCuisineTemplate } from '../data/cuisineTemplates'
 import { checkApiHealth } from '../services/api'
@@ -397,6 +397,45 @@ export default function POS() {
     setCurrentCheckItems([])
     setView('check_list')
     if (selectedOrderType) loadChecks(selectedOrderType)
+  }
+
+  const handleDownloadReceipt = () => {
+    if (!currentCheck) return
+    const tip = parseFloat(tipAmount) || 0
+    const finalTotal = Math.round((currentCheck.total + tip) * 100) / 100
+    const lines: string[] = []
+    lines.push('RECEIPT')
+    lines.push(currentCheck.check_number)
+    lines.push('')
+    lines.push(`Check:  ${currentCheck.check_number}`)
+    lines.push(`Name:   ${currentCheck.check_name}`)
+    lines.push(`Type:   ${(currentCheck.order_type || '').replace('_', ' ').toUpperCase()}`)
+    lines.push(`Date:   ${new Date().toLocaleString()}`)
+    lines.push(''.padEnd(40, '-'))
+    for (const item of currentCheckItems) {
+      lines.push(`${item.quantity}x ${item.name}  $${(item.price * item.quantity).toFixed(2)}`)
+      if (item.modifiers) lines.push(`    + ${item.modifiers}`)
+      if (item.special_instructions) lines.push(`    Note: ${item.special_instructions}`)
+    }
+    lines.push(''.padEnd(40, '-'))
+    lines.push(`Subtotal:  $${currentCheck.subtotal.toFixed(2)}`)
+    lines.push(`Tax:       $${currentCheck.tax.toFixed(2)}`)
+    if (tip > 0) lines.push(`Tip:       $${tip.toFixed(2)}`)
+    lines.push(''.padEnd(40, '='))
+    lines.push(`TOTAL:     $${finalTotal.toFixed(2)}`)
+    lines.push('')
+    lines.push(`PAID: ${paymentMethod === 'credit_card' ? 'CREDIT CARD' : 'CASH'}`)
+    lines.push('')
+    lines.push('Thank you for your business!')
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `receipt-${currentCheck.check_number}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   const handleBackToOrderType = () => {
@@ -1111,7 +1150,14 @@ export default function POS() {
               </div>
             </div>
 
-            {/* Finalize Button */}
+            {/* Download & Finalize Buttons */}
+            <button
+              onClick={handleDownloadReceipt}
+              className="w-full flex items-center justify-center gap-2 py-3 mb-3 border-2 border-neutral-300 dark:border-neutral-600 rounded-xl font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            >
+              <Download className="w-5 h-5" />
+              Download Receipt
+            </button>
             <button
               onClick={handleFinalizeWithTip}
               className="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-lg transition-colors"

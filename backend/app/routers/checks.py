@@ -5,7 +5,7 @@ Endpoints for check creation, retrieval, and management.
 Implements 26.md specification for check-based ordering workflow.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 from typing import List, Optional
@@ -87,19 +87,28 @@ class CheckItemResponse(BaseModel):
 @router.post("/create", response_model=CheckResponse)
 async def create_check(
     request: CreateCheckRequest,
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
+    authorization: str = Header(default="")
 ):
     """
     Create a new check
-    
+
     Creates a new check with auto-generated check number.
     POS users must be authenticated to create checks.
     """
     try:
         service = CheckManagementService(db)
-        
-        # TODO: Get actual user_id from auth token
+
+        # Soft auth: parse JWT if present, fallback to demo user
         created_by = "demo_pos_user"
+        if authorization and authorization.startswith("Bearer ") and "demo-token" not in authorization:
+            try:
+                from jose import jwt
+                from ..config import settings
+                payload = jwt.decode(authorization[7:], settings.secret_key, algorithms=[settings.algorithm])
+                created_by = payload.get("sub", "demo_pos_user")
+            except Exception:
+                pass
         
         check = await service.create_check(
             restaurant_id=request.restaurant_id,

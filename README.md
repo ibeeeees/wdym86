@@ -111,11 +111,11 @@ A full-stack AI-powered restaurant management platform with **probabilistic dema
             ┌─────────────────────────────┼─────────────────────────────┐
             ▼                             ▼                             ▼
   ┌──────────────────┐      ┌──────────────────────┐      ┌──────────────────┐
-  │   Ground-Up ML   │      │   AI Agents          │      │   Gemini Layer   │
-  │   NumPy TCN      │      │   Risk Agent         │      │   Business AI    │
-  │   NB Distribution│      │   Reorder Agent      │      │   Explanations   │
-  │   Adam Optimizer │      │   Strategy Agent     │      │   Chat Advisor   │
-  │                  │      │   Disruption Engine  │      │   What-If        │
+  │   Ground-Up ML   │      │   AI Agents          │      │   Gemini 2.5     │
+  │   NumPy TCN      │      │   Risk Agent         │      │   Function Call  │
+  │   NB Distribution│      │   Reorder Agent      │      │   Vision         │
+  │   Adam Optimizer │      │   Strategy Agent     │      │   Code Execution │
+  │                  │      │   Disruption Engine  │      │   Search Ground  │
   └──────────────────┘      └──────────────────────┘      └──────────────────┘
                                           │
             ┌─────────────────────────────┼─────────────────────────────┐
@@ -143,6 +143,7 @@ A full-stack AI-powered restaurant management platform with **probabilistic dema
 - **React 18** + TypeScript (25 pages)
 - **Vite** - Dev server with API proxy
 - **Tailwind CSS** - Glassmorphism UI with dark mode
+- **@google/generative-ai** - Gemini 2.5 SDK (function calling, vision, code execution, search grounding, structured output)
 - **Recharts** - Charts (Line, Bar, Area, Pie)
 - **Framer Motion** - Animations and transitions
 - **Lucide Icons** - Icon library (no emojis)
@@ -420,7 +421,7 @@ wdym86/
 │       │   ├── POS.tsx            # Check-first POS workflow
 │       │   ├── BOHPOS.tsx         # Kitchen display system
 │       │   ├── Delivery.tsx       # Multi-platform delivery
-│       │   ├── GeminiChat.tsx     # AI restaurant advisor
+│       │   ├── GeminiChat.tsx     # AI advisor (vision, tools, code exec, search)
 │       │   ├── FloorPlanEditor.tsx # Drag-and-drop floor plans
 │       │   ├── TimelineAnalytics.tsx # KPI analytics
 │       │   ├── InventoryTracking.tsx # Non-food inventory

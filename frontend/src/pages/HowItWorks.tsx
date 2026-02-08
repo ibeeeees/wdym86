@@ -13,6 +13,59 @@ import {
   Sparkles,
 } from 'lucide-react'
 
+// ---------------------------------------------------------------------------
+// Tech Stack Carousel Data
+// ---------------------------------------------------------------------------
+
+interface TechItem {
+  name: string
+  color: string // tailwind gradient
+}
+
+const techStack: TechItem[] = [
+  // AI/ML
+  { name: 'NumPy TCN', color: 'from-purple-600 to-indigo-600' },
+  { name: 'Negative Binomial', color: 'from-purple-500 to-pink-500' },
+  { name: 'Gemini 2.5 Flash', color: 'from-blue-500 to-cyan-500' },
+  { name: 'Function Calling', color: 'from-blue-600 to-indigo-500' },
+  { name: 'Vision', color: 'from-violet-500 to-purple-500' },
+  { name: 'Code Execution', color: 'from-indigo-500 to-blue-500' },
+  { name: 'Search Grounding', color: 'from-cyan-500 to-blue-500' },
+  { name: 'Structured Output', color: 'from-blue-400 to-indigo-500' },
+  // Frontend
+  { name: 'React 18', color: 'from-sky-500 to-cyan-400' },
+  { name: 'TypeScript', color: 'from-blue-600 to-blue-500' },
+  { name: 'Vite', color: 'from-yellow-500 to-orange-500' },
+  { name: 'Tailwind CSS', color: 'from-teal-500 to-cyan-500' },
+  { name: 'Recharts', color: 'from-rose-500 to-pink-500' },
+  { name: 'Framer Motion', color: 'from-pink-500 to-purple-500' },
+  { name: 'Lucide Icons', color: 'from-orange-400 to-red-400' },
+  // Backend
+  { name: 'FastAPI', color: 'from-green-500 to-emerald-500' },
+  { name: 'Python', color: 'from-yellow-500 to-green-500' },
+  { name: 'SQLAlchemy', color: 'from-red-500 to-orange-500' },
+  { name: 'Alembic', color: 'from-neutral-600 to-neutral-500' },
+  // Payments
+  { name: 'Stripe', color: 'from-indigo-500 to-purple-600' },
+  { name: 'Solana Pay', color: 'from-green-400 to-teal-500' },
+  { name: 'TaxJar', color: 'from-amber-500 to-yellow-500' },
+  // Infrastructure
+  { name: 'AWS RDS', color: 'from-orange-500 to-amber-500' },
+  { name: 'AWS S3', color: 'from-green-600 to-emerald-500' },
+  { name: 'AWS Cognito', color: 'from-red-500 to-rose-500' },
+  { name: 'NCR Voyix BSP', color: 'from-blue-700 to-indigo-600' },
+  // Integrations
+  { name: 'DoorDash', color: 'from-red-600 to-red-500' },
+  { name: 'Uber Eats', color: 'from-green-600 to-lime-500' },
+  { name: 'Grubhub', color: 'from-orange-600 to-orange-500' },
+  { name: 'Postmates', color: 'from-neutral-700 to-neutral-500' },
+  { name: 'Seamless', color: 'from-orange-500 to-red-500' },
+]
+
+// ---------------------------------------------------------------------------
+// Features Data
+// ---------------------------------------------------------------------------
+
 const features = [
   {
     icon: Monitor,
@@ -106,6 +159,38 @@ export default function HowItWorks() {
           <div className="mt-8 flex items-center justify-center space-x-2 text-white/50 text-sm">
             <Sparkles className="w-4 h-4" />
             <span>Built with NumPy TCN, Gemini, and Solana</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Tech Stack Carousel */}
+      <section className="py-12 bg-neutral-50 dark:bg-neutral-800/50 overflow-hidden">
+        <p className="text-center text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-6">
+          Built With
+        </p>
+        <style>{`
+          @keyframes scroll-left {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+        `}</style>
+        <div className="relative">
+          {/* Fade edges */}
+          <div className="absolute left-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-r from-neutral-50 dark:from-neutral-800/50 to-transparent pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-l from-neutral-50 dark:from-neutral-800/50 to-transparent pointer-events-none" />
+          {/* Scrolling row */}
+          <div
+            className="flex whitespace-nowrap"
+            style={{ animation: 'scroll-left 40s linear infinite' }}
+          >
+            {[...techStack, ...techStack].map((tech, i) => (
+              <span
+                key={i}
+                className={`inline-flex items-center px-4 py-2 mx-2 rounded-full text-xs font-bold text-white bg-gradient-to-r ${tech.color} shadow-md flex-shrink-0`}
+              >
+                {tech.name}
+              </span>
+            ))}
           </div>
         </div>
       </section>

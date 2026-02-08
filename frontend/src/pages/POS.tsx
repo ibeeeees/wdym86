@@ -145,7 +145,7 @@ export default function POS() {
 
   const demoGetCheckList = (orderType: OrderType): Check[] => {
     return Array.from(demoChecks.values())
-      .filter(c => c.order_type === orderType && c.status === 'active')
+      .filter(c => c.order_type === orderType && (c.status === 'active' || c.status === 'sent'))
       .map(({ items: _items, ...check }) => ({ ...check }))
   }
 
@@ -232,7 +232,7 @@ export default function POS() {
       if (isDemoMode()) {
         setChecks(demoGetCheckList(orderType))
       } else {
-        const data = await apiGetCheckList(restaurantId, orderType, 'active')
+        const data = await apiGetCheckList(restaurantId, orderType)
         setChecks(data)
       }
     } catch (err) {

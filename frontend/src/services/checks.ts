@@ -75,13 +75,13 @@ export async function createCheck(data: CreateCheckRequest): Promise<Check> {
 export async function getCheckList(
   restaurantId: string,
   orderType: 'dine_in' | 'takeout' | 'delivery',
-  status: string = 'active'
+  status?: string
 ): Promise<Check[]> {
   const params = new URLSearchParams({
     restaurant_id: restaurantId,
     order_type: orderType,
-    status,
   })
+  if (status) params.set('status', status)
 
   return await fetchJson<Check[]>(`/checks/list?${params.toString()}`)
 }
